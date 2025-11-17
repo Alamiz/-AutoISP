@@ -3,13 +3,13 @@ import logging
 import sys
 import os
 
-def run_automation(email, automation_name):
+def run_automation(email, isp, automation_name):
     """
     Dynamically import and execute a specific automation task.
     Example: category='browsing', automation_id='google_search', parameters={'query': 'test'}
     """
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("autoisp")
 
     profile = email.split('@')[0]
 
@@ -24,16 +24,16 @@ def run_automation(email, automation_name):
     sys.path.insert(0, application_path)
 
     try:
-        module_path = f"modules.automations.{automation_name}"
+        module_path = f"automations.{isp}.{automation_name}"
         module = importlib.import_module(module_path)
 
         if hasattr(module, "main"):
             logger.info(
-                f"Running {automation_name} for profile {profile}."
+                f"Running {automation_name} on {isp} for profile {profile}."
             )
             return module.main(email)
 
-        raise AttributeError(f"{module_path} missing 'main(account, parameters, db)' entrypoint.")
+        raise AttributeError(f"{module_path} missing 'main(email)' entrypoint.")
 
     except Exception as e:
         logger.exception(f"Failed to run automation {automation_name}: {e}")
