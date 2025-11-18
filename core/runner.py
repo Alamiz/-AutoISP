@@ -3,7 +3,7 @@ import logging
 import sys
 import os
 
-def run_automation(email, isp, automation_name):
+def run_automation(email, password, isp, automation_name):
     """
     Dynamically import and execute a specific automation task.
     Example: category='browsing', automation_id='google_search', parameters={'query': 'test'}
@@ -31,7 +31,7 @@ def run_automation(email, isp, automation_name):
             logger.info(
                 f"Running {automation_name} on {isp} for profile {profile}."
             )
-            return module.main(email)
+            return module.main(email, password)
 
         raise AttributeError(f"{module_path} missing 'main(email)' entrypoint.")
 

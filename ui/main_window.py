@@ -64,6 +64,7 @@ class MainWindow(QWidget):
 
     def run_authentication(self):
         email = self.email.text()
+        password = self.password.text()
         provider = self.provider.currentText()  # 'gmx' or 'webde'
 
         if not email:
@@ -72,7 +73,7 @@ class MainWindow(QWidget):
 
         self.write_log(f"Starting authentication for {email} on {provider}...")
 
-        run_automation(email, provider, "authenticate")
+        run_automation(email, password, provider, "authenticate")
 
 
 def run_ui():

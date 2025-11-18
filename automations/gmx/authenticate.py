@@ -3,8 +3,9 @@ from core.browser_helper import PlaywrightBrowserFactory
 from core.utils import retry, RequiredActionFailed, find_element_in_frame
 
 class GMXAuthentication:
-    def __init__(self, email):
+    def __init__(self, email, password):
         self.email = email
+        self.password = password
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.browser = PlaywrightBrowserFactory(profile_dir=f"Profile_{self.profile}")
@@ -42,19 +43,17 @@ class GMXAuthentication:
     @retry(max_retries=3, delay=5, required=True)
     def authenticate(self, page):
 
-        page.goto("https://www.gmx.net/")
-        # page.wait_for_timeout(150_000_000)
-
         iframe_selector = 'iframe[src^="https://alligator.navigator.gmx.net"]'
 
+        # Navigate to GMX login page
+        page.goto("https://www.gmx.net/")
+
         email_field_selectors = [
-            "input[id='username']"
+            "input#username"
         ]
 
         email_input = find_element_in_frame(page, email_field_selectors, iframe_selector)
-
         email_input.fill(self.email)
-
 
         submit_button_selectors = [
             'button[type="submit"]'
@@ -62,9 +61,19 @@ class GMXAuthentication:
 
         submit_button = find_element_in_frame(page, submit_button_selectors, iframe_selector)
         submit_button.click()
+        
+        password_field_selectors = [
+            "input#password"
+        ]
+
+        password_input = find_element_in_frame(page, password_field_selectors, iframe_selector)
+        password_input.fill(self.password)
+
+        submit_button = find_element_in_frame(page, submit_button_selectors, iframe_selector)
+        submit_button.click()
 
         page.wait_for_timeout(150_000_000)
 
-def main(email):
-    auth = GMXAuthentication(email)
+def main(email, password):
+    auth = GMXAuthentication(email, password)
     return auth.run()
