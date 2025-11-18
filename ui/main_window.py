@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 import sys
 from core.runner import run_automation
-from core.utils import QTextEditLogger
+from core.utils.logger import QTextEditLogger
 import logging
 
 class MainWindow(QWidget):

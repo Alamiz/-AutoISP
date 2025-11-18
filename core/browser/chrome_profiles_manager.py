@@ -1,6 +1,4 @@
 import os
-import shutil
-import zipfile
 import platform
 from pathlib import Path
 import json

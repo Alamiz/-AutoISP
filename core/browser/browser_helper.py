@@ -1,5 +1,5 @@
 from playwright.sync_api import sync_playwright, BrowserContext, Page
-from core.chrome_profiles_manager import ChromeProfileManager
+from core.browser.chrome_profiles_manager import ChromeProfileManager
 import os
 from typing import Optional, List
 

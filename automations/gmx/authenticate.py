@@ -1,16 +1,21 @@
 import logging
-from core.browser_helper import PlaywrightBrowserFactory
-from core.utils import retry, RequiredActionFailed, find_element_in_frame
+from core.browser.browser_helper import PlaywrightBrowserFactory
+from core.utils.decorators import retry, RequiredActionFailed
+from core.utils.element_finder import find_element_in_frame
+from core.humanization.actions import HumanAction
 
-class GMXAuthentication:
+class GMXAuthentication(HumanAction):
     def __init__(self, email, password):
+        super().__init__()
         self.email = email
         self.password = password
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.browser = PlaywrightBrowserFactory(profile_dir=f"Profile_{self.profile}")
+        self.login_frame_selector = 'iframe[src^="https://alligator.navigator.gmx.net"]'
 
-    def run(self) -> bool:
+
+    def execute(self) -> bool:
         """
         Runs authentication flow for GMX
         """
@@ -42,38 +47,50 @@ class GMXAuthentication:
 
     @retry(max_retries=3, delay=5, required=True)
     def authenticate(self, page):
-
-        iframe_selector = 'iframe[src^="https://alligator.navigator.gmx.net"]'
+        """
+        Handles authentication flow for GMX
+        """
 
         # Navigate to GMX login page
         page.goto("https://www.gmx.net/")
+        self.human.read_delay()
 
-        email_field_selectors = [
-            "input#username"
-        ]
+        # Fill email
+        self.human_fill(
+            page,
+            selectors=['input#username'],
+            text=self.email,
+            iframe_selector=self.login_frame_selector
+        )
 
-        email_input = find_element_in_frame(page, email_field_selectors, iframe_selector)
-        email_input.fill(self.email)
+        # Click submit
+        self.human_click(
+            page,
+            selectors=['button[type="submit"]'],
+            iframe_selector=self.login_frame_selector
+        )
 
-        submit_button_selectors = [
-            'button[type="submit"]'
-        ]
-
-        submit_button = find_element_in_frame(page, submit_button_selectors, iframe_selector)
-        submit_button.click()
         
-        password_field_selectors = [
-            "input#password"
-        ]
+        # Fill password
+        self.human_fill(
+            page,
+            selectors=['input#password'],
+            text=self.password,
+            iframe_selector=self.login_frame_selector
+        )
 
-        password_input = find_element_in_frame(page, password_field_selectors, iframe_selector)
-        password_input.fill(self.password)
+        # Final submit
+        self.human_click(
+            page,
+            selectors=['button[type="submit"]'],
+            iframe_selector=self.login_frame_selector
+        )
 
-        submit_button = find_element_in_frame(page, submit_button_selectors, iframe_selector)
-        submit_button.click()
-
-        page.wait_for_timeout(150_000_000)
+        # Wait for success indicator
+        page.wait_for_timeout(2000)
+        
+        self.logger.info(f"GMX authentication completed for {self.email}")
 
 def main(email, password):
     auth = GMXAuthentication(email, password)
-    return auth.run()
+    return auth.execute()
