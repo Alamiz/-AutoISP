@@ -44,10 +44,13 @@ class MainWindow(QWidget):
         self.logger.addHandler(text_edit_handler)
 
         layout.addWidget(QLabel("Email"))
-        layout.addWidget(self.email)
+        layout.addWidget(self.email)        
+        self.email.setText("janmoepak@gmx.de")
+
 
         layout.addWidget(QLabel("Password"))
         layout.addWidget(self.password)
+        self.password.setText("dxEYwQlqQ68")
 
         layout.addWidget(QLabel("Provider"))
         layout.addWidget(self.provider)

@@ -1,8 +1,9 @@
 import logging
+from playwright.sync_api import Page
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.decorators import retry, RequiredActionFailed
-from core.utils.element_finder import find_element_in_frame
 from core.humanization.actions import HumanAction
+from core.utils.identifier import identify_page
 
 class GMXAuthentication(HumanAction):
     def __init__(self, email, password):
@@ -46,7 +47,7 @@ class GMXAuthentication(HumanAction):
             self.browser.close()
 
     @retry(max_retries=3, delay=5, required=True)
-    def authenticate(self, page):
+    def authenticate(self, page: Page):
         """
         Handles authentication flow for GMX
         """
@@ -54,6 +55,9 @@ class GMXAuthentication(HumanAction):
         # Navigate to GMX login page
         page.goto("https://www.gmx.net/")
         self.human.read_delay()
+
+        identified_page = identify_page(page, page.url)
+        print("Current page is: ", identified_page)
 
         # Fill email
         self.human_fill(
