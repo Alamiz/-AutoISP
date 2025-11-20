@@ -149,111 +149,199 @@ def has_required_sublink(current_url: str, required_sublink: str) -> bool:
         return False
 
 def identify_page(page: Page, current_url: Optional[str] = None) -> str:
-    """
-    Identify the current page by checking:
-    - CSS selectors
-    - optional text content
-    - optional iframe scope
-    - expected presence/absence (should_exist)
-    """
-
-    logger = logging.getLogger("autoisp")
-
     html_content = page.content()
     soup = BeautifulSoup(html_content, 'html.parser')
+
     page_scores = {}
 
     for page_name, config in PAGE_SIGNATURES.items():
-        # print(f"\n[PAGE] {page_name}")
+        logging.info(f"Processing check for page: {page_name}")
 
-        # Check required sublink
-        if 'required_sublink' in config:
-            if not has_required_sublink(current_url, config['required_sublink']):
-                # print(f"  ❌ Missing required sublink: {config['required_sublink']}")
+        # Required sublink check (cheap)
+        if "required_sublink" in config:
+            if not has_required_sublink(current_url, config["required_sublink"]):
+                logging.info(f"Skipping check for page: {page_name} due to required sublink not found")
                 continue
 
-        total_weight = 0
-        matched_weight = 0
+        total_possible = 0
+        matched_score = 0
 
-        for check in config['checks']:
-            css = check['css_selector']
-            should_exist = check.get('should_exist', True)
-            weight = check.get('weight', 1)
-            min_count = check.get('min_count', 1)
-            text_required = check.get('contains_text')
-            iframe_selector = check.get('iframe_selector')
+        for check in config["checks"]:
+            logging.info(f"Processing check: {check.get('name', '')}")
 
-            # print(f"  ➤ Checking '{css}'")
+            weight = check.get("weight", 1)
+            should_exist = check.get("should_exist", True)
+            min_count = check.get("min_count", 1)
+            contains_text = check.get("contains_text")
+            requires_english = check.get("require_english", False)
 
-            total_weight += weight
-            exists = False
+            if requires_english and not is_page_english(html_content):
+                logging.info(f"Skipping check: {check.get('name', '')} due to not being English")
+                continue
+
+            # Lookup method
+            element_exists = False
 
             try:
-                # -----------------------
-                # 1) BeautifulSoup search
-                # -----------------------
-                elements = soup.select(css)
-                if len(elements) >= min_count:
-                    exists = True
+                # ------------------------------------------------------------------
+                # 1) FAST mode (default)
+                # ------------------------------------------------------------------
+                if not check.get("deep_search", False):
 
-                    # Check text if provided
-                    if text_required:
-                        exists = any(text_required.lower() in el.get_text().lower()
-                                     for el in elements)
+                    if "iframe_selector" in check:
+                        # fast iframe search
+                        elements = get_iframe_elements(
+                            page,
+                            check["iframe_selector"],
+                            check["css_selector"]
+                        )
+                        element_exists = len(elements) >= min_count
 
-                # If BeautifulSoup fails → fallback to Playwright
-                if not exists:
-                    # -----------------------
-                    # 2) Playwright search
-                    # -----------------------
-                    if iframe_selector:
-                        frame = page.frame_locator(iframe_selector)
-                        locator = frame.locator(css)
+                        # text validation
+                        if element_exists and contains_text:
+                            element_exists = any(
+                                contains_text.lower() in (page.evaluate("(e) => e.innerText", el) or "").lower()
+                                for el in elements
+                            )
+
                     else:
-                        locator = page.locator(css)
+                        # BeautifulSoup (fastest)
+                        elements = soup.select(check["css_selector"])
+                        element_exists = len(elements) >= min_count
 
-                    count = locator.count()
+                        if element_exists and contains_text:
+                            element_exists = any(
+                                contains_text.lower() in el.get_text().lower()
+                                for el in elements
+                            )
 
-                    if count >= min_count:
-                        exists = True
-
-                        # Optional text matching
-                        if text_required:
-                            txt = locator.all_text_contents()
-                            exists = any(text_required.lower() in t.lower() for t in txt)
-
-                # -----------------------
-                # Scoring
-                # -----------------------
-                if should_exist:
-                    if exists:
-                        matched_weight += weight
-                        # print(f"    ✔ FOUND")
-                    else:
-                        pass
-                        # print(f"    ✘ NOT FOUND")
+                # ------------------------------------------------------------------
+                # 2) DEEP SEARCH mode
+                # ------------------------------------------------------------------
                 else:
-                    # Should NOT exist
-                    if exists:
-                        pass
-                        # print(f"    ✘ SHOULD NOT EXIST")
-                    else:
-                        matched_weight += weight
-                        # print(f"    ✔ ABSENCE CONFIRMED")
+                    elements = deep_find_elements(page, check["css_selector"])
+                    element_exists = len(elements) >= min_count
+
+                    if element_exists and contains_text:
+                        element_exists = any(
+                            contains_text.lower() in page.evaluate("(e) => e.innerText", el).lower()
+                            for el in elements
+                        )
 
             except Exception as e:
-                # print(f"    ⚠ Error: {e}")
-                logger.error(f"Error while identifying page: {e}")
+                logging.error(f"Error processing check '{check.get('name', '')}': {e}")
+                continue
 
-        # Calculate page score
-        score = matched_weight / total_weight if total_weight else 0
-        page_scores[page_name] = score
+            # scoring
+            total_possible += weight
 
-    # Debug print scores
-    # for pn, sc in page_scores.items():
-        # print(f"[SCORE] {pn}: {sc}")
+            if should_exist:
+                if element_exists:
+                    matched_score += weight
+                    logging.info(f"Matched check: {check.get('name', '')} (should_exist=true, element_exists=true)")
+                else:
+                    logging.info(f"Unmatched check: {check.get('name', '')} (should_exist=true, element_exists=False)")
+            else:
+                if not element_exists:
+                    matched_score += weight
+                    logging.info(f"Matched check: {check.get('name', '')} (should_exist=False, element_exists=False)")
+                else:
+                    matched_score -= weight
+                    logging.info(f"Unmatched check: {check.get('name', '')} (should_exist=False, element_exists=True)")
 
-    # Best match above threshold
-    best_page, best_score = max(page_scores.items(), key=lambda x: x[1]) if page_scores else ('unknown', 0)
-    return best_page if best_score >= 0.7 else 'unknown'
+        if total_possible > 0:
+            page_scores[page_name] = max(0, matched_score) / total_possible
 
+            # Stop search if score is 1 (page found !)
+            if matched_score / total_possible == 1:
+                logging.info(f"Stopping search due to score of 1")
+                break
+        else:
+            page_scores[page_name] = 0
+
+    # best match
+    if not page_scores:
+        logging.info("No matches found")
+        return "unknown"
+
+    best_page, score = max(page_scores.items(), key=lambda x: x[1])
+    logging.info(f"Best match found: {best_page} with score: {score}")
+    return best_page if score >= 0.7 else "unknown"
+
+def deep_find_elements(page: Page, css_selector: str):
+    """
+    Recursively search for elements across:
+    - main DOM
+    - all iframes (nested)
+    - all shadow roots (nested)
+    """
+    results = []
+
+    def search_frame(frame):
+        nonlocal results
+
+        # 1) normal query
+        try:
+            els = frame.query_selector_all(css_selector)
+            results.extend(els)
+        except:
+            pass
+
+        # 2) shadow DOM search
+        try:
+            shadow_js = """
+                (selector) => {
+                    const results = [];
+
+                    function scan(node) {
+                        if (!node) return;
+
+                        if (node.shadowRoot) {
+                            const matches = node.shadowRoot.querySelectorAll(selector);
+                            results.push(...matches);
+
+                            node.shadowRoot.querySelectorAll("*").forEach(scan);
+                        }
+                    }
+
+                    document.querySelectorAll("*").forEach(scan);
+                    return results;
+                }
+            """
+
+            handle = frame.evaluate_handle(shadow_js, css_selector)
+            length = frame.evaluate("x => x.length", handle)
+
+            for i in range(length):
+                item = handle.get_property(str(i))
+                el = item.as_element()
+                if el:
+                    results.append(el)
+
+        except:
+            pass
+
+        # 3) recurse into iframes
+        try:
+            for child in frame.child_frames:
+                search_frame(child)
+        except:
+            pass
+
+    search_frame(page.main_frame)
+    return results
+
+def get_iframe_elements(page: Page, iframe_selector: str, element_selector: str):
+    try:
+        iframe_element = page.query_selector(iframe_selector)
+        if not iframe_element:
+            return []
+
+        content_frame = iframe_element.content_frame()
+        if not content_frame:
+            return []
+
+        els = content_frame.query_selector_all(element_selector)
+        return els
+    except:
+        return []
