@@ -1,40 +1,4 @@
 PAGE_SIGNATURES = {
-    "gmail_inbox": {
-        "description": "Gmail Inbox page.",
-        "required_sublink": "mail.google.com/mail",
-        "checks": [
-            {
-                "name": "Check div role=navigation",
-                "css_selector": "div[role=\"navigation\"]",
-                "contains_text": "",
-                "min_count": 1,
-                "require_english": False,
-                "description": "div with role navigation",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "Anchor inbox",
-                "css_selector": "a[href=\"#inbox\"]",
-                "contains_text": "",
-                "min_count": 1,
-                "require_english": False,
-                "description": "Inbox sidebar link",
-                "weight": 2.0,
-                "should_exist": True
-            },
-            {
-                "name": "Emails grid table",
-                "css_selector": "table[role=\"grid\"]",
-                "contains_text": "",
-                "min_count": 1,
-                "require_english": False,
-                "description": "Main email list table",
-                "weight": 1.0,
-                "should_exist": True
-            }
-        ]
-    },
     "gmx_login_page": {
         "description": "GMX Login page.",
         "required_sublink": "www.gmx.net",
@@ -129,5 +93,581 @@ PAGE_SIGNATURES = {
                 "should_exist": False
             }
         ]
-    }
+    },
+    "gmx_inbox": {
+        "description": "GMX email inbox page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-inbox',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_favorites": {
+        "description": "GMX email favorites page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-favorite',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_general": {
+        "description": "GMX email general page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-general',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_newsletter": {
+        "description": "GMX email newsletter page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-newsletter',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_orders": {
+        "description": "GMX email orders page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-shopping',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_contracts-and-subscriptions": {
+        "description": "GMX email contracts and subscriptions page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-contracts',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_socialmedia": {
+        "description": "GMX email socialmedia page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-socialmedia',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_trash": {
+        "description": "GMX email trash page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-trash',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_spam": {
+        "description": "GMX email spam page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-spam',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_sent": {
+        "description": "GMX email sent page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-sent',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_drafts": {
+        "description": "GMX email drafts page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-drafts',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_outbox": {
+        "description": "GMX email outbox page.",
+        "required_sublink": "navigator.gmx.net/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Active inbox button",
+                "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-outbox',
+                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": "",
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
 }

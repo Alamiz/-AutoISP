@@ -1,9 +1,10 @@
+from automations.gmx.signatures import PAGE_SIGNATURES
 from playwright.sync_api import Page
 from typing import Optional
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import re
-from test_data.signatures import PAGE_SIGNATURES
+import logging
 
 # def get_signatures_dict():
 #     """
@@ -66,7 +67,6 @@ from test_data.signatures import PAGE_SIGNATURES
 #         result[sig.name] = sig_data
     
 #     return result
-
 
 def is_page_english(html_content):
     """
@@ -150,115 +150,110 @@ def has_required_sublink(current_url: str, required_sublink: str) -> bool:
 
 def identify_page(page: Page, current_url: Optional[str] = None) -> str:
     """
-    Identify page using CSS selectors with conditions:
-    - contains_text
-    - min_count
-    - should_exist (True = reward for presence, False = reward for absence)
-    - iframe_selector (to search within iframe content)
+    Identify the current page by checking:
+    - CSS selectors
+    - optional text content
+    - optional iframe scope
+    - expected presence/absence (should_exist)
     """
+
+    logger = logging.getLogger("autoisp")
 
     html_content = page.content()
     soup = BeautifulSoup(html_content, 'html.parser')
-    page_signatures = PAGE_SIGNATURES
     page_scores = {}
 
-    for page_name, config in page_signatures.items():
-        # Check required sublink first
+    for page_name, config in PAGE_SIGNATURES.items():
+        # print(f"\n[PAGE] {page_name}")
+
+        # Check required sublink
         if 'required_sublink' in config:
             if not has_required_sublink(current_url, config['required_sublink']):
+                # print(f"  ❌ Missing required sublink: {config['required_sublink']}")
                 continue
-        
-        total_possible = 0
-        matched_score = 0
-        
+
+        total_weight = 0
+        matched_weight = 0
+
         for check in config['checks']:
-            # Skip if English is required but page isn't English
-            if check.get('require_english') and not is_page_english(html_content):
-                continue
-                
-            weight = check.get('weight', 1)
+            css = check['css_selector']
             should_exist = check.get('should_exist', True)
-            
+            weight = check.get('weight', 1)
+            min_count = check.get('min_count', 1)
+            text_required = check.get('contains_text')
+            iframe_selector = check.get('iframe_selector')
+
+            # print(f"  ➤ Checking '{css}'")
+
+            total_weight += weight
+            exists = False
+
             try:
-                # Determine where to search for elements
-                if 'iframe_selector' in check:
-                    # Search within iframe
-                    elements = get_iframe_elements(page, check['iframe_selector'], check['css_selector'])
-                else:
-                    # Search in main page
-                    elements = soup.select(check['css_selector'])
-                
-                min_count = check.get('min_count', 1)
-                
-                # Always add to total possible for this check
-                total_possible += weight
-                
-                # Check if element exists with minimum count
-                element_exists = len(elements) >= min_count
-                
-                # If element exists, check additional conditions
-                if element_exists and check.get('contains_text'):
-                    element_exists = any(
-                        check['contains_text'].lower() in el.get_text().lower()
-                        for el in elements
-                    )
-                
-                # Score based on should_exist expectation
-                if should_exist:
-                    # Positive check: reward for presence, penalize for absence
-                    if element_exists:
-                        matched_score += weight
-                else:
-                    # Negative check: reward for absence, penalize for presence
-                    if element_exists:
-                        matched_score -= weight  # Penalize for presence
+                # -----------------------
+                # 1) BeautifulSoup search
+                # -----------------------
+                elements = soup.select(css)
+                if len(elements) >= min_count:
+                    exists = True
+
+                    # Check text if provided
+                    if text_required:
+                        exists = any(text_required.lower() in el.get_text().lower()
+                                     for el in elements)
+
+                # If BeautifulSoup fails → fallback to Playwright
+                if not exists:
+                    # -----------------------
+                    # 2) Playwright search
+                    # -----------------------
+                    if iframe_selector:
+                        frame = page.frame_locator(iframe_selector)
+                        locator = frame.locator(css)
                     else:
-                        matched_score += weight  # Reward for absence
-                
+                        locator = page.locator(css)
+
+                    count = locator.count()
+
+                    if count >= min_count:
+                        exists = True
+
+                        # Optional text matching
+                        if text_required:
+                            txt = locator.all_text_contents()
+                            exists = any(text_required.lower() in t.lower() for t in txt)
+
+                # -----------------------
+                # Scoring
+                # -----------------------
+                if should_exist:
+                    if exists:
+                        matched_weight += weight
+                        # print(f"    ✔ FOUND")
+                    else:
+                        pass
+                        # print(f"    ✘ NOT FOUND")
+                else:
+                    # Should NOT exist
+                    if exists:
+                        pass
+                        # print(f"    ✘ SHOULD NOT EXIST")
+                    else:
+                        matched_weight += weight
+                        # print(f"    ✔ ABSENCE CONFIRMED")
+
             except Exception as e:
-                print(f"Error processing check '{check.get('name', 'unnamed')}': {e}")
-                continue
-        
-        # Always store the score, even if 0
-        if total_possible > 0:
-            page_scores[page_name] = max(0, matched_score) / total_possible
-        else:
-            page_scores[page_name] = 0
+                # print(f"    ⚠ Error: {e}")
+                logger.error(f"Error while identifying page: {e}")
 
-    # Return best match above threshold
-    best_match = max(page_scores.items(), key=lambda x: x[1]) if page_scores else None
-    return best_match[0] if best_match and best_match[1] >= 0.7 else 'unknown'
+        # Calculate page score
+        score = matched_weight / total_weight if total_weight else 0
+        page_scores[page_name] = score
 
-def get_iframe_elements(page: Page, iframe_selector: str, element_selector: str):
-    """
-    Get elements from within an iframe.
-    
-    Args:
-        page: Playwright Page object
-        iframe_selector: CSS selector to find the iframe
-        element_selector: CSS selector to find elements within the iframe
-        
-    Returns:
-        List of BeautifulSoup elements found within the iframe
-    """
-    try:
-        # Get the first matching frame
-        frame_element = page.query_selector(iframe_selector)
-        if not frame_element:
-            return []
-        
-        # Get the frame's content frame
-        content_frame = frame_element.content_frame()
-        if not content_frame:
-            return []
-        
-        # Get iframe's HTML content
-        iframe_html = content_frame.content()
-        iframe_soup = BeautifulSoup(iframe_html, 'html.parser')
-        
-        # Find elements within iframe
-        return iframe_soup.select(element_selector)
-        
-    except Exception as e:
-        print(f"Error accessing iframe with selector '{iframe_selector}': {e}")
-        return []
+    # Debug print scores
+    # for pn, sc in page_scores.items():
+        # print(f"[SCORE] {pn}: {sc}")
+
+    # Best match above threshold
+    best_page, best_score = max(page_scores.items(), key=lambda x: x[1]) if page_scores else ('unknown', 0)
+    return best_page if best_score >= 0.7 else 'unknown'
+

@@ -24,7 +24,7 @@ def run_automation(email, password, isp, automation_name):
     sys.path.insert(0, application_path)
 
     try:
-        module_path = f"automations.{isp}.{automation_name}"
+        module_path = f"automations.{isp}.{automation_name}.run"
         module = importlib.import_module(module_path)
 
         if hasattr(module, "main"):

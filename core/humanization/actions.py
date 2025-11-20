@@ -14,7 +14,7 @@ class HumanAction(ABC):
     
     def __init__(self):
         self.logger = logging.getLogger("autoisp")
-        self.human = HumanBehavior()
+        self.human_behavior = HumanBehavior()
     
     def _find_element_with_humanization(self, page: Page, selectors: List[str], 
                                          iframe_selector: Optional[str] = None,
@@ -23,7 +23,7 @@ class HumanAction(ABC):
         
         # Add slight delay before searching (human reads page first)
         if random.random() > 0.6:  # 40% chance
-            self.human.read_delay()
+            self.human_behavior.read_delay()
         
         # Use appropriate finder based on whether iframe is specified
         if iframe_selector:
@@ -32,20 +32,20 @@ class HumanAction(ABC):
             element = find_element(page, selectors)
         
         if wait_visible and random.random() > 0.5:  # 50% chance to scroll
-            self.human.scroll_into_view(element)
+            self.human_behavior.scroll_into_view(element)
         
         return element
     
     def human_fill(self, page: Page, selectors: List[str], text: str,
                    iframe_selector: Optional[str] = None):
         """Find and fill input with human-like typing"""
-        self.human.wait_before_action()
+        self.human_behavior.wait_before_action()
         element = self._find_element_with_humanization(page, selectors, iframe_selector)
-        self.human.type_text(element, text)
+        self.human_behavior.type_text(element, text)
     
     def human_click(self, page: Page, selectors: List[str],
                    iframe_selector: Optional[str] = None, force: bool = False):
         """Find and click element with human-like behavior"""
-        self.human.wait_before_action()
+        self.human_behavior.wait_before_action()
         element = self._find_element_with_humanization(page, selectors, iframe_selector)
-        self.human.click(element, force=force)
+        self.human_behavior.click(element, force=force)

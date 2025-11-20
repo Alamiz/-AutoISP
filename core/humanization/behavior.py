@@ -10,7 +10,7 @@ class HumanBehavior:
                  typing_speed_range=(50, 150),  # ms per character
                  mouse_move_duration_range=(100, 300),  # ms
                  action_delay_range=(500, 1500),  # ms between actions
-                 reading_delay_range=(1000, 3000)):  # ms for "reading"
+                 reading_delay_range=(3000, 5000)):  # ms for "reading"
         
         self.typing_speed_range = typing_speed_range
         self.mouse_move_duration_range = mouse_move_duration_range
