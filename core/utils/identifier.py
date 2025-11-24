@@ -1,4 +1,3 @@
-from automations.gmx.signatures import PAGE_SIGNATURES
 from playwright.sync_api import Page
 from typing import Optional
 from bs4 import BeautifulSoup
@@ -148,13 +147,16 @@ def has_required_sublink(current_url: str, required_sublink: str) -> bool:
     except:
         return False
 
-def identify_page(page: Page, current_url: Optional[str] = None) -> str:
+def identify_page(page: Page, current_url: Optional[str] = None, signatures=None) -> str:
     html_content = page.content()
     soup = BeautifulSoup(html_content, 'html.parser')
 
     page_scores = {}
 
-    for page_name, config in PAGE_SIGNATURES.items():
+    if signatures is None:
+        raise ValueError("Signatures must be provided for the current platform")
+
+    for page_name, config in signatures.items():
         # Required sublink check (cheap)
         if "required_sublink" in config:
             if not has_required_sublink(current_url, config["required_sublink"]):

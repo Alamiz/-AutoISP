@@ -4,7 +4,7 @@ from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.decorators import retry, RequiredActionFailed
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
-from .flows import GMXFlowHandler
+from ..desktop.flows import GMXFlowHandler
 import time
 
 
@@ -31,12 +31,13 @@ class GMXAuthentication(HumanAction):
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 10
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop"):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", signatures=None):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
+        self.signatures = signatures
         
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
@@ -100,7 +101,7 @@ class GMXAuthentication(HumanAction):
 
         # page.wait_for_timeout(15_000)
 
-        current_page_id = identify_page(page, page.url)
+        current_page_id = identify_page(page, page.url, self.signatures)
         self.logger.info(f"Current page: {current_page_id}")
 
 
@@ -113,7 +114,7 @@ class GMXAuthentication(HumanAction):
             iteration += 1
             
             # Identify current page
-            current_page_id = identify_page(page, page.url)
+            current_page_id = identify_page(page, page.url, self.signatures)
             self.logger.info(f"[Iteration {iteration}] Current page: {current_page_id}")
             
             # Check if we've reached a goal state
