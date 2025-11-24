@@ -1,9 +1,8 @@
 import logging
 import random
 from abc import ABC
-from typing import Optional, List
-from playwright.sync_api import Page, Locator
-from core.utils.element_finder import find_element, find_element_in_frame, deep_find_elements, ElementNotFound
+from playwright.sync_api import Page
+from core.utils.element_finder import deep_find_elements, ElementNotFound
 from core.humanization.behavior import HumanBehavior
 
 class HumanAction(ABC):

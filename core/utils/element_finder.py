@@ -1,57 +1,8 @@
-from playwright.sync_api import Page, TimeoutError
+from playwright.sync_api import Page
 
 class ElementNotFound(Exception):
     """Raised when none of the provided selectors match an element."""
     pass
-
-def find_element_in_frame(page: Page, selectors: list[str], frame_selector: str = None, timeout: int = 5000):
-    """
-    Try each selector in the list and return the first matching element.
-    
-    :param page: Playwright Page object
-    :param selectors: List of CSS/XPath selectors
-    :param timeout: Timeout for each selector in ms
-    :return: Playwright element handle
-    :raises: ElementNotFound if no selector matches
-    """
-
-    if not frame_selector:
-        raise ValueError("frame_selector is required")
-
-    frame_element = page.wait_for_selector(frame_selector, timeout=timeout)
-    frame = frame_element.content_frame()
-
-    for selector in selectors:
-        try:
-            element = frame.wait_for_selector(selector, timeout=timeout)
-            if element:
-                return element
-        except TimeoutError:
-            continue  # try next selector
-
-    # If we get here, no selector matched
-    raise ElementNotFound(f"No element found for selectors: {selectors}")
-
-def find_element(page: Page, selectors: list[str], timeout: int = 5000):
-    """
-    Try each selector in the list and return the first matching element.
-    
-    :param page: Playwright Page object
-    :param selectors: List of CSS/XPath selectors
-    :param timeout: Timeout for each selector in ms
-    :return: Playwright element handle
-    :raises: ElementNotFound if no selector matches
-    """
-    for selector in selectors:
-        try:
-            element = page.wait_for_selector(selector, timeout=timeout)
-            if element:
-                return element
-        except TimeoutError:
-            continue  # try next selector
-
-    # If we get here, no selector matched
-    raise ElementNotFound(f"No element found for selectors: {selectors}")
 
 def deep_find_elements(page: Page, css_selector: str):
     """
@@ -62,14 +13,15 @@ def deep_find_elements(page: Page, css_selector: str):
     """
     results = []
 
-    def search_frame(frame):
+    def search_frame(frame, depth=0):
         nonlocal results
-
+        
         # 1) normal query
         try:
             els = frame.query_selector_all(css_selector)
-            results.extend(els)
-        except:
+            if els:
+                results.extend(els)
+        except Exception as e:
             pass
 
         # 2) shadow DOM search
@@ -97,23 +49,32 @@ def deep_find_elements(page: Page, css_selector: str):
             handle = frame.evaluate_handle(shadow_js, css_selector)
             length = frame.evaluate("x => x.length", handle)
 
-            for i in range(length):
-                item = handle.get_property(str(i))
-                el = item.as_element()
-                if el:
-                    results.append(el)
-
-        except:
+            if length > 0:
+                for i in range(length):
+                    item = handle.get_property(str(i))
+                    el = item.as_element()
+                    if el:
+                        results.append(el)
+        except Exception as e:
             pass
 
-        # 3) recurse into iframes
+        # 3) Find all iframe elements in this frame and recurse into them
         try:
-            for child in frame.child_frames:
-                search_frame(child)
-        except:
+            iframe_elements = frame.query_selector_all("iframe")
+            
+            if iframe_elements:
+                for idx, iframe_element in enumerate(iframe_elements):
+                    try:
+                        content_frame = iframe_element.content_frame()
+                        if content_frame:
+                            search_frame(content_frame, depth + 1)
+                    except Exception as e:
+                        pass
+        except Exception as e:
             pass
-
-    search_frame(page.main_frame)
+        
+    search_frame(page.main_frame, depth=0)
+    
     return results
 
 def get_iframe_elements(page: Page, iframe_selector: str, element_selector: str):
