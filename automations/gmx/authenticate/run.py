@@ -31,20 +31,25 @@ class GMXAuthentication(HumanAction):
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 10
     
-    def __init__(self, email, password, proxy_config=None):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop"):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
+        self.user_agent_type = user_agent_type
+        
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
+        
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
-            proxy_config=proxy_config  # Pass proxy config to browser factory
+            proxy_config=proxy_config,
+            user_agent_type=user_agent_type
         )
         
         # Initialize flow handler
         self.flow_handler = GMXFlowHandler(self, email, password)
+
 
     def execute(self) -> bool:
         """
@@ -135,7 +140,7 @@ class GMXAuthentication(HumanAction):
         )
 
 
-def main(email, password, proxy_config=None):
+def main(email, password, proxy_config=None, device_type="desktop"):
     """Entry point for GMX authentication"""
-    auth = GMXAuthentication(email, password, proxy_config)
+    auth = GMXAuthentication(email, password, proxy_config, device_type)
     return auth.execute()
