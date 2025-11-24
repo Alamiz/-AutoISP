@@ -13,6 +13,24 @@ class GMXFlowHandler:
         self.logger = logging.getLogger("autoisp")
         self.login_frame_selector = 'iframe[src^="https://alligator.navigator.gmx.net"]'
     
+    def handle_register_page(self, page: Page) -> str:
+        """
+        Handle GMX register page - full authentication flow (mobile)
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected register page - starting mobile full authentication")
+        
+        # Click login button
+        self.human_action.human_click(
+            page,
+            selectors=['form.login-link.login-mobile > button[type="submit"]'],
+        )
+                
+        page.wait_for_timeout(2000)
+        self.logger.info("Login button clicked successfully")
+        
+        return "gmx_login_page"  # Expected next page
+
     def handle_login_page(self, page: Page) -> str:
         """
         Handle GMX login page - full authentication flow
@@ -23,118 +41,41 @@ class GMXFlowHandler:
         # Fill email
         self.human_action.human_fill(
             page,
-            selectors=['input#username'],
+            selectors=['form input#username'],
             text=self.email,
-            deep_search=True
         )
         
         # Click continue
         self.human_action.human_click(
             page,
-            selectors=['button[type="submit"][data-testid="button-continue"]'],
-            deep_search=True
+            selectors=['form button[type="submit"]'],
         )
         
         # Fill password
         self.human_action.human_fill(
             page,
-            selectors=['input#password'],
+            selectors=['form input#password'],
             text=self.password,
-            deep_search=True
         )
         
         # Click submit
         self.human_action.human_click(
             page,
-            selectors=['button[type="submit"][data-testid="button-submit"]'],
-            deep_search=True
+            selectors=['button[type="submit"][data-testid="button-next"]'],
         )
         
         page.wait_for_timeout(2000)
         self.logger.info("Login form submitted successfully")
         
-        return "gmx_logged_in_page"  # Expected next page
+        return "gmx_folder_list"  # Expected next page
     
-    def handle_logged_in_page(self, page: Page) -> str:
-        """
-        Handle already authenticated page - just click continue
-        Returns: Next expected page identifier
-        """
-        self.logger.info("Detected logged-in page - clicking continue button")
-        
-        self.human_action.human_click(
-            page,
-            selectors=["button[data-component-path='openInbox.continue-button']"],
-            deep_search=True
-        )
-        
-        self.logger.info("Continue button clicked successfully")
-        page.wait_for_timeout(10_000)
-        
-        return "gmx_inbox"  # Expected next page
-
-    def handle_inbox_ads_preferences_popup_1(self, page: Page) -> str:
-        """
-        Handle inbox page with ads preferences popup (type 1)
-        Returns: Next expected page identifier
-        """
-        self.logger.info("Detected preferences popup (type 1) - clicking accept button")
-        
-        self.human_action.human_click(
-            page,
-            selectors=["button#save-all-pur"],
-            deep_search=True
-        )
-        
-        page.wait_for_timeout(1500)
-        self.logger.info("Accept button clicked successfully")
-        
-        return "gmx_inbox"  # Expected next page
-
-    def handle_inbox_ads_preferences_popup_2(self, page: Page) -> str:
-        """
-        Handle inbox page with ads preferences popup (type 2)
-        Returns: Next expected page identifier
-        """
-        self.logger.info("Detected preferences popup (type 2) - clicking deny button")
-        
-        self.human_action.human_click(
-            page,
-            selectors=["button#deny"],
-            deep_search=True
-        )
-        
-        page.wait_for_timeout(1500)
-        self.logger.info("Continue button clicked successfully")
-        
-        return "gmx_inbox"  # Expected next page
-    
-    def handle_inbox_smart_features_popup(self, page: Page) -> str:
-        """
-        Handle inbox page with smart fetures popup
-        Returns: Next expected page identifier
-        """
-        self.logger.info("Detected smart features popup - clicking accept button")
-        
-        self.human_action.human_click(
-            page,
-            selectors=['button[data-component-path="acceptall-button"]'],
-            deep_search=True
-        )
-        page.wait_for_timeout(1500)
-        self.logger.info("Accept button clicked successfully")
-
-        page.reload()
-        
-        return "gmx_inbox"  # Expected next page
-    
-    def handle_inbox_page(self, page: Page) -> str:
+    def handle_folder_list_page(self, page: Page) -> str:
         """
         Handle inbox page - already fully authenticated
         Returns: Current page identifier (no action needed)
         """
         self.logger.info("Already at inbox - authentication complete")
-        return "gmx_inbox"  # Stay on current page
+        return "gmx_folder_list"  # Stay on current page
     
     def handle_unknown_page(self, page: Page) -> str:
         """
@@ -142,6 +83,6 @@ class GMXFlowHandler:
         Returns: Next expected page identifier
         """
         self.logger.warning("Unknown page detected - navigating to GMX login")
-        page.goto("https://www.gmx.net/")
+        page.goto("https://lightmailer-bs.gmx.net/")
         self.human_action.human_behavior.read_delay()
         return "gmx_login_page"  # Expected next page

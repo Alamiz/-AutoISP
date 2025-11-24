@@ -4,7 +4,7 @@ from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.decorators import retry, RequiredActionFailed
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
-from ..desktop.flows import GMXFlowHandler
+from .flows import GMXFlowHandler
 import time
 
 
@@ -15,18 +15,14 @@ class GMXAuthentication(HumanAction):
     
     # Define the flow map: page_identifier -> handler_method
     FLOW_MAP = {
+        "gmx_register_page": "handle_register_page",
         "gmx_login_page": "handle_login_page",
-        "gmx_logged_in_page": "handle_logged_in_page",
-        "gmx_inbox_ads_preferences_popup_1_core": "handle_inbox_ads_preferences_popup_1",
-        "gmx_inbox_ads_preferences_popup_1": "handle_inbox_ads_preferences_popup_1",
-        "gmx_inbox_ads_preferences_popup_2": "handle_inbox_ads_preferences_popup_2",
-        "gmx_inbox_smart_features_popup": "handle_inbox_smart_features_popup",
-        "gmx_inbox": "handle_inbox_page",
+        "gmx_folder_list_page": "handle_folder_list_page",
         "unknown": "handle_unknown_page"
     }
     
     # Define goal states (authentication is complete)
-    GOAL_STATES = {"gmx_inbox"}
+    GOAL_STATES = {"gmx_folder_list_page"}
     
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 10
@@ -95,7 +91,7 @@ class GMXAuthentication(HumanAction):
         Automatically handles different page states until reaching goal state
         """
         # Navigate to GMX
-        page.goto("https://www.gmx.net/")
+        page.goto("https://lightmailer-bs.gmx.net/")
         self.human_behavior.read_delay()
         # page.wait_for_timeout(100_100_100)
 
