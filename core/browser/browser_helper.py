@@ -90,6 +90,7 @@ class PlaywrightBrowserFactory:
             headless=self.headless,
             args=args,
             ignore_default_args=["--enable-automation"],
+            user_agent=self._get_user_agent()
         )
         
         # Proxy configuration
@@ -108,12 +109,6 @@ class PlaywrightBrowserFactory:
             self._context = self._pw.chromium.launch_persistent_context(**launch_kwargs)
             print("✅ Browser started successfully")
 
-            # Set user agent based on type
-            user_agent = self._get_user_agent()
-            if user_agent and self._context:
-                self._context.set_extra_http_headers({"User-Agent": user_agent})
-                print(f"✅ User Agent set: {user_agent[:50]}...")
-            
             self._opened = True
             
         except Exception as e:
@@ -123,7 +118,7 @@ class PlaywrightBrowserFactory:
     def _get_user_agent(self):
         """Get user agent string based on type"""
         user_agents = {
-            "desktop": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "desktop": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.5993.90 Safari/537.36",
             "mobile": "Mozilla/5.0 (Linux; Android 12; Redmi Note 11 Build/SKQ1.211019.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/99.0.4844.88 Mobile Safari/537.36"
         }
         return user_agents.get(self.user_agent_type, user_agents["desktop"])
