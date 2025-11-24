@@ -1,7 +1,7 @@
 from playwright.sync_api import sync_playwright, BrowserContext, Page
 from core.browser.chrome_profiles_manager import ChromeProfileManager
 import os
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 STEALTH_INIT_SCRIPT = """
 // Minimal evasions for navigator properties commonly checked
@@ -44,6 +44,7 @@ class PlaywrightBrowserFactory:
         use_stealth: bool = True,
         start_maximized: bool = True,
         slow_mo: Optional[int] = None,
+        proxy_config: Optional[Dict] = None,
     ):
         self.profile_path = os.path.join(ChromeProfileManager().chrome_data_path, profile_dir)
         self.profile_dir = profile_dir
@@ -54,6 +55,7 @@ class PlaywrightBrowserFactory:
         self.use_stealth = use_stealth
         self.start_maximized = start_maximized
         self.slow_mo = slow_mo
+        self.proxy_config = proxy_config
 
         self._pw = None
         self._context: Optional[BrowserContext] = None
@@ -76,6 +78,7 @@ class PlaywrightBrowserFactory:
             args.append("--start-maximized")
         args.extend(self.additional_args)
         
+        # Build launch kwargs
         launch_kwargs = dict(
             user_data_dir=self.profile_path,
             channel=self.channel,
@@ -88,6 +91,19 @@ class PlaywrightBrowserFactory:
         # optionally set executable path (useful if you want the same Chrome binary you use manually)
         if self.executable_path:
             launch_kwargs["executable_path"] = self.executable_path
+        
+        # Add proxy configuration if provided
+        if self.proxy_config:
+            proxy_settings = {
+                'server': f"{self.proxy_config['type']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
+            }
+            
+            # Add proxy authentication if provided
+            if 'username' in self.proxy_config and 'password' in self.proxy_config:
+                proxy_settings['username'] = self.proxy_config['username']
+                proxy_settings['password'] = self.proxy_config['password']
+            
+            launch_kwargs['proxy'] = proxy_settings
         
         # launch persistent context (this will reuse the real profile)
         self._context = self._pw.chromium.launch_persistent_context(**launch_kwargs)

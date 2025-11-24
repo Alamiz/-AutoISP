@@ -3,7 +3,7 @@ import logging
 import sys
 import os
 
-def run_automation(email, password, isp, automation_name):
+def run_automation(email, password, isp, automation_name, proxy_config=None):
     """
     Dynamically import and execute a specific automation task.
     Example: category='browsing', automation_id='google_search', parameters={'query': 'test'}
@@ -31,7 +31,16 @@ def run_automation(email, password, isp, automation_name):
             logger.info(
                 f"Running {automation_name} on {isp} for profile {profile}."
             )
-            return module.main(email, password)
+            
+            # Log proxy usage if configured
+            if proxy_config:
+                logger.info(f"Using proxy: {proxy_config['type']}://{proxy_config['host']}:{proxy_config['port']}")
+            
+            # Pass proxy_config to the main function
+            if proxy_config:
+                return module.main(email, password, proxy_config=proxy_config)
+            else:
+                return module.main(email, password)
 
         raise AttributeError(f"{module_path} missing 'main(email)' entrypoint.")
 
