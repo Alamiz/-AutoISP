@@ -17,6 +17,10 @@ class GMXAuthentication(HumanAction):
     FLOW_MAP = {
         "gmx_login_page": "handle_login_page",
         "gmx_logged_in_page": "handle_logged_in_page",
+        "gmx_inbox_ads_preferences_popup_1_core": "handle_inbox_ads_preferences_popup_1",
+        "gmx_inbox_ads_preferences_popup_1": "handle_inbox_ads_preferences_popup_1",
+        "gmx_inbox_ads_preferences_popup_2": "handle_inbox_ads_preferences_popup_2",
+        "gmx_inbox_smart_features_popup": "handle_inbox_smart_features_popup",
         "gmx_inbox": "handle_inbox_page",
         "unknown": "handle_unknown_page"
     }
@@ -25,7 +29,7 @@ class GMXAuthentication(HumanAction):
     GOAL_STATES = {"gmx_inbox"}
     
     # Maximum flow iterations to prevent infinite loops
-    MAX_FLOW_ITERATIONS = 5
+    MAX_FLOW_ITERATIONS = 10
     
     def __init__(self, email, password):
         super().__init__()
@@ -76,6 +80,15 @@ class GMXAuthentication(HumanAction):
         # Navigate to GMX
         page.goto("https://www.gmx.net/")
         self.human_behavior.read_delay()
+        # page.wait_for_timeout(100_100_100)
+
+        # page.wait_for_timeout(15_000)
+
+        current_page_id = identify_page(page, page.url)
+        self.logger.info(f"Current page: {current_page_id}")
+
+
+        # page.wait_for_timeout(100_100_100)
 
         iteration = 0
         current_page_id = None

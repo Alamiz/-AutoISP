@@ -25,14 +25,14 @@ class GMXFlowHandler:
             page,
             selectors=['input#username'],
             text=self.email,
-            iframe_selector=self.login_frame_selector
+            deep_search=True
         )
         
-        # Click submit
+        # Click continue
         self.human_action.human_click(
             page,
-            selectors=['button[type="submit"]'],
-            iframe_selector=self.login_frame_selector
+            selectors=['button[type="submit"][data-testid="button-continue"]'],
+            deep_search=True
         )
         
         # Fill password
@@ -40,14 +40,14 @@ class GMXFlowHandler:
             page,
             selectors=['input#password'],
             text=self.password,
-            iframe_selector=self.login_frame_selector
+            deep_search=True
         )
         
-        # Final submit
+        # Click submit
         self.human_action.human_click(
             page,
-            selectors=['button[type="submit"]'],
-            iframe_selector=self.login_frame_selector
+            selectors=['button[type="submit"][data-testid="button-submit"]'],
+            deep_search=True
         )
         
         page.wait_for_timeout(2000)
@@ -65,11 +65,66 @@ class GMXFlowHandler:
         self.human_action.human_click(
             page,
             selectors=["button[data-component-path='openInbox.continue-button']"],
-            iframe_selector=self.login_frame_selector
+            deep_search=True
+        )
+        
+        self.logger.info("Continue button clicked successfully")
+        page.wait_for_timeout(10_000)
+        
+        return "gmx_inbox"  # Expected next page
+
+    def handle_inbox_ads_preferences_popup_1(self, page: Page) -> str:
+        """
+        Handle inbox page with ads preferences popup (type 1)
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected preferences popup (type 1) - clicking accept button")
+        
+        self.human_action.human_click(
+            page,
+            selectors=["button#save-all-pur"],
+            deep_search=True
+        )
+        
+        page.wait_for_timeout(1500)
+        self.logger.info("Accept button clicked successfully")
+        
+        return "gmx_inbox"  # Expected next page
+
+    def handle_inbox_ads_preferences_popup_2(self, page: Page) -> str:
+        """
+        Handle inbox page with ads preferences popup (type 2)
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected preferences popup (type 2) - clicking deny button")
+        
+        self.human_action.human_click(
+            page,
+            selectors=["button#deny"],
+            deep_search=True
         )
         
         page.wait_for_timeout(1500)
         self.logger.info("Continue button clicked successfully")
+        
+        return "gmx_inbox"  # Expected next page
+    
+    def handle_inbox_smart_features_popup(self, page: Page) -> str:
+        """
+        Handle inbox page with smart fetures popup
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected smart features popup - clicking accept button")
+        
+        self.human_action.human_click(
+            page,
+            selectors=['button[data-component-path="acceptall-button"]'],
+            deep_search=True
+        )
+        page.wait_for_timeout(1500)
+        self.logger.info("Accept button clicked successfully")
+
+        page.reload()
         
         return "gmx_inbox"  # Expected next page
     

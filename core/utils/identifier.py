@@ -155,20 +155,15 @@ def identify_page(page: Page, current_url: Optional[str] = None) -> str:
     page_scores = {}
 
     for page_name, config in PAGE_SIGNATURES.items():
-        logging.info(f"Processing check for page: {page_name}")
-
         # Required sublink check (cheap)
         if "required_sublink" in config:
             if not has_required_sublink(current_url, config["required_sublink"]):
-                logging.info(f"Skipping check for page: {page_name} due to required sublink not found")
                 continue
 
         total_possible = 0
         matched_score = 0
 
         for check in config["checks"]:
-            logging.info(f"Processing check: {check.get('name', '')}")
-
             weight = check.get("weight", 1)
             should_exist = check.get("should_exist", True)
             min_count = check.get("min_count", 1)
@@ -176,7 +171,6 @@ def identify_page(page: Page, current_url: Optional[str] = None) -> str:
             requires_english = check.get("require_english", False)
 
             if requires_english and not is_page_english(html_content):
-                logging.info(f"Skipping check: {check.get('name', '')} due to not being English")
                 continue
 
             # Lookup method
@@ -229,7 +223,6 @@ def identify_page(page: Page, current_url: Optional[str] = None) -> str:
                         )
 
             except Exception as e:
-                logging.error(f"Error processing check '{check.get('name', '')}': {e}")
                 continue
 
             # scoring
@@ -238,34 +231,28 @@ def identify_page(page: Page, current_url: Optional[str] = None) -> str:
             if should_exist:
                 if element_exists:
                     matched_score += weight
-                    logging.info(f"Matched check: {check.get('name', '')} (should_exist=true, element_exists=true)")
                 else:
-                    logging.info(f"Unmatched check: {check.get('name', '')} (should_exist=true, element_exists=False)")
+                    matched_score -= weight
             else:
                 if not element_exists:
                     matched_score += weight
-                    logging.info(f"Matched check: {check.get('name', '')} (should_exist=False, element_exists=False)")
                 else:
                     matched_score -= weight
-                    logging.info(f"Unmatched check: {check.get('name', '')} (should_exist=False, element_exists=True)")
 
         if total_possible > 0:
             page_scores[page_name] = max(0, matched_score) / total_possible
 
             # Stop search if score is 1 (page found !)
             if matched_score / total_possible == 1:
-                logging.info(f"Stopping search due to score of 1")
                 break
         else:
             page_scores[page_name] = 0
 
     # best match
     if not page_scores:
-        logging.info("No matches found")
         return "unknown"
 
     best_page, score = max(page_scores.items(), key=lambda x: x[1])
-    logging.info(f"Best match found: {best_page} with score: {score}")
     return best_page if score >= 0.7 else "unknown"
 
 def deep_find_elements(page: Page, css_selector: str):
@@ -277,14 +264,15 @@ def deep_find_elements(page: Page, css_selector: str):
     """
     results = []
 
-    def search_frame(frame):
+    def search_frame(frame, depth=0):
         nonlocal results
-
+        
         # 1) normal query
         try:
             els = frame.query_selector_all(css_selector)
-            results.extend(els)
-        except:
+            if els:
+                results.extend(els)
+        except Exception as e:
             pass
 
         # 2) shadow DOM search
@@ -312,23 +300,32 @@ def deep_find_elements(page: Page, css_selector: str):
             handle = frame.evaluate_handle(shadow_js, css_selector)
             length = frame.evaluate("x => x.length", handle)
 
-            for i in range(length):
-                item = handle.get_property(str(i))
-                el = item.as_element()
-                if el:
-                    results.append(el)
-
-        except:
+            if length > 0:
+                for i in range(length):
+                    item = handle.get_property(str(i))
+                    el = item.as_element()
+                    if el:
+                        results.append(el)
+        except Exception as e:
             pass
 
-        # 3) recurse into iframes
+        # 3) Find all iframe elements in this frame and recurse into them
         try:
-            for child in frame.child_frames:
-                search_frame(child)
-        except:
+            iframe_elements = frame.query_selector_all("iframe")
+            
+            if iframe_elements:
+                for idx, iframe_element in enumerate(iframe_elements):
+                    try:
+                        content_frame = iframe_element.content_frame()
+                        if content_frame:
+                            search_frame(content_frame, depth + 1)
+                    except Exception as e:
+                        pass
+        except Exception as e:
             pass
-
-    search_frame(page.main_frame)
+        
+    search_frame(page.main_frame, depth=0)
+    
     return results
 
 def get_iframe_elements(page: Page, iframe_selector: str, element_selector: str):

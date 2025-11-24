@@ -3,7 +3,7 @@ import random
 from abc import ABC
 from typing import Optional, List
 from playwright.sync_api import Page, Locator
-from core.utils.element_finder import find_element, find_element_in_frame
+from core.utils.element_finder import find_element, find_element_in_frame, deep_find_elements, ElementNotFound
 from core.humanization.behavior import HumanBehavior
 
 class HumanAction(ABC):
@@ -16,36 +16,65 @@ class HumanAction(ABC):
         self.logger = logging.getLogger("autoisp")
         self.human_behavior = HumanBehavior()
     
-    def _find_element_with_humanization(self, page: Page, selectors: List[str], 
-                                         iframe_selector: Optional[str] = None,
-                                         wait_visible: bool = True) -> Locator:
-        """Find element with humanization - uses your existing utility functions"""
-        
-        # Add slight delay before searching (human reads page first)
-        if random.random() > 0.6:  # 40% chance
+    def _find_element_with_humanization(
+        self,
+        page: Page,
+        selectors: list[str],
+        deep_search: bool = False,
+        wait_visible: bool = True
+    ):
+        """
+        Find element with humanization, optionally using deep search for nested shadow/iframe elements.
+        """
+
+        # Slight random delay before searching
+        if random.random() > 0.6:
             self.human_behavior.read_delay()
-        
-        # Use appropriate finder based on whether iframe is specified
-        if iframe_selector:
-            element = find_element_in_frame(page, selectors, iframe_selector)
+
+        element = None
+
+        if deep_search:
+            # Use universal deep search to find the element
+            for selector in selectors:
+                elements = deep_find_elements(page, selector)
+                if elements:
+                    element = elements[0]
+                    break
         else:
-            element = find_element(page, selectors)
-        
-        if wait_visible and random.random() > 0.5:  # 50% chance to scroll
+            # Fast default search (main DOM only)
+            for selector in selectors:
+                try:
+                    element = page.wait_for_selector(selector, timeout=3000)
+                    if element:
+                        break
+                except TimeoutError:
+                    continue
+
+        if not element:
+            raise ElementNotFound(f"No element found for selectors: {selectors}")
+
+        # Scroll into view with some randomness
+        if wait_visible and random.random() > 0.5:
             self.human_behavior.scroll_into_view(element)
-        
+
         return element
+
     
-    def human_fill(self, page: Page, selectors: List[str], text: str,
-                   iframe_selector: Optional[str] = None):
-        """Find and fill input with human-like typing"""
+    def human_fill(self, page: Page, selectors: list[str], text: str, deep_search: bool = False):
+        """
+        Find input element and fill it with human-like typing.
+        Uses deep_search if the element might be inside shadow DOM or nested iframes.
+        """
         self.human_behavior.wait_before_action()
-        element = self._find_element_with_humanization(page, selectors, iframe_selector)
+        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search)
         self.human_behavior.type_text(element, text)
-    
-    def human_click(self, page: Page, selectors: List[str],
-                   iframe_selector: Optional[str] = None, force: bool = False):
-        """Find and click element with human-like behavior"""
+        
+    def human_click(self, page: Page, selectors: list[str], deep_search: bool = False, force: bool = False):
+        """
+        Find and click element with human-like behavior.
+        Uses deep search if the element might be inside shadow DOM or nested iframes.
+        """
         self.human_behavior.wait_before_action()
-        element = self._find_element_with_humanization(page, selectors, iframe_selector)
+        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search)
+
         self.human_behavior.click(element, force=force)
