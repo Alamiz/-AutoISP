@@ -112,7 +112,7 @@ PAGE_SIGNATURES = {
     },
     "webde_inbox_ads_preferences_popup_1": {
         "description": "Webde email ads preferences popup.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -159,7 +159,7 @@ PAGE_SIGNATURES = {
     },
     "webde_inbox_ads_preferences_popup_2": {
         "description": "Webde email ads preferences popup.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -228,7 +228,7 @@ PAGE_SIGNATURES = {
     },
     "webde_inbox_smart_features_popup": {
         "description": "Webde email smart features popup.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -286,7 +286,7 @@ PAGE_SIGNATURES = {
     },
     "webde_inbox": {
         "description": "Webde email inbox page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -295,7 +295,7 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "require_english": False,
                 "description": "Inbox iframe",
-                "weight": 1.0,
+                "weight": 2.0,
                 "should_exist": True
             },
             {
@@ -306,7 +306,7 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "require_english": False,
                 "description": "",
-                "weight": 1.0,
+                "weight": 2.0,
                 "should_exist": True
             },
             {
@@ -352,7 +352,7 @@ PAGE_SIGNATURES = {
     },
     "webde_favorites": {
         "description": "Webde email favorites page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -400,7 +400,7 @@ PAGE_SIGNATURES = {
     },
     "webde_general": {
         "description": "Webde email general page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -448,7 +448,7 @@ PAGE_SIGNATURES = {
     },
     "webde_newsletter": {
         "description": "Webde email newsletter page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -496,7 +496,7 @@ PAGE_SIGNATURES = {
     },
     "webde_orders": {
         "description": "Webde email orders page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -544,7 +544,7 @@ PAGE_SIGNATURES = {
     },
     "webde_contracts-and-subscriptions": {
         "description": "Webde email contracts and subscriptions page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -592,7 +592,7 @@ PAGE_SIGNATURES = {
     },
     "webde_socialmedia": {
         "description": "Webde email socialmedia page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -640,7 +640,7 @@ PAGE_SIGNATURES = {
     },
     "webde_trash": {
         "description": "Webde email trash page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -688,7 +688,7 @@ PAGE_SIGNATURES = {
     },
     "webde_spam": {
         "description": "Webde email spam page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -736,7 +736,7 @@ PAGE_SIGNATURES = {
     },
     "webde_sent": {
         "description": "Webde email sent page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -784,7 +784,7 @@ PAGE_SIGNATURES = {
     },
     "webde_drafts": {
         "description": "Webde email drafts page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
@@ -832,7 +832,7 @@ PAGE_SIGNATURES = {
     },
     "webde_outbox": {
         "description": "Webde email outbox page.",
-        "required_sublink": "navigator.web.de/mail",
+        "required_sublink": "web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",

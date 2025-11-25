@@ -17,6 +17,9 @@ class WebdeAuthentication(HumanAction):
     FLOW_MAP = {
         "webde_register_page": "handle_register_page",
         "webde_login_page": "handle_login_page",
+        "webde_inbox_ads_preferences_popup_1": "handle_inbox_ads_preferences_popup_1",
+        "webde_inbox_ads_preferences_popup_2": "handle_inbox_ads_preferences_popup_2",
+        # "webde_inbox_smart_features_popup": "handle_inbox_smart_features_popup",
         "webde_folder_list_page": "handle_folder_list_page",
         "unknown": "handle_unknown_page"
     }

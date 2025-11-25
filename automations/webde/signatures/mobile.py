@@ -105,6 +105,118 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "webde_inbox_ads_preferences_popup_1": {
+        "description": "Webde email ads preferences popup (core).",
+        "required_sublink": "web.de",
+        "checks": [
+            {
+                "name": "Advertising core pop-up",
+                "css_selector": 'iframe.permission-core-iframe',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "webde_inbox_ads_preferences_popup_2": {
+        "description": "Webde email ads preferences popup.",
+        "required_sublink": "web.de",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="permission"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Advertising popup deny button",
+                "css_selector": 'button#deny',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Advertising popup accept button",
+                "css_selector": 'button#cta',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "webde_inbox_smart_features_popup": {
+        "description": "Webde email smart features popup.",
+        "required_sublink": "navigator.web.de/mail",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Smart features pop-up",
+                "css_selector": 'iframe#thirdPartyFrame_upp_dialog',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Smart features container iframe",
+                "css_selector": 'iframe[src*="spl.web.de/smart-inbox/twoinone"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_folder_list_page": {
         "description": "Webde folder list page.",
         "required_sublink": "web.de/folderlist",

@@ -49,7 +49,7 @@ class WebdeFlowHandler:
             deep_search=True
         )
         
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(15_000)
         self.logger.info("Login form submitted successfully")
         
         return "webde_logged_in_page"  # Expected next page
@@ -68,7 +68,7 @@ class WebdeFlowHandler:
         )
         
         self.logger.info("Continue button clicked successfully")
-        page.wait_for_timeout(10_000)
+        page.wait_for_timeout(15_000)
         
         return "webde_inbox"  # Expected next page
 
