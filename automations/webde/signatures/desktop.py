@@ -1,11 +1,11 @@
 PAGE_SIGNATURES = {
-    "gmx_login_page": {
-        "description": "GMX Login page.",
-        "required_sublink": "www.gmx.net",
+    "webde_login_page": {
+        "description": "Webde Login page.",
+        "required_sublink": "web.de",
         "checks": [
             {
                 "name": "Check login iframe",
-                "css_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
+                "css_selector": 'iframe[src^="https://alligator.navigator.web.de"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -16,7 +16,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Email input inside iframe",
                 "css_selector": "form#login input#username",
-                # "iframe_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -27,7 +26,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "Create account button",
-                "css_selector": 'a[data-component="button"][href^="https://www.gmx.net/mail/tarifvergleich"]',
+                "css_selector": 'a[data-component="button"][href^="https://web.de/email/tarifvergleich"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -37,13 +36,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_logged_in_page": {
-        "description": "GMX Confirm user page.",
-        "required_sublink": "www.gmx.net",
+    "webde_logged_in_page": {
+        "description": "Webde Confirm user page.",
+        "required_sublink": "web.de",
         "checks": [
             {
                 "name": "Check login iframe",
-                "css_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
+                "css_selector": 'iframe[src^="https://alligator.navigator.web.de"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -64,7 +63,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Continue button",
                 "css_selector": "button[data-component-path='openInbox.continue-button']",
-                # "iframe_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -76,7 +74,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Greeting user",
                 "css_selector": "div.oi_customer span.oi_customer_greeting",
-                # "iframe_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -88,7 +85,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Email input",
                 "css_selector": "input#username",
-                # "iframe_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "deep_search": True,
                 "contains_text": None,
                 "require_english": False,
@@ -98,41 +94,10 @@ PAGE_SIGNATURES = {
             }
         ]
     },
-    "gmx_inbox_ads_preferences_popup_1_core": {
-        "description": "GMX email ads preferences popup (core).",
-        "required_sublink": "www.gmx.net",
+    "webde_inbox_ads_preferences_popup_1_core": {
+        "description": "Webde email ads preferences popup (core).",
+        "required_sublink": "web.de",
         "checks": [
-            # {
-            #     "name": "Check inbox iframe",
-            #     "css_selector": 'iframe[src*="gmx.net/mail/client"]',
-            #     "contains_text": None,
-            #     "min_count": 1,
-            #     "require_english": False,
-            #     "description": "Inbox iframe",
-            #     "weight": 1.0,
-            #     "should_exist": True
-            # },
-            # {
-            #     "name": "Emails sidebar",
-            #     "css_selector": 'webmailer-mail-sidebar#sidebar',
-            #     "deep_search": True,
-            #     "contains_text": None,
-            #     "min_count": 1,
-            #     "require_english": False,
-            #     "description": "",
-            #     "weight": 1.0,
-            #     "should_exist": True
-            # },
-            # {
-            #     "name": "User avatar",
-            #     "css_selector": 'div.nav-header__icons > account-avatar-navigator',
-            #     "contains_text": None,
-            #     "min_count": 1,
-            #     "require_english": False,
-            #     "description": "",
-            #     "weight": 1.0,
-            #     "should_exist": True
-            # },
             {
                 "name": "Advertising core pop-up",
                 "css_selector": 'iframe.permission-core-iframe',
@@ -145,13 +110,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_inbox_ads_preferences_popup_1": {
-        "description": "GMX email ads preferences popup.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_inbox_ads_preferences_popup_1": {
+        "description": "Webde email ads preferences popup.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -192,13 +157,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_inbox_ads_preferences_popup_2": {
-        "description": "GMX email ads preferences popup.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_inbox_ads_preferences_popup_2": {
+        "description": "Webde email ads preferences popup.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -229,7 +194,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "Advertising pop-up",
-                "css_selector": 'iframe#thirdPartyFrame_upp_dialog[src*="navigator.gmx.net/upp-dialog"]',
+                "css_selector": 'iframe#thirdPartyFrame_upp_dialog[src*="navigator.web.de/upp-dialog"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -261,13 +226,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_inbox_smart_features_popup": {
-        "description": "GMX email smart features popup.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_inbox_smart_features_popup": {
+        "description": "Webde email smart features popup.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -278,7 +243,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -309,7 +273,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "Smart features container iframe",
-                "css_selector": 'iframe[src*="spl.gmx.net/smart-inbox/twoinone"]',
+                "css_selector": 'iframe[src*="spl.web.de/smart-inbox/twoinone"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -320,13 +284,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_inbox": {
-        "description": "GMX email inbox page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_inbox": {
+        "description": "Webde email inbox page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -337,7 +301,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -348,7 +311,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "User avatar",
-                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "css_selector": 'div#actions-menu-static > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -359,7 +322,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active inbox button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-inbox',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -388,13 +350,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_favorites": {
-        "description": "GMX email favorites page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_favorites": {
+        "description": "Webde email favorites page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -405,7 +367,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -427,7 +388,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active favorites button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-favorite',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -438,13 +398,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_general": {
-        "description": "GMX email general page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_general": {
+        "description": "Webde email general page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -455,7 +415,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -477,7 +436,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active general button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-general',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -488,13 +446,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_newsletter": {
-        "description": "GMX email newsletter page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_newsletter": {
+        "description": "Webde email newsletter page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -505,7 +463,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -527,7 +484,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active newsletter button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-newsletter',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -538,13 +494,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_orders": {
-        "description": "GMX email orders page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_orders": {
+        "description": "Webde email orders page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -555,7 +511,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -577,7 +532,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active orders button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-shopping',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -588,13 +542,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_contracts-and-subscriptions": {
-        "description": "GMX email contracts and subscriptions page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_contracts-and-subscriptions": {
+        "description": "Webde email contracts and subscriptions page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -605,7 +559,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -627,7 +580,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active contracts and subscriptions button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-contracts',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -638,13 +590,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_socialmedia": {
-        "description": "GMX email socialmedia page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_socialmedia": {
+        "description": "Webde email socialmedia page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -655,7 +607,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -677,7 +628,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active socialmedia button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-socialmedia',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -688,13 +638,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_trash": {
-        "description": "GMX email trash page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_trash": {
+        "description": "Webde email trash page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -705,7 +655,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -727,7 +676,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active trash button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-trash',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -738,13 +686,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_spam": {
-        "description": "GMX email spam page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_spam": {
+        "description": "Webde email spam page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -755,7 +703,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -777,7 +724,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active spam button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-spam',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -788,13 +734,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_sent": {
-        "description": "GMX email sent page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_sent": {
+        "description": "Webde email sent page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -805,7 +751,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -827,7 +772,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active sent button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-sent',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -838,13 +782,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_drafts": {
-        "description": "GMX email drafts page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_drafts": {
+        "description": "Webde email drafts page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -855,7 +799,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -877,7 +820,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active drafts button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-drafts',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -888,13 +830,13 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_outbox": {
-        "description": "GMX email outbox page.",
-        "required_sublink": "navigator.gmx.net/mail",
+    "webde_outbox": {
+        "description": "Webde email outbox page.",
+        "required_sublink": "navigator.web.de/mail",
         "checks": [
             {
                 "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
@@ -905,7 +847,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Emails sidebar",
                 "css_selector": 'webmailer-mail-sidebar#sidebar',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -927,7 +868,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active outbox button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-outbox',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,

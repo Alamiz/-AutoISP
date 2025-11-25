@@ -3,8 +3,8 @@ from playwright.sync_api import Page
 from core.humanization.actions import HumanAction
 
 
-class GMXFlowHandler:
-    """Handles different GMX page flows"""
+class WebdeFlowHandler:
+    """Handles different Webde page flows"""
     
     def __init__(self, human_action: HumanAction, email: str, password: str):
         self.human_action = human_action
@@ -14,7 +14,7 @@ class GMXFlowHandler:
     
     def handle_login_page(self, page: Page) -> str:
         """
-        Handle GMX login page - full authentication flow
+        Handle Webde login page - full authentication flow
         Returns: Next expected page identifier
         """
         self.logger.info("Detected login page - starting full authentication")
@@ -52,7 +52,7 @@ class GMXFlowHandler:
         page.wait_for_timeout(2000)
         self.logger.info("Login form submitted successfully")
         
-        return "gmx_logged_in_page"  # Expected next page
+        return "webde_logged_in_page"  # Expected next page
     
     def handle_logged_in_page(self, page: Page) -> str:
         """
@@ -70,7 +70,7 @@ class GMXFlowHandler:
         self.logger.info("Continue button clicked successfully")
         page.wait_for_timeout(10_000)
         
-        return "gmx_inbox"  # Expected next page
+        return "webde_inbox"  # Expected next page
 
     def handle_inbox_ads_preferences_popup_1(self, page: Page) -> str:
         """
@@ -88,7 +88,7 @@ class GMXFlowHandler:
         page.wait_for_timeout(1500)
         self.logger.info("Accept button clicked successfully")
         
-        return "gmx_inbox"  # Expected next page
+        return "webde_inbox"  # Expected next page
 
     def handle_inbox_ads_preferences_popup_2(self, page: Page) -> str:
         """
@@ -106,7 +106,7 @@ class GMXFlowHandler:
         page.wait_for_timeout(1500)
         self.logger.info("Continue button clicked successfully")
         
-        return "gmx_inbox"  # Expected next page
+        return "webde_inbox"  # Expected next page
     
     def handle_inbox_smart_features_popup(self, page: Page) -> str:
         """
@@ -125,7 +125,7 @@ class GMXFlowHandler:
 
         page.reload()
         
-        return "gmx_inbox"  # Expected next page
+        return "webde_inbox"  # Expected next page
     
     def handle_inbox_page(self, page: Page) -> str:
         """
@@ -133,14 +133,14 @@ class GMXFlowHandler:
         Returns: Current page identifier (no action needed)
         """
         self.logger.info("Already at inbox - authentication complete")
-        return "gmx_inbox"  # Stay on current page
+        return "webde_inbox"  # Stay on current page
     
     def handle_unknown_page(self, page: Page) -> str:
         """
         Handle unknown page - navigate to login
         Returns: Next expected page identifier
         """
-        self.logger.warning("Unknown page detected - navigating to GMX login")
-        page.goto("https://www.gmx.net/")
+        self.logger.warning("Unknown page detected - navigating to Webde login")
+        page.goto("https://web.de/")
         self.human_action.human_behavior.read_delay()
-        return "gmx_login_page"  # Expected next page
+        return "webde_login_page"  # Expected next page
