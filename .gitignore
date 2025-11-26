@@ -54,4 +54,6 @@ poetry.lock
 
 # Inviro
 .venv/
+venv/
 .env/
+env/
