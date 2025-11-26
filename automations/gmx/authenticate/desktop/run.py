@@ -5,7 +5,6 @@ from core.utils.decorators import retry, RequiredActionFailed
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
 from ..desktop.flows import GMXFlowHandler
-import time
 
 
 class GMXAuthentication(HumanAction):
@@ -99,13 +98,8 @@ class GMXAuthentication(HumanAction):
         self.human_behavior.read_delay()
         # page.wait_for_timeout(100_100_100)
 
-        # page.wait_for_timeout(15_000)
-
         current_page_id = identify_page(page, page.url, self.signatures)
         self.logger.info(f"Current page: {current_page_id}")
-
-
-        # page.wait_for_timeout(100_100_100)
 
         iteration = 0
         current_page_id = None
