@@ -1,0 +1,52 @@
+import httpx
+from modules.schemas.account import AccountCreate, AccountUpdate
+from modules.core.logging_config import ContextLogger
+from fastapi.exceptions import HTTPException
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Configuration for the external API
+EXTERNAL_ACCOUNT_API_BASE_URL = "http://localhost:8000/accounts" 
+
+async def _fetch_accounts_from_external_api():
+    """Fetches all accounts from the external API."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(EXTERNAL_ACCOUNT_API_BASE_URL)
+            response.raise_for_status()  # Raise an exception for bad status codes
+            return response.json()
+    except httpx.RequestError as exc:
+        logger.error(f"An error occurred while requesting external accounts: {exc}")
+        raise HTTPException(status_code=500, detail="Could not connect to external account service")
+    except httpx.HTTPStatusError as exc:
+        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
+        raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
+
+async def _fetch_account_by_id_from_external_api(account_id: int):
+    """Fetches a single account by ID from the external API."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{EXTERNAL_ACCOUNT_API_BASE_URL}/{account_id}")
+            response.raise_for_status()
+            return response.json()
+    except httpx.RequestError as exc:
+        logger.error(f"An error occurred while requesting external account {account_id}: {exc}")
+        raise HTTPException(status_code=500, detail="Could not connect to external account service")
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Account with ID {account_id} not found in external service")
+        logger.error(f"External account service returned error for ID {account_id}: {exc.response.status_code} - {exc.response.text}")
+        raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
+
+async def get_accounts():
+    """
+    Retrieves all accounts from an external API.
+    """
+    return await _fetch_accounts_from_external_api()
+
+async def get_account_by_id(account_id: int):
+    """
+    Retrieves a single account by ID from an external API.
+    """
+    return await _fetch_account_by_id_from_external_api(account_id)

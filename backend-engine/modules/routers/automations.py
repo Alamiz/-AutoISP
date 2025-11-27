@@ -1,0 +1,66 @@
+# app/routers/automations.py
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from modules.core.runner import run_automation
+from modules.crud.account import get_account_by_id
+from pydantic import BaseModel
+from typing import List
+from modules.database import SessionLocal
+
+router = APIRouter(prefix="/automations", tags=["Automations"])
+db = SessionLocal()
+
+class AutomationRequest(BaseModel):
+    account_ids: List[int]
+    category: str
+    automation_id: str
+    parameters: dict = {}
+
+
+@router.post("/run")
+def trigger_automation(request: AutomationRequest, background_tasks: BackgroundTasks):
+    try:
+        failed_accounts = []
+
+        for account_id in request.account_ids:
+            # Account IDs are UUID strings; force string to ensure compatibility
+            account = get_account_by_id(str(account_id))
+
+            if not account:
+                failed_accounts.append(
+                    {str(account_id): f"Account with id {account_id} not found"}
+                )
+                continue
+
+            # Extract correct password from credentials
+            password = None
+            if account.credentials and "password" in account.credentials:
+                password = account.credentials["password"]
+
+            if not password:
+                failed_accounts.append(
+                    {str(account_id): f"Password missing in account credentials"}
+                )
+                continue
+
+            # Schedule automation with correct arguments
+            background_tasks.add_task(
+                run_automation,
+                email=account.email,
+                password=password,
+                isp=account.provider,
+                automation_name=request.automation_id,
+                proxy_config=account.proxy_settings,
+                device_type=account.type
+            )
+
+        return {
+            "status": "queued",
+            "category": request.category,
+            "automation_id": request.automation_id,
+            "parameters": request.parameters,
+            "accounts": request.account_ids,
+            "failed_accounts": failed_accounts,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
