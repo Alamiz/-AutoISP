@@ -25,15 +25,15 @@ export default function Titlebar() {
   }, []);
 
   return (
-    <div className="h-8 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between select-none" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+    <div className="h-8 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between select-none z-50" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
       {/* Drag region */}
       <div className="flex-1 h-full" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
-      
+
       {/* App title (optional) */}
       <div className="absolute left-1/2 transform -translate-x-1/2 text-zinc-400 text-xs font-medium pointer-events-none">
         Gmail Automation
       </div>
-      
+
       {/* Window controls */}
       <div className="flex items-center h-full" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         {/* Minimize - sends window to taskbar */}
@@ -45,7 +45,7 @@ export default function Titlebar() {
         >
           <Minus size={16} strokeWidth={2.5} />
         </button>
-        
+
         {/* Maximize/Restore toggle */}
         <button
           onClick={() => window.electronAPI.maximize()}
@@ -59,7 +59,7 @@ export default function Titlebar() {
             <Square size={14} strokeWidth={2.5} />
           )}
         </button>
-        
+
         {/* Close */}
         <button
           onClick={() => window.electronAPI.close()}

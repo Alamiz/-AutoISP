@@ -175,7 +175,7 @@ export function AccountList() {
       <Card className="bg-card border-border">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground">Gmail Accounts</CardTitle>
+            <CardTitle className="text-foreground">Accounts</CardTitle>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"

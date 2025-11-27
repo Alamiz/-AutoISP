@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full overflow-hidden">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden bg-zinc-950`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden `}
       >
         <div className="flex flex-col h-screen w-screen overflow-hidden">
           <Titlebar />
