@@ -1,5 +1,24 @@
-import { contextBridge, ipcRenderer } from 'electron';
+const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('electron', {
-    // Add IPC methods here if needed
+contextBridge.exposeInMainWorld('electronAPI', {
+    minimize: () => ipcRenderer.send('window:minimize'),
+    maximize: () => ipcRenderer.send('window:maximize'),
+    close: () => ipcRenderer.send('window:close'),
+
+    // Listen for maximize/unmaximize events
+    onMaximize: (callback: () => void) => {
+        ipcRenderer.on('window-maximized', callback);
+    },
+    onUnmaximize: (callback: () => void) => {
+        ipcRenderer.on('window-unmaximized', callback);
+    },
+
+    // Cleanup listeners (optional but recommended)
+    removeMaximizeListener: (callback: () => void) => {
+        ipcRenderer.removeListener('window-maximized', callback);
+    },
+    removeUnmaximizeListener: (callback: () => void) => {
+        ipcRenderer.removeListener('window-unmaximized', callback);
+    },
+    openDevTools: () => ipcRenderer.send('window:open-devtools'),
 });

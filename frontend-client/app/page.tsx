@@ -1,23 +1,53 @@
-'use client';
+"use client"
 
-import { useEffect, useState } from 'react';
+// import { Dashboard } from "@/components/dashboard"
+import { AccountList } from "@/components/account-list"
+// import { AutomationControls } from "@/components/automation-controls"
+// import { AutomationTemplates } from "@/components/automation-templates"
+// import { LiveLogPanel } from "@/components/live-log-panel"
+import { AccountProvider } from "@/providers/account-provider"
 
-export default function Home() {
-  const [message, setMessage] = useState<string>('Loading...');
-
-  useEffect(() => {
-    fetch('http://localhost:8000/api/hello')
-      .then((res) => res.json())
-      .then((data) => setMessage(data.message))
-      .catch((err) => setMessage('Error fetching data: ' + err.message));
-  }, []);
-
+export default function HomePage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <h1 className="text-4xl font-bold">AutoISP Desktop App</h1>
-        <p className="text-xl">Backend Status: {message}</p>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">GM</span>
+              </div>
+              <h1 className="text-xl font-semibold text-foreground">Gmail Automation Manager</h1>
+            </div>
+            <button onClick={() => window.electronAPI.openDevTools()} type="button" className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">Developer Console</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-6 py-8">
+        <AccountProvider>
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            {/* Left Column - Dashboard & Controls */}
+            <div className="xl:col-span-1 space-y-6">
+              {/* <Dashboard /> */}
+              {/* <AutomationControls /> */}
+            </div>
+
+            {/* Middle Column - Account Management & Templates */}
+            <div className="xl:col-span-2 space-y-6">
+              <AccountList />
+              {/* <AutomationTemplates /> */}
+            </div>
+
+            {/* Right Column - Live Logs */}
+            <div className="xl:col-span-1">
+              {/* <LiveLogPanel /> */}
+            </div>
+          </div>
+        </AccountProvider>
       </main>
     </div>
-  );
+  )
 }

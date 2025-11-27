@@ -1,6 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, Menu, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import { spawn, ChildProcess } from 'child_process';
+import kill from 'tree-kill';
+import log from 'electron-log';
 
 let mainWindow: BrowserWindow | null;
 let pythonProcess: ChildProcess | null = null;
@@ -16,6 +18,7 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
         },
+        frame: false
     });
 
     const startUrl = isDev
@@ -27,6 +30,16 @@ function createWindow() {
     if (isDev) {
         mainWindow.webContents.openDevTools();
     }
+
+    Menu.setApplicationMenu(null);
+
+    mainWindow.on('maximize', () => {
+        mainWindow?.webContents.send('window-maximized');
+    });
+
+    mainWindow.on('unmaximize', () => {
+        mainWindow?.webContents.send('window-unmaximized');
+    });
 
     mainWindow.on('closed', () => {
         mainWindow = null;
@@ -72,6 +85,18 @@ function killPythonBackend() {
     if (pythonProcess) {
         console.log('Killing Python backend...');
         pythonProcess.kill();
+
+        // Try to kill the process using tree-kill
+        try {
+            if (!pythonProcess.pid) return;
+            kill(pythonProcess.pid, "SIGTERM", (err) => {
+                if (err) log.error("Failed to kill Python backend process due to:", err)
+                else log.info("Python backend process killed!")
+            })
+        } catch (error) {
+            log.error("Failed to kill Python backend process:", error)
+        }
+
         pythonProcess = null;
     }
 }
@@ -85,6 +110,30 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
+});
+
+ipcMain.on('window:minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.minimize();
+});
+
+ipcMain.on('window:maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win?.isMaximized()) {
+        win.unmaximize();
+    } else {
+        win?.maximize();
+    }
+});
+
+ipcMain.on('window:close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.close();
+});
+
+ipcMain.on('window:open-devtools', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.webContents.openDevTools();
 });
 
 app.on('activate', () => {
