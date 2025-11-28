@@ -9,6 +9,10 @@ let pythonProcess: ChildProcess | null = null;
 
 const isDev = process.env.NODE_ENV === 'development';
 
+import serve from 'electron-serve';
+
+const serveURL = serve({ directory: path.join(__dirname, '../../out') });
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -21,11 +25,11 @@ function createWindow() {
         frame: false
     });
 
-    const startUrl = isDev
-        ? 'http://localhost:3000'
-        : `file://${path.join(__dirname, '../../out/index.html')}`;
-
-    mainWindow.loadURL(startUrl);
+    if (isDev) {
+        mainWindow.loadURL('http://localhost:3000');
+    } else {
+        serveURL(mainWindow);
+    }
 
     if (isDev) {
         mainWindow.webContents.openDevTools();

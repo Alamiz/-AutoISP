@@ -6,8 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // Use relative paths for assets in production (Electron)
-  assetPrefix: isProd ? '.' : undefined,
+  output: 'export',
 };
 
 export default nextConfig;
