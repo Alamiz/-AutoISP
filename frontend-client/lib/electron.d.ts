@@ -6,6 +6,7 @@ declare global {
       minimize: () => void;
       maximize: () => void;
       close: () => void;
+      resize: (width: number, height: number) => void;
       onMaximize: (callback: () => void) => void;
       onUnmaximize: (callback: () => void) => void;
       removeMaximizeListener?: (callback: () => void) => void;

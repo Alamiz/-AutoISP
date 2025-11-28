@@ -135,6 +135,12 @@ ipcMain.on('window:close', (event) => {
     win?.close();
 });
 
+ipcMain.on('window:resize', (event, width: number, height: number) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.setSize(width, height, true);
+    win?.center();
+});
+
 ipcMain.on('window:open-devtools', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     win?.webContents.openDevTools();

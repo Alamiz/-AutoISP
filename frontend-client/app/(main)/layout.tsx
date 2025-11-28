@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -12,6 +13,13 @@ export default function MainLayout({
 }: {
     children: React.ReactNode
 }) {
+    useEffect(() => {
+        // Restore window to default size when entering main app
+        if (typeof window !== 'undefined' && window.electronAPI) {
+            window.electronAPI.resize(1200, 800);
+        }
+    }, []);
+
     return (
         <AuthGuard>
             <AppSidebar />
