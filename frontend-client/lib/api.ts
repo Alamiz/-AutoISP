@@ -18,17 +18,35 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(endpoint: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`);
+export async function apiGet<T>(endpoint: string, apiType: "local" | "master" = "local"): Promise<T> {
+  const baseUrl = apiType === "master" ? "http://localhost:8000" : API_BASE;
+
+  // Get auth token if using master API
+  const headers: HeadersInit = {};
+  if (apiType === "master") {
+    const tokensStr = typeof window !== 'undefined' ? localStorage.getItem("auth_tokens") : null;
+    if (tokensStr) {
+      try {
+        const tokens = JSON.parse(tokensStr);
+        headers["Authorization"] = `Bearer ${tokens.access}`;
+      } catch (e) {
+        // Silent fail
+      }
+    }
+  }
+
+  const res = await fetch(`${baseUrl}${endpoint}`, { headers });
   if (!res.ok) throw new Error(`Failed to fetch ${endpoint}: ${res.status}`);
   return res.json();
 }
 
 export async function apiPost<T, B>(
   endpoint: string,
-  body: B
+  body: B,
+  apiType: "local" | "master" = "local"
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+  const baseUrl = apiType === "master" ? "http://localhost:8000" : API_BASE;
+  const res = await fetch(`${baseUrl}${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

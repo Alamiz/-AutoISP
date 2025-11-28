@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { User, Lock, Bell, Palette, Shield, Database, Smartphone, Save, CheckCircle2, Globe } from "lucide-react"
+import { useUser } from "@/contexts/user-context"
 
 interface SettingsDialogProps {
     open: boolean
@@ -14,19 +15,26 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
-    const [userProfile] = useState({
-        name: "John Doe",
-        email: "john.doe@example.com",
-        role: "Admin",
-        department: "Engineering",
-        joinDate: "January 15, 2024",
-        avatar: "JD",
-    })
+    const { user, isLoading } = useUser()
 
     const handleSave = (section: string) => {
         setSaveSuccess(section)
         setTimeout(() => setSaveSuccess(null), 3000)
     }
+
+    if (isLoading || !user) {
+        return null
+    }
+
+    const displayName = user.first_name && user.last_name
+        ? `${user.first_name} ${user.last_name}`
+        : user.username
+
+    const initials = user.first_name && user.last_name
+        ? `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
+        : user.username.substring(0, 2).toUpperCase()
+
+    const role = user.is_staff ? "Admin" : "User"
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,14 +51,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                             <CardContent className="pt-6">
                                 <div className="flex items-center gap-4">
                                     <div className="h-16 w-16 rounded-full bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shrink-0">
-                                        <span className="text-2xl font-bold text-primary-foreground">{userProfile.avatar}</span>
+                                        <span className="text-2xl font-bold text-primary-foreground">{initials}</span>
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold text-foreground">{userProfile.name}</h2>
-                                        <p className="text-sm text-muted-foreground">{userProfile.email}</p>
+                                        <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
+                                        <p className="text-sm text-muted-foreground">{user.email}</p>
                                         <div className="flex items-center gap-2 mt-2">
                                             <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                                                {userProfile.role}
+                                                {role}
                                             </span>
                                         </div>
                                     </div>
@@ -127,7 +135,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                                 <label className="text-sm font-medium text-foreground">Full Name</label>
                                                 <input
                                                     type="text"
-                                                    defaultValue={userProfile.name}
+                                                    defaultValue={displayName}
                                                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                                 />
                                             </div>
@@ -135,27 +143,27 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                                 <label className="text-sm font-medium text-foreground">Email</label>
                                                 <input
                                                     type="email"
-                                                    defaultValue={userProfile.email}
+                                                    defaultValue={user.email}
                                                     disabled
                                                     className="w-full px-3 py-2 rounded-lg border border-border bg-muted text-muted-foreground cursor-not-allowed"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-sm font-medium text-foreground">Department</label>
+                                                <label className="text-sm font-medium text-foreground">Username</label>
                                                 <input
                                                     type="text"
-                                                    defaultValue={userProfile.department}
+                                                    defaultValue={user.username}
                                                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                                 />
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-sm font-medium text-foreground">Role</label>
                                                 <select
-                                                    defaultValue={userProfile.role}
+                                                    defaultValue={role}
                                                     disabled
                                                     className="w-full px-3 py-2 rounded-lg border border-border bg-muted text-muted-foreground cursor-not-allowed"
                                                 >
-                                                    <option>{userProfile.role}</option>
+                                                    <option>{role}</option>
                                                 </select>
                                             </div>
                                         </div>
