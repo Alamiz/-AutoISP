@@ -5,18 +5,22 @@ import { AccountList } from "@/components/account-list"
 import { AutomationControls } from "@/components/automation-controls"
 import { HeroSection } from "@/components/hero-section"
 import { QuickActions } from "@/components/quick-actions"
-import { Sidebar } from "@/components/sidebar"
+import { BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 // import { AutomationControls } from "@/components/automation-controls"
 // import { AutomationTemplates } from "@/components/automation-templates"
 // import { LiveLogPanel } from "@/components/live-log-panel"
 import { AccountProvider } from "@/providers/account-provider"
-import { useState } from "react"
+
+import { PageBreadcrumb } from "@/components/breadcrumb-context"
 
 export default function HomePage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-
   return (
     <div className="flex h-full bg-background">
+      <PageBreadcrumb>
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/">Home</BreadcrumbLink>
+        </BreadcrumbItem>
+      </PageBreadcrumb>
       {/* <header className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -33,9 +37,7 @@ export default function HomePage() {
         </div>
       </header> */}
 
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
+      <main className={`flex-1 overflow-auto transition-all duration-300`}>
         <AccountProvider>
 
           <div className="p-6 space-y-6">

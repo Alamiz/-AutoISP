@@ -1,7 +1,7 @@
-import { BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { PageBreadcrumb } from '@/components/breadcrumb-context';
+import { PageBreadcrumb } from '@/components/breadcrumb-context'
+import { BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 
-function AccountsPage() {
+function AutomationsPage() {
     return (
         <>
             <PageBreadcrumb>
@@ -10,12 +10,12 @@ function AccountsPage() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                    <BreadcrumbPage>Accounts</BreadcrumbPage>
+                    <BreadcrumbPage>Automations</BreadcrumbPage>
                 </BreadcrumbItem>
             </PageBreadcrumb>
-            <div>AccountsPage</div>
+            <div>AutomationsPage</div>
         </>
     )
 }
 
-export default AccountsPage
+export default AutomationsPage
