@@ -7,3 +7,4 @@ uvicorn
 pyinstaller
 httpx
 websockets
+requests

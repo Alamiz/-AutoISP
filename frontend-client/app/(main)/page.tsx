@@ -8,7 +8,7 @@ import { QuickActions } from "@/components/quick-actions"
 import { BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 // import { AutomationControls } from "@/components/automation-controls"
 // import { AutomationTemplates } from "@/components/automation-templates"
-// import { LiveLogPanel } from "@/components/live-log-panel"
+import { LiveLogPanel } from "@/components/live-log-panel"
 import { AccountProvider } from "@/providers/account-provider"
 
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
@@ -51,14 +51,14 @@ export default function HomePage() {
               </div>
 
               {/* Middle Column - Account Management & Templates */}
-              <div className="xl:col-span-3 space-y-6">
+              <div className="xl:col-span-2 space-y-6">
                 <AccountList />
                 {/* <AutomationTemplates /> */}
               </div>
 
               {/* Right Column - Live Logs */}
               <div className="xl:col-span-1">
-                {/* <LiveLogPanel /> */}
+                <LiveLogPanel />
               </div>
             </div>
           </div>

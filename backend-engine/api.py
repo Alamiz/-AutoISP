@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from modules.routers import automations, auth, backup
+from modules.core.utils.logger import configure_logger
+
+logger = configure_logger()
 
 app = FastAPI()
 
