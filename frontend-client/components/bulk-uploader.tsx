@@ -9,6 +9,7 @@ import { Upload, Download, FileText } from "lucide-react"
 import { apiPost } from "@/lib/api"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
 interface BulkUploaderProps {
   open: boolean
@@ -93,16 +94,16 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
         };
       });
 
-      const response = await apiPost("/api/accounts/bulk-upload", accounts);
+      const response = await apiPost("/api/accounts/bulk-upload/", accounts);
       console.log("Upload response:", response);
-      alert(`Successfully uploaded ${accounts.length} accounts.`)
+      toast.success(`Successfully uploaded ${accounts.length} accounts.`)
 
       onOpenChange(false)
       setFile(null)
       onAccountSaved()
     } catch (error) {
       console.error("Error uploading file:", error)
-      alert("Error uploading file. Please check the format and try again.")
+      toast.error("Error uploading file. Please check the format and try again.")
     } finally {
       setLoading(false)
     }

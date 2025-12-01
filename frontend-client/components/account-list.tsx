@@ -17,6 +17,7 @@ import { BackupModal } from "./backup-modal"
 import { RestoreModal } from "./restore-modal"
 import { formatBytes } from "@/utils/formatters"
 import { useAccounts } from "@/hooks/useAccounts"
+import { toast } from "sonner"
 
 export function AccountList() {
   const [showAddAccount, setShowAddAccount] = useState(false)
@@ -106,7 +107,7 @@ export function AccountList() {
 
   const bulkDeleteAccounts = useMutation({
     mutationFn: async (accountIds: string[]) => {
-      await apiDelete('/api/accounts/bulk-upload', accountIds)
+      await apiDelete('/api/accounts/bulk-delete/', accountIds)
       return accountIds
     },
     onMutate: async (accountIds: string[]) => {
@@ -119,9 +120,11 @@ export function AccountList() {
     },
     onError: (err, accountIds, context) => {
       queryClient.setQueryData(["accounts"], context?.previousAccounts)
+      toast.error("Failed to delete accounts")
     },
     onSuccess: () => {
       setSelectedAccounts([])
+      toast.success("Accounts deleted successfully")
     }
   })
 
