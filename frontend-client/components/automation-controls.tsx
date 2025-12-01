@@ -1,9 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -17,84 +23,46 @@ import { apiPost } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useAccounts } from "@/hooks/useAccounts"
+import { gmxAutomations, webdeAutomations } from "@/data/automations"
 
-const availableAutomations: Automation[] = [
-  {
-    id: "google_search",
-    name: "Search google",
-    description: "Open Google and search for a query",
-    category: "browsing",
-    estimatedDuration: "0-1 minutes",
-    parameters: {
-      query: { type: "text", label: "Search query", required: true }
-    },
-  },
-  {
-    id: "open_profile",
-    name: "Open profile",
-    description: "Open profile for a specefic duration for test purposes.",
-    category: "test",
-    estimatedDuration: "unkown",
-    parameters: {
-      duration: { type: "number", label: "Duration (seconds)", required: true },
-    },
-  },
-  // {
-  //   id: "extract-attachments",
-  //   name: "Extract attachments",
-  //   description: "Download and organize email attachments",
-  //   category: "attachments",
-  //   estimatedDuration: "5-15 minutes",
-  //   parameters: {
-  //     fileTypes: { type: "text", label: "File Types (e.g., pdf,docx)", required: false },
-  //     maxSize: { type: "number", label: "Max File Size (MB)", required: false },
-  //   },
-  // },
-  // {
-  //   id: "archive-promotional",
-  //   name: "Archive promotional",
-  //   description: "Auto-archive promotional and marketing emails",
-  //   category: "inbox",
-  //   estimatedDuration: "1-3 minutes",
-  //   parameters: {
-  //     daysOld: { type: "number", label: "Archive emails older than (days)", required: false },
-  //   },
-  // },
-  // {
-  //   id: "check-session",
-  //   name: "Check login/session",
-  //   description: "Verify account accessibility and session validity",
-  //   category: "maintenance",
-  //   estimatedDuration: "30 seconds",
-  //   parameters: {},
-  // },
-]
+// Map provider names to their automation lists
+const automationsByProvider = {
+  gmx: gmxAutomations,
+  webde: webdeAutomations,
+}
 
 export function AutomationControls() {
+  const [selectedProvider, setSelectedProvider] = useState<"gmx" | "webde">("gmx")
+  const [availableAutomations, setAvailableAutomations] = useState<Automation[]>(gmxAutomations)
   const [selectedAutomations, setSelectedAutomations] = useState<string[]>([])
   const [scheduleType, setScheduleType] = useState<"now" | "later">("now")
   const [showScheduler, setShowScheduler] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [automationParams, setAutomationParams] = useState<Record<string, Record<string, any>>>({})
   const [activeTab, setActiveTab] = useState("select")
 
   const { selectedAccounts, setSelectedAccounts } = useAccounts()
-
   const queryClient = useQueryClient()
+
+  // Update available automations when provider changes
+  useEffect(() => {
+    setAvailableAutomations(automationsByProvider[selectedProvider])
+    // Clear selections when switching providers
+    setSelectedAutomations([])
+    setAutomationParams({})
+    setActiveTab("select")
+  }, [selectedProvider])
 
   const handleAutomationToggle = (automationId: string, checked: boolean) => {
     if (checked) {
       setSelectedAutomations([...selectedAutomations, automationId])
     } else {
       setSelectedAutomations(selectedAutomations.filter((id) => id !== automationId))
-      // Remove parameters for deselected automation
       const newParams = { ...automationParams }
       delete newParams[automationId]
       setAutomationParams(newParams)
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleParameterChange = (automationId: string, paramKey: string, value: any) => {
     setAutomationParams((prev) => ({
       ...prev,
@@ -147,10 +115,12 @@ export function AutomationControls() {
     mutationFn: async ({ automationId, automation }: { automationId: string, automation: Automation }) => {
       return await apiPost('/automations/run', {
         automation_id: automation.id,
-        category: automation.category,
         parameters: automationParams[automationId] || {},
         account_ids: selectedAccounts.map(acc => acc.id),
-      })
+        provider: selectedProvider,
+      },
+        "local"
+      )
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
@@ -221,6 +191,26 @@ export function AutomationControls() {
 
             {/* Automation Selection */}
             <TabsContent value="select" className="space-y-4">
+              {/* Provider Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-foreground">Email Provider</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between bg-input border-border">
+                      <span className="capitalize">{selectedProvider}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem onClick={() => setSelectedProvider("gmx")}>
+                      GMX
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedProvider("webde")}>
+                      web.de
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-foreground">Available Automations</h4>
                 <div className="space-y-2">
@@ -319,6 +309,9 @@ export function AutomationControls() {
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-foreground">Execution Summary</h4>
                   <div className="p-3 rounded-lg border border-border bg-accent/20">
+                    <p className="text-sm text-foreground mb-2">
+                      Provider: <span className="font-medium capitalize">{selectedProvider}</span>
+                    </p>
                     <p className="text-sm text-foreground mb-2">
                       {selectedAutomations.length} automation{selectedAutomations.length > 1 ? "s" : ""} selected
                     </p>

@@ -5,13 +5,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Configuration for the external API
-EXTERNAL_ACCOUNT_API_BASE_URL = "http://localhost:8000/accounts" 
+EXTERNAL_ACCOUNT_API_BASE_URL = "http://localhost:8000/api/accounts" 
 
-async def _fetch_accounts_from_external_api():
+def _fetch_accounts_from_external_api():
     """Fetches all accounts from the external API."""
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(EXTERNAL_ACCOUNT_API_BASE_URL)
+        with httpx.Client() as client:
+            response = client.get(EXTERNAL_ACCOUNT_API_BASE_URL + "/")
             response.raise_for_status()  # Raise an exception for bad status codes
             return response.json()
     except httpx.RequestError as exc:
@@ -21,11 +21,11 @@ async def _fetch_accounts_from_external_api():
         logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
 
-async def _fetch_account_by_id_from_external_api(account_id: int):
+def _fetch_account_by_id_from_external_api(account_id: str):
     """Fetches a single account by ID from the external API."""
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"{EXTERNAL_ACCOUNT_API_BASE_URL}/{account_id}")
+        with httpx.Client() as client:
+            response = client.get(f"{EXTERNAL_ACCOUNT_API_BASE_URL}/{account_id}/")
             response.raise_for_status()
             return response.json()
     except httpx.RequestError as exc:
@@ -37,14 +37,14 @@ async def _fetch_account_by_id_from_external_api(account_id: int):
         logger.error(f"External account service returned error for ID {account_id}: {exc.response.status_code} - {exc.response.text}")
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
 
-async def get_accounts():
+def get_accounts():
     """
     Retrieves all accounts from an external API.
     """
-    return await _fetch_accounts_from_external_api()
+    return _fetch_accounts_from_external_api()
 
-async def get_account_by_id(account_id: int):
+def get_account_by_id(account_id: str):
     """
     Retrieves a single account by ID from an external API.
     """
-    return await _fetch_account_by_id_from_external_api(account_id)
+    return _fetch_account_by_id_from_external_api(account_id)
