@@ -32,6 +32,7 @@ import {
 
 import { auth } from "@/lib/auth"
 import { useUser } from "@/contexts/user-context"
+import { Button } from "./ui/button"
 
 export function NavUser() {
   const { isMobile } = useSidebar()
@@ -43,7 +44,10 @@ export function NavUser() {
   }
 
   if (isLoading || !user) {
-    return null
+    return <Button onClick={handleLogout} variant="ghost">
+      <LogOut />
+      Log out
+    </Button >
   }
 
   const displayName = user.first_name && user.last_name

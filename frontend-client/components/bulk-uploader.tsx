@@ -7,6 +7,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Button } from "@/components/ui/button"
 import { Upload, Download, FileText } from "lucide-react"
 import { apiPost } from "@/lib/api"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 interface BulkUploaderProps {
   open: boolean
@@ -18,6 +20,7 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
   const [dragActive, setDragActive] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
+  const [provider, setProvider] = useState<string>("gmx")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrag = (e: React.DragEvent) => {
@@ -48,12 +51,12 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
 
   const downloadTemplate = () => {
     const csvContent =
-      "email,password,label\nuser1@gmail.com,password123,Primary\nuser2@gmail.com,password456,Marketing"
+      "email,password,recovery_email,number\nuser1@gmail.com,pass123,recovery1@example.com,1234567890\nuser2@gmail.com,pass456,,"
     const blob = new Blob([csvContent], { type: "text/csv" })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = "gmail-accounts-template.csv"
+    a.download = "accounts-template.csv"
     a.click()
     window.URL.revokeObjectURL(url)
   }
@@ -63,7 +66,7 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
 
     try {
       setLoading(true)
-      
+
       const text = await file.text();
 
       // Parse file into accounts
@@ -74,14 +77,23 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
 
       // If header exists, skip it
       const dataLines = hasHeader ? lines.slice(1) : lines;
-    
+
       // Parse file into accounts
       const accounts = dataLines.map(line => {
-        const [email, password, label] = line.split(",").map(s => s.trim());
-        return { email, password, label: label || "" };
+        const [email, password, recovery_email, number] = line.split(",").map(s => s.trim());
+        return {
+          email,
+          provider,
+          type: "desktop",
+          credentials: {
+            password,
+            recovery_email: recovery_email || undefined,
+            number: number || undefined
+          }
+        };
       });
 
-      const response = await apiPost("/accounts/bulk", accounts);
+      const response = await apiPost("/api/accounts/bulk-upload", accounts);
       console.log("Upload response:", response);
       alert(`Successfully uploaded ${accounts.length} accounts.`)
 
@@ -90,6 +102,7 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
       onAccountSaved()
     } catch (error) {
       console.error("Error uploading file:", error)
+      alert("Error uploading file. Please check the format and try again.")
     } finally {
       setLoading(false)
     }
@@ -106,18 +119,35 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
         <SheetHeader>
           <SheetTitle className="text-foreground">Bulk Upload Accounts</SheetTitle>
           <SheetDescription className="text-muted-foreground">
-            Upload multiple Gmail accounts via CSV file. Download the template to get started.
+            Upload multiple accounts via CSV file.
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 mt-6">
+          {/* Provider Selection */}
+          <div className="space-y-2">
+            <Label>Default Provider</Label>
+            <Select value={provider} onValueChange={setProvider}>
+              <SelectTrigger className="bg-input border-border">
+                <SelectValue placeholder="Select provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gmx">GMX</SelectItem>
+                <SelectItem value="webde">WEB.DE</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              This provider will be applied to all uploaded accounts.
+            </p>
+          </div>
+
           {/* Template Download */}
           <div className="p-4 rounded-lg border border-border bg-accent/20">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-medium text-foreground">CSV Template</h4>
                 <p className="text-xs text-muted-foreground">
-                  Download template with required columns: email, password, label
+                  Columns: email, password, recovery_email, number
                 </p>
               </div>
               <Button
@@ -134,9 +164,8 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
 
           {/* File Upload Area */}
           <div
-            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-            }`}
+            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+              }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -179,7 +208,7 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
               disabled={!file || loading}
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Upload Accounts
+              {loading ? "Uploading..." : "Upload Accounts"}
             </Button>
           </div>
         </div>
