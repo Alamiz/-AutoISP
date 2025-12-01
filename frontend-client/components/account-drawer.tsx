@@ -61,13 +61,13 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
   useEffect(() => {
     if (editingAccount) {
       formik.setValues({
-        email: editingAccount.email,
-        password: editingAccount.credentials.password,
-        label: editingAccount.label,
+        email: editingAccount.email || "",
+        password: editingAccount.credentials?.password || "",
+        label: editingAccount.label || "",
         provider: editingAccount.provider || "gmx",
         type: editingAccount.type || "desktop",
-        recovery_email: editingAccount.credentials.recovery_email || "",
-        number: editingAccount.credentials.number || "",
+        recovery_email: editingAccount.credentials?.recovery_email || "",
+        number: editingAccount.credentials?.number || "",
         proxy_host: editingAccount.proxy_settings?.host || "",
         proxy_port: editingAccount.proxy_settings?.port?.toString() || "",
         proxy_username: editingAccount.proxy_settings?.username || "",
