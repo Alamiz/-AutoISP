@@ -265,7 +265,7 @@ export function AccountList() {
                         <History className="h-4 w-4 mr-2" />
                         View History
                       </DropdownMenuItem>
-                      <DropdownMenuSub>
+                      {/* <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
                           <Database className="h-4 w-4 mr-4 text-muted-foreground" />
                           Backup & Restore
@@ -273,22 +273,22 @@ export function AccountList() {
                         <DropdownMenuSubContent className="bg-popover border-border">
                           <DropdownMenuItem onClick={() => setBackupAccount(account)}>
                             <Database className="h-4 w-4 mr-2" />
-                            {/* {account.backups.length > 0 ? "Update Backup" : "Create Backup"} */}
+                            {account.backups.length > 0 ? "Update Backup" : "Create Backup"}
                           </DropdownMenuItem>
-                          {/* <DropdownMenuItem onClick={() => setRestoreAccount(account)} disabled={!account.backups[account.backups.length - 1]?.filename}>
+                          <DropdownMenuItem onClick={() => setRestoreAccount(account)} disabled={!account.backups[account.backups.length - 1]?.filename}>
                             <RotateCcw className="h-4 w-4 mr-2" />
                             Restore Backup
-                          </DropdownMenuItem> */}
+                          </DropdownMenuItem>
                         </DropdownMenuSubContent>
-                      </DropdownMenuSub>
+                      </DropdownMenuSub> */}
                       <DropdownMenuItem onClick={() => handleEditAccount(account)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Account
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleToggleStatus(account.id)}>
+                      {/* <DropdownMenuItem onClick={() => handleToggleStatus(account.id)}>
                         {account.status === "disabled" ? <CheckCircle className="h-4 w-4 mr-2" /> : <CircleSlashIcon className="h-4 w-4 mr-2" />}
                         {account.status === "disabled" ? "Enable" : "Disable"}
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> */}
                       <DropdownMenuItem
                         onClick={() => handleDeleteAccount(account?.id)}
                         className="text-destructive focus:text-destructive"
@@ -332,12 +332,12 @@ export function AccountList() {
         history={currentHistory}
       />
 
-      <BackupModal
+      {/* <BackupModal
         open={!!backupAccount}
         onOpenChange={(open) => !open && setBackupAccount(null)}
         account={backupAccount}
         onBackupComplete={handleBackupComplete}
-      />
+      /> */}
 
       <RestoreModal
         open={!!restoreAccount}

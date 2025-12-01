@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -26,6 +26,7 @@ export function BackupModal({
   const [isBackingUp, setIsBackingUp] = useState(false)
   const [backupProgress, setBackupProgress] = useState(0)
   const [backupStatus, setBackupStatus] = useState<"idle" | "backing-up" | "success" | "error">("idle")
+  const [stepText, setStepText] = useState("")
 
   const backups = account?.backups ?? [];
   const lastBackupIndex = backups.length - 1
@@ -48,7 +49,7 @@ export function BackupModal({
   const startBackup = useMutation({
     mutationFn: async (accountId: string) => {
       setIsBackingUp(true)
-      await apiPost(`/backups/${accountId}/start`, {})
+      await apiPost(`/backups/${accountId}/start`, {}, "local")
       return accountId
     },
     onMutate: async () => {
@@ -62,7 +63,6 @@ export function BackupModal({
 
       if (err instanceof ApiError) {
         const errMessage = err?.data?.detail || err?.data?.message || err.message
-
         console.error(`Backup Error: ${errMessage}`);
         toast.error(`Backup Error: ${errMessage}`)
       } else {
@@ -71,16 +71,10 @@ export function BackupModal({
       }
     },
     onSuccess: () => {
-      onBackupComplete()
-      onOpenChange(false)
-      setBackupStatus("success")
-      setBackupProgress(100)
-
-      toast.success("Backup completed successfully")
+      toast.success("Backup started successfully")
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] })
-      setIsBackingUp(false)
     }
   })
 
@@ -90,6 +84,39 @@ export function BackupModal({
       startBackup.mutate(account.id);
     }
   }
+
+  // 🔹 WebSocket connection for real-time progress
+  useEffect(() => {
+    console.log("account", account)
+    if (!account) return
+
+    const ws = new WebSocket(`ws://localhost:8001/backups/${account.id}/progress`)
+
+    ws.onopen = () => console.log("Backup WebSocket opened")
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      console.log("Backup Progress:", data)
+      if (data.percent !== undefined) {
+        console.log("Backup Progress:", data.percent)
+        setBackupProgress(data.percent)
+        setStepText(data.step)
+      }
+      if (data.status === "completed") {
+        setBackupStatus("success")
+        setIsBackingUp(false)
+        onBackupComplete()
+        toast.success("Backup completed successfully")
+      }
+    }
+
+    ws.onclose = () => console.log("Backup WebSocket closed")
+    ws.onerror = (err) => {
+      setBackupStatus("error")
+      toast.error("Backup connection failed")
+    }
+
+    return () => ws.close()
+  }, [account])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -119,7 +146,7 @@ export function BackupModal({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <p className="text-sm text-foreground">Creating backup...</p>
+                <p className="text-sm text-foreground">{stepText}</p>
               </div>
               <Progress value={backupProgress} className="h-2" />
               <p className="text-xs text-muted-foreground">{backupProgress}% complete</p>
