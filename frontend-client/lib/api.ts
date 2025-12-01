@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const LOCAL_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const MASTER_API_URL = process.env.NEXT_PUBLIC_MASTER_API_URL || "http://localhost:8000";
 
 interface ApiErrorDetails {
   detail?: string;
@@ -18,22 +19,42 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(endpoint: string, apiType: "local" | "master" = "local"): Promise<T> {
-  const baseUrl = apiType === "master" ? "http://localhost:8000" : API_BASE;
+type ApiType = "local" | "master";
 
-  // Get auth token if using master API
-  const headers: HeadersInit = {};
+interface ApiConfig {
+  baseUrl: string;
+  headers: HeadersInit;
+}
+
+function getApiConfig(apiType: ApiType): ApiConfig {
+  const baseUrl = apiType === "master" ? MASTER_API_URL : LOCAL_API_URL;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
   if (apiType === "master") {
     const tokensStr = typeof window !== 'undefined' ? localStorage.getItem("auth_tokens") : null;
     if (tokensStr) {
       try {
         const tokens = JSON.parse(tokensStr);
-        headers["Authorization"] = `Bearer ${tokens.access}`;
+        if (tokens.access) {
+          headers["Authorization"] = `Bearer ${tokens.access}`;
+        }
       } catch (e) {
         // Silent fail
       }
     }
   }
+
+  return { baseUrl, headers };
+}
+
+export async function apiGet<T>(endpoint: string, apiType: ApiType = "master"): Promise<T> {
+  const { baseUrl, headers } = getApiConfig(apiType);
+
+  // GET requests usually don't have Content-Type, but it doesn't hurt. 
+  // However, we should remove it if it causes issues with some servers.
+  // For now, keeping it as getApiConfig adds it.
 
   const res = await fetch(`${baseUrl}${endpoint}`, { headers });
   if (!res.ok) throw new Error(`Failed to fetch ${endpoint}: ${res.status}`);
@@ -43,12 +64,13 @@ export async function apiGet<T>(endpoint: string, apiType: "local" | "master" = 
 export async function apiPost<T, B>(
   endpoint: string,
   body: B,
-  apiType: "local" | "master" = "local"
+  apiType: ApiType = "master"
 ): Promise<T> {
-  const baseUrl = apiType === "master" ? "http://localhost:8000" : API_BASE;
+  const { baseUrl, headers } = getApiConfig(apiType);
+
   const res = await fetch(`${baseUrl}${endpoint}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -70,20 +92,32 @@ export async function apiPost<T, B>(
   return data as T;
 }
 
-export async function apiPut<T, B>(endpoint: string, body: B): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+export async function apiPut<T, B>(
+  endpoint: string,
+  body: B,
+  apiType: ApiType = "master"
+): Promise<T> {
+  const { baseUrl, headers } = getApiConfig(apiType);
+
+  const res = await fetch(`${baseUrl}${endpoint}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Failed to put to ${endpoint}: ${res.status}`);
   return res.json();
 }
 
-export async function apiDelete<T, B>(endpoint: string, body?: B): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+export async function apiDelete<T, B>(
+  endpoint: string,
+  body?: B,
+  apiType: ApiType = "master"
+): Promise<T> {
+  const { baseUrl, headers } = getApiConfig(apiType);
+
+  const res = await fetch(`${baseUrl}${endpoint}`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
+    headers,
     ...(body && { body: JSON.stringify(body) })
   });
   if (!res.ok) throw new Error(`Failed to delete ${endpoint}: ${res.status}`);

@@ -4,10 +4,8 @@ from modules.core.runner import run_automation
 from modules.crud.account import get_account_by_id
 from pydantic import BaseModel
 from typing import List
-from modules.database import SessionLocal
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
-db = SessionLocal()
 
 class AutomationRequest(BaseModel):
     account_ids: List[int]

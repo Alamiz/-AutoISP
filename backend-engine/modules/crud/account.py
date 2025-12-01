@@ -1,6 +1,4 @@
 import httpx
-from modules.schemas.account import AccountCreate, AccountUpdate
-from modules.core.logging_config import ContextLogger
 from fastapi.exceptions import HTTPException
 import logging
 

@@ -17,6 +17,13 @@ export const auth = {
         localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
         // Also set cookie for middleware
         document.cookie = `auth_tokens=${JSON.stringify(tokens)}; path=/; max-age=${60 * 60 * 24 * 7}`;
+
+        // Sync token to local backend
+        try {
+            await apiPost("/auth/set-token", { access_token: tokens.access }, "local");
+        } catch (error) {
+            console.error("Failed to sync token to local backend:", error);
+        }
     },
 
     logout() {
