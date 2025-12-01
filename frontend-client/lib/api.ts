@@ -120,6 +120,12 @@ export async function apiDelete<T, B>(
     headers,
     ...(body && { body: JSON.stringify(body) })
   });
+
+  // Throw error if not ok
   if (!res.ok) throw new Error(`Failed to delete ${endpoint}: ${res.status}`);
+
+  // Return null if no content
+  if (res.status === 204) return null as any;
+
   return res.json();
 }

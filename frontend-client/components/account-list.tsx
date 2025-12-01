@@ -12,7 +12,7 @@ import { BulkUploader } from "./bulk-uploader"
 import { AccountHistoryModal } from "./account-history-modal"
 import { apiDelete, apiGet } from "@/lib/api"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Account, HistoryEntry } from "@/lib/types"
+import { Account, HistoryEntry, PaginatedResponse } from "@/lib/types"
 import { BackupModal } from "./backup-modal"
 import { RestoreModal } from "./restore-modal"
 import { formatBytes } from "@/utils/formatters"
@@ -33,8 +33,8 @@ export function AccountList() {
   const { data: accounts } = useQuery<Account[]>({
     queryKey: ["accounts"],
     queryFn: async () => {
-      const data = await apiGet<Account[]>("/accounts");
-      return data;
+      const data = await apiGet<PaginatedResponse<Account>>("/api/accounts");
+      return data.results;
     }
   })
 
@@ -44,16 +44,14 @@ export function AccountList() {
 
   const getStatusColor = (status: Account["status"]) => {
     switch (status) {
-      case "running":
+      case "active":
         return "bg-green-500/10 text-green-400 border-green-500/20"
-      case "error":
-        return "bg-red-500/10 text-red-400 border-red-500/20"
+      case "inactive":
+        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
       case "disabled":
         return "bg-gray-600/10 text-gray-400 border-gray-500/20"
-      case "idle":
-        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-      case "new":
-        return "bg-blue-500/10 text-blue-400 border-blue-500/20"
+      case "error":
+        return "bg-red-500/10 text-red-400 border-red-500/20"
       default:
         return "bg-slate-500/10 text-slate-400 border-slate-500/20"
     }
@@ -79,7 +77,7 @@ export function AccountList() {
 
   const deleteAccount = useMutation({
     mutationFn: async (accountId: string) => {
-      await apiDelete(`/accounts/${accountId}`)
+      await apiDelete(`/api/accounts/${accountId}/`)
       return accountId
     },
 
@@ -108,7 +106,7 @@ export function AccountList() {
 
   const bulkDeleteAccounts = useMutation({
     mutationFn: async (accountIds: string[]) => {
-      await apiDelete('/accounts/bulk', accountIds)
+      await apiDelete('/api/accounts/bulk-upload', accountIds)
       return accountIds
     },
     onMutate: async (accountIds: string[]) => {
@@ -209,8 +207,8 @@ export function AccountList() {
         <CardContent>
           <div className="space-y-3">
             {accounts?.map((account) => {
-              const lastBackup = account.backups[account.backups.length - 1];
-              const hasBackup = lastBackup && lastBackup.filename;
+              // const lastBackup = account.backups[account.backups.length - 1];
+              // const hasBackup = lastBackup && lastBackup.filename;
 
               return (
                 <div
@@ -230,12 +228,12 @@ export function AccountList() {
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Last: {new Date(account.activities[account.activities.length - 1].executed_at).toLocaleString() ?? "Nan"}</span>
+                      {/* <span>Last: {new Date(account.activities[account.activities.length - 1].executed_at).toLocaleString() ?? "Nan"}</span> */}
                       <Badge className={getStatusColor(account.status)}>{account.status}</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">{account.latestAutomation}</p>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">{account.latest_automation}</p>
                     <div className="flex flex-wrap items-center mt-2 gap-2 text-xs">
-                      <Database
+                      {/* <Database
                         className={`h-3 w-3 ${hasBackup ? "text-green-400" : "text-muted-foreground"}`}
                       />
                       <span className={`text-xs ${hasBackup ? "text-green-400" : "text-muted-foreground"}`}>
@@ -249,7 +247,7 @@ export function AccountList() {
                         ) : (
                           "No backup"
                         )}
-                      </span>
+                      </span> */}
                     </div>
                   </div>
 
@@ -272,12 +270,12 @@ export function AccountList() {
                         <DropdownMenuSubContent className="bg-popover border-border">
                           <DropdownMenuItem onClick={() => setBackupAccount(account)}>
                             <Database className="h-4 w-4 mr-2" />
-                            {account.backups.length > 0 ? "Update Backup" : "Create Backup"}
+                            {/* {account.backups.length > 0 ? "Update Backup" : "Create Backup"} */}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setRestoreAccount(account)} disabled={!account.backups[account.backups.length - 1]?.filename}>
+                          {/* <DropdownMenuItem onClick={() => setRestoreAccount(account)} disabled={!account.backups[account.backups.length - 1]?.filename}>
                             <RotateCcw className="h-4 w-4 mr-2" />
                             Restore Backup
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
                       <DropdownMenuItem onClick={() => handleEditAccount(account)}>

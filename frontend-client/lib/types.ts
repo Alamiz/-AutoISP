@@ -1,3 +1,10 @@
+export interface PaginatedResponse<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
+}
+
 export interface HistoryEntry {
   id: number
   action: string
@@ -19,13 +26,28 @@ export interface Backup {
 export interface Account {
   id: string;
   email: string;
-  password: string;
+  credentials: {
+    password: string;
+    number?: string;
+    recovery_email?: string;
+  };
   label: string;
-  lastChecked: string;
-  status: "idle" | "running" | "error" | "disabled" | "new";
-  latestAutomation: string;
+  last_sync: string;
+  status: "active" | "inactive" | "error" | "disabled";
+  latest_automation: string;
+  provider: "gmx" | "webde";
+  type: "desktop" | "mobile";
+  proxy_settings: {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    protocol: "http" | "https";
+  };
   activities: HistoryEntry[];
   backups: Backup[];
+  created_at: string;
+  updated_at: string;
 }
 
 

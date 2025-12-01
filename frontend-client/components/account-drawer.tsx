@@ -10,16 +10,10 @@ import { Eye, EyeOff, Shield } from "lucide-react"
 import { useFormik } from "formik";
 import { accountSchema } from "@/lib/validation/accountSchema"
 import { apiPost, apiPut } from "@/lib/api"
-
-interface Account {
-  id: string
-  email: string
-  password: string
-  label: string
-  lastChecked: string
-  status: "idle" | "running" | "error" | "disabled" | "new"
-  latestAutomation: string
-}
+import { Account } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface AccountDrawerProps {
   open: boolean
@@ -35,14 +29,23 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
       email: "",
       password: "",
       label: "",
+      provider: "gmx",
+      type: "desktop",
+      recovery_email: "",
+      number: "",
+      proxy_host: "",
+      proxy_port: "",
+      proxy_username: "",
+      proxy_password: "",
+      proxy_protocol: "http",
     },
     validationSchema: accountSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
         if (editingAccount)
-          await updateAccount()
+          await updateAccount(values)
         else
-          await addAccount()
+          await addAccount(values)
 
         onOpenChange(false)
         resetForm()
@@ -57,124 +60,281 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
 
   useEffect(() => {
     if (editingAccount) {
-      formik.setFieldValue("email", editingAccount.email)
-      formik.setFieldValue("password", editingAccount.password)
-      formik.setFieldValue("label", editingAccount.label)
+      formik.setValues({
+        email: editingAccount.email,
+        password: editingAccount.credentials.password,
+        label: editingAccount.label,
+        provider: editingAccount.provider || "gmx",
+        type: editingAccount.type || "desktop",
+        recovery_email: editingAccount.credentials.recovery_email || "",
+        number: editingAccount.credentials.number || "",
+        proxy_host: editingAccount.proxy_settings?.host || "",
+        proxy_port: editingAccount.proxy_settings?.port?.toString() || "",
+        proxy_username: editingAccount.proxy_settings?.username || "",
+        proxy_password: editingAccount.proxy_settings?.password || "",
+        proxy_protocol: editingAccount.proxy_settings?.protocol || "http",
+      })
     } else {
       formik.resetForm()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingAccount])
 
-  async function addAccount() {
-    await apiPost("/accounts", {
-      email: formik.values.email,
-      password: formik.values.password,
-      label: formik.values.label,
+  async function addAccount(values: any) {
+    await apiPost("/api/accounts/", {
+      email: values.email,
+      provider: values.provider,
+      type: values.type,
+      credentials: {
+        password: values.password,
+        recovery_email: values.recovery_email || undefined,
+        number: values.number || undefined,
+      },
+      proxy_settings: values.proxy_host ? {
+        host: values.proxy_host,
+        port: parseInt(values.proxy_port),
+        username: values.proxy_username || undefined,
+        password: values.proxy_password || undefined,
+        protocol: values.proxy_protocol,
+      } : undefined,
+      label: values.label,
     })
   }
 
-  async function updateAccount() {
-    await apiPut(`/accounts/${editingAccount?.id}`, {
-      password: formik.values.password,
-      label: formik.values.label,
+  async function updateAccount(values: any) {
+    await apiPut(`/api/accounts/${editingAccount?.id}/`, {
+      credentials: {
+        password: values.password,
+        recovery_email: values.recovery_email || undefined,
+        number: values.number || undefined,
+      },
+      provider: values.provider,
+      type: values.type,
+      proxy_settings: values.proxy_host ? {
+        host: values.proxy_host,
+        port: parseInt(values.proxy_port),
+        username: values.proxy_username || undefined,
+        password: values.proxy_password || undefined,
+        protocol: values.proxy_protocol,
+      } : undefined,
+      label: values.label,
     })
   }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="bg-card border-border p-4">
-        <SheetHeader>
-          <SheetTitle className="text-foreground">
-            {editingAccount ? "Edit Gmail Account" : "Add Gmail Account"}
-          </SheetTitle>
-          <SheetDescription className="text-muted-foreground">
-            {editingAccount
-              ? "Update account details. Password changes require re-authentication."
-              : "Add a new Gmail account for automation. Credentials are encrypted at rest."}
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent className="bg-card border-border p-0 sm:max-w-md w-full">
+        <div className="p-6 pb-2">
+          <SheetHeader>
+            <SheetTitle className="text-foreground">
+              {editingAccount ? "Edit Account" : "Add Account"}
+            </SheetTitle>
+            <SheetDescription className="text-muted-foreground">
+              {editingAccount
+                ? "Update account details."
+                : "Add a new account for automation."}
+            </SheetDescription>
+          </SheetHeader>
+        </div>
 
-        <Alert className="mt-4 border-border bg-accent/20">
-          <Shield className="h-4 w-4" />
-          <AlertDescription className="text-sm text-muted-foreground">
-            <strong>Security:</strong> Passwords are encrypted using AES-256 and stored in a secure database. Consider
-            using App Passwords for enhanced security.
-          </AlertDescription>
-        </Alert>
+        <ScrollArea className="h-[calc(100vh-140px)] px-4 ">
+          <form onSubmit={formik.handleSubmit} className="space-y-6 pb-6">
+            <Tabs defaultValue="general" className="w-full px-2">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="security">Security</TabsTrigger>
+                <TabsTrigger value="proxy">Proxy</TabsTrigger>
+              </TabsList>
 
-        <form onSubmit={formik.handleSubmit} className="space-y-6 mt-6">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-foreground">
-              Email Address
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="user@gmail.com"
-              className="bg-input border-border"
-              disabled={!!editingAccount} // Disable email editing
-            />
-          </div>
+              <TabsContent value="general" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...formik.getFieldProps("email")}
+                    disabled={!!editingAccount}
+                    className="bg-input border-border"
+                  />
+                  {formik.touched.email && formik.errors.email && (
+                    <div className="text-red-500 text-xs">{formik.errors.email}</div>
+                  )}
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-foreground">
-              Password {editingAccount && "(leave unchanged to keep current)"}
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={formik.values.password}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                placeholder={editingAccount ? "••••••••" : "Enter password"}
-                className="bg-input border-border pr-10"
-              />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="provider">Provider</Label>
+                    <Select
+                      onValueChange={(value) => formik.setFieldValue("provider", value)}
+                      value={formik.values.provider}
+                    >
+                      <SelectTrigger className="bg-input border-border">
+                        <SelectValue placeholder="Select provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gmx">GMX</SelectItem>
+                        <SelectItem value="webde">WEB.DE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Type</Label>
+                    <Select
+                      onValueChange={(value) => formik.setFieldValue("type", value)}
+                      value={formik.values.type}
+                    >
+                      <SelectTrigger className="bg-input border-border">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desktop">Desktop</SelectItem>
+                        <SelectItem value="mobile">Mobile</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="label">Label (Optional)</Label>
+                  <Input
+                    id="label"
+                    {...formik.getFieldProps("label")}
+                    className="bg-input border-border"
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="security" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      {...formik.getFieldProps("password")}
+                      className="bg-input border-border pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {formik.touched.password && formik.errors.password && (
+                    <div className="text-red-500 text-xs">{formik.errors.password}</div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="recovery_email">Recovery Email (Optional)</Label>
+                  <Input
+                    id="recovery_email"
+                    type="email"
+                    {...formik.getFieldProps("recovery_email")}
+                    className="bg-input border-border"
+                  />
+                  {formik.touched.recovery_email && formik.errors.recovery_email && (
+                    <div className="text-red-500 text-xs">{formik.errors.recovery_email}</div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="number">Phone Number (Optional)</Label>
+                  <Input
+                    id="number"
+                    {...formik.getFieldProps("number")}
+                    className="bg-input border-border"
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="proxy" className="space-y-4 mt-4">
+                <Alert className="border-border bg-accent/20 mb-4">
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription className="text-xs text-muted-foreground">
+                    Configure proxy settings if this account requires a specific IP address.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="proxy_host">Host</Label>
+                    <Input
+                      id="proxy_host"
+                      {...formik.getFieldProps("proxy_host")}
+                      className="bg-input border-border"
+                      placeholder="1.2.3.4"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="proxy_port">Port</Label>
+                    <Input
+                      id="proxy_port"
+                      type="number"
+                      {...formik.getFieldProps("proxy_port")}
+                      className="bg-input border-border"
+                      placeholder="8080"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="proxy_protocol">Protocol</Label>
+                  <Select
+                    onValueChange={(value) => formik.setFieldValue("proxy_protocol", value)}
+                    value={formik.values.proxy_protocol}
+                  >
+                    <SelectTrigger className="bg-input border-border">
+                      <SelectValue placeholder="Select protocol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="http">HTTP</SelectItem>
+                      <SelectItem value="https">HTTPS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="proxy_username">Username (Optional)</Label>
+                  <Input
+                    id="proxy_username"
+                    {...formik.getFieldProps("proxy_username")}
+                    className="bg-input border-border"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="proxy_password">Password (Optional)</Label>
+                  <Input
+                    id="proxy_password"
+                    type="password"
+                    {...formik.getFieldProps("proxy_password")}
+                    className="bg-input border-border"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex gap-3 pt-4">
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="flex-1 border-border hover:bg-accent"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                Cancel
+              </Button>
+              <Button type="submit" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={formik.isSubmitting || formik.isValidating || !formik.isValid}>
+                {editingAccount ? "Update Account" : "Add Account"}
               </Button>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="label" className="text-foreground">
-              Label (Optional)
-            </Label>
-            <Input
-              id="label"
-              value={formik.values.label}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              placeholder="e.g., Primary, Marketing, Support"
-              className="bg-input border-border"
-              required={false}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1 border-border hover:bg-accent"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" disabled={formik.isSubmitting}>
-              {editingAccount ? "Update Account" : "Add Account"}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   )
