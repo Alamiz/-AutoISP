@@ -16,6 +16,7 @@ class GMXAuthentication(HumanAction):
     # Define the flow map: page_identifier -> handler_method
     FLOW_MAP = {
         "gmx_register_page": "handle_register_page",
+        "gmx_logged_in_page": "handle_logged_in_page",
         "gmx_login_page": "handle_login_page",
         "gmx_folder_list_page": "handle_folder_list_page",
         "unknown": "handle_unknown_page"
@@ -48,6 +49,7 @@ class GMXAuthentication(HumanAction):
         self.flow_handler = GMXFlowHandler(self, email, password)
 
 
+    @retry(max_retries=3, delay=5, required=True)
     def execute(self) -> bool:
         """
         Runs authentication flow for GMX
@@ -84,7 +86,6 @@ class GMXAuthentication(HumanAction):
             # Close browser
             self.browser.close()
 
-    @retry(max_retries=3, delay=5, required=True)
     def authenticate(self, page: Page):
         """
         State-based authentication flow

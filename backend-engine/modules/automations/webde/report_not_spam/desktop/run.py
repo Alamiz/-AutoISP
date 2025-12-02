@@ -1,47 +1,43 @@
 import logging
 from playwright.sync_api import Page
+from automations.webde.authenticate.desktop.run import WebDEAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.decorators import retry, RequiredActionFailed
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
-from ..desktop.flows import WebdeFlowHandler
-import time
+from .flows import ReportNotSpamFlowHandler
+from automations.webde.signatures.desktop import PAGE_SIGNATURES
 
-
-class WebDEAuthentication(HumanAction):
+class ReportNotSpam(HumanAction):
     """
-    State-based Webde authentication orchestrator
+    State-based WebDE report not spam orchestrator
     """
     
     # Define the flow map: page_identifier -> handler_method
     FLOW_MAP = {
-        "webde_login_page": "handle_login_page",
-        "webde_logged_in_page": "handle_logged_in_page",
-        "webde_inbox_ads_preferences_popup_1_core": "handle_inbox_ads_preferences_popup_1",
-        "webde_inbox_ads_preferences_popup_1": "handle_inbox_ads_preferences_popup_1",
-        "webde_inbox_ads_preferences_popup_2": "handle_inbox_ads_preferences_popup_2",
-        "webde_inbox_smart_features_popup": "handle_inbox_smart_features_popup",
         "webde_inbox": "handle_inbox_page",
+        "webde_spam": "handle_spam_page",
         "unknown": "handle_unknown_page"
     }
     
-    # Define goal states (authentication is complete)
-    GOAL_STATES = {"webde_inbox"}
+    # Define goal states (report not spam is complete)
+    GOAL_STATES = {"task_completed"}
     
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 10
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", signatures=None):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", search_text=None):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
-        self.signatures = signatures
-        
+        self.search_text = search_text
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
-        
+        self.signatures = PAGE_SIGNATURES
+        self.action_completed = False
+
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
             proxy_config=proxy_config,
@@ -49,23 +45,12 @@ class WebDEAuthentication(HumanAction):
         )
         
         # Initialize flow handler
-        self.flow_handler = WebdeFlowHandler(self, email, password)
-
+        self.flow_handler = ReportNotSpamFlowHandler(self, email, password, search_text)
 
     @retry(max_retries=3, delay=5, required=True)
-    def execute(self) -> bool:
-        """
-        Runs authentication flow for Webde
-        """
-        self.logger.info(f"Starting authentication flow for {self.email}")
+    def execute(self):
+        self.logger.info(f"Starting Report Not Spam for {self.email}")
         
-        # Log proxy usage if configured
-        if self.proxy_config:
-            proxy_info = f"{self.proxy_config['type']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
-            if 'username' in self.proxy_config:
-                proxy_info = f"{self.proxy_config['type']}://{self.proxy_config['username']}:***@{self.proxy_config['host']}:{self.proxy_config['port']}"
-            self.logger.info(f"Using proxy: {proxy_info}")
-
         try:
             # Start browser with proxy configuration
             self.browser.start()
@@ -73,40 +58,34 @@ class WebDEAuthentication(HumanAction):
             # Create new page
             page = self.browser.new_page()
             
-            # Authenticate using state-based flow
-            self.authenticate(page)
+            # Authenticate first
+            # We reuse the authentication automation to get us to the inbox
+            webde_auth = WebDEAuthentication(self.email, self.password, self.proxy_config, self.user_agent_type, signatures=self.signatures)
+            webde_auth.authenticate(page)
+
+            # Report not spam using state-based flow
+            self.report_not_spam(page)
             
-            self.logger.info(f"Authentication successful for {self.email}")
-            return True
+            self.logger.info(f"Report not spam successful for {self.email}")
+            return {"status": "success", "message": "Reported not spam"}
         
         except RequiredActionFailed as e:
-            self.logger.error(f"Authentication failed for {self.email}: {e}")
-            return False
+            self.logger.error(f"Report not spam failed for {self.email}: {e}")
+            return {"status": "failed", "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error for {self.email}: {e}")
-            return False
+            return {"status": "error", "message": str(e)}
         finally:
             # Close browser
             self.browser.close()
 
-    def authenticate(self, page: Page):
+    def report_not_spam(self, page: Page):
         """
-        State-based authentication flow
+        State-based report not spam flow
         Automatically handles different page states until reaching goal state
         """
-        # Navigate to Webde
-        page.goto("https://web.de/")
-        self.human_behavior.read_delay()
-        # page.wait_for_timeout(100_100_100)
-
-        # page.wait_for_timeout(15_000)
-
-        current_page_id = identify_page(page, page.url, self.signatures)
-        self.logger.info(f"Current page: {current_page_id}")
-
-
-        # page.wait_for_timeout(100_100_100)
-
+        # We assume we are already authenticated and likely at inbox
+        
         iteration = 0
         current_page_id = None
         
@@ -115,9 +94,14 @@ class WebDEAuthentication(HumanAction):
             
             # Identify current page
             current_page_id = identify_page(page, page.url, self.signatures)
+            
+            # Override state if action is completed
+            if self.action_completed:
+                current_page_id = "task_completed"
+                
             self.logger.info(f"[Iteration {iteration}] Current page: {current_page_id}")
             
-            # Check if we've reached a goal state
+            # Check if we've reached goal state
             if current_page_id in self.GOAL_STATES:
                 self.logger.info(f"Goal state reached: {current_page_id}")
                 return
@@ -139,4 +123,3 @@ class WebDEAuthentication(HumanAction):
             f"Failed to reach goal state after {self.MAX_FLOW_ITERATIONS} iterations. "
             f"Last page: {current_page_id}"
         )
-

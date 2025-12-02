@@ -777,7 +777,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Active spam button",
                 "css_selector": 'div.sidebar-folder__container--active button.sidebar-folder-icon-spam',
-                # "iframe_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,

@@ -8,7 +8,7 @@ from .flows import WebdeFlowHandler
 import time
 
 
-class WebdeAuthentication(HumanAction):
+class WebDEAuthentication(HumanAction):
     """
     State-based Webde authentication orchestrator
     """
@@ -51,6 +51,7 @@ class WebdeAuthentication(HumanAction):
         self.flow_handler = WebdeFlowHandler(self, email, password)
 
 
+    @retry(max_retries=3, delay=5, required=True)
     def execute(self) -> bool:
         """
         Runs authentication flow for Webde
@@ -87,7 +88,6 @@ class WebdeAuthentication(HumanAction):
             # Close browser
             self.browser.close()
 
-    @retry(max_retries=3, delay=5, required=True)
     def authenticate(self, page: Page):
         """
         State-based authentication flow
@@ -142,5 +142,5 @@ class WebdeAuthentication(HumanAction):
 
 def main(email, password, proxy_config=None, device_type="desktop"):
     """Entry point for Webde authentication"""
-    auth = WebdeAuthentication(email, password, proxy_config, device_type)
+    auth = WebDEAuthentication(email, password, proxy_config, device_type)
     return auth.execute()

@@ -1,9 +1,9 @@
 # automations/webde/authenticate/loader.py
-from .desktop.run import WebdeAuthentication as DesktopAuth
-from .mobile.run import WebdeAuthentication as MobileAuth
+from .desktop.run import WebDEAuthentication as DesktopAuth
+from .mobile.run import WebDEAuthentication as MobileAuth
 from ..signatures import desktop as desktop_signatures, mobile as mobile_signatures
 
-def run(email, password, device_type="desktop", proxy_config=None):
+def run(email, password, device_type="desktop", proxy_config=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     """

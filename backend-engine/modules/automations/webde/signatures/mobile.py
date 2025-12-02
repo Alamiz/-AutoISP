@@ -59,6 +59,66 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "webde_logged_in_page": {
+        "description": "WebDE Logged In page.",
+        "required_sublink": "www.web.de",
+        "checks": [
+            {
+                "name": "Register button",
+                "css_selector": 'button.register__button',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Account avatar",
+                "css_selector": 'div.login-wrapper  > account-avatar',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+            {
+                "name": "Login button",
+                "css_selector": 'form.login-link.login-mobile > button[type="submit"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+            {
+                "name": "Email input",
+                "css_selector": 'form[action*="registrierung.gmx.net"] input[type="text"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Register button",
+                "css_selector": 'form[action*="registrierung.gmx.net"] button[type="submit"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_login_page": {
         "description": "Webde Login page.",
         "required_sublink": "auth.web.de/login/mobile",
@@ -352,7 +412,7 @@ PAGE_SIGNATURES = {
             {
                 "name": "Folder title",
                 "css_selector": 'div.message-list-panel__navigation-bar li.toolbar__content a',
-                "contains_text": "Spamverdacht",
+                "contains_text": "Spam",
                 "min_count": 1,
                 "require_english": False,
                 "description": "",

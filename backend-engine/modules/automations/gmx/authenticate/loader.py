@@ -3,7 +3,7 @@ from .desktop.run import GMXAuthentication as DesktopAuth
 from .mobile.run import GMXAuthentication as MobileAuth
 from ..signatures import desktop as desktop_signatures, mobile as mobile_signatures
 
-def run(email, password, device_type="desktop", proxy_config=None):
+def run(email, password, device_type="desktop", proxy_config=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     """

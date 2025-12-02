@@ -30,6 +30,34 @@ class GMXFlowHandler:
         
         return "gmx_login_page"  # Expected next page
 
+    def handle_logged_in_page(self, page: Page) -> str:
+        """
+        Handle GMX logged in page - full authentication flow (mobile)
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected logged in page - starting mobile full authentication")
+        
+        # Click profile avatar
+        self.human_action.human_click(
+            page,
+            selectors=['div.login-wrapper  > account-avatar'],
+        )
+                
+        page.wait_for_timeout(2000)
+        self.logger.info("Profile avatar clicked successfully")
+        
+        # Click continue to inbox button
+        self.human_action.human_click(
+            page,
+            selectors=['div#appa-account-flyout > section.account-avatar__flyout-content > section.appa-account-avatar__buttons > button:nth-of-type(2)'],
+            deep_search=True
+        )
+                
+        page.wait_for_timeout(2000)
+        self.logger.info("Continue to inbox button clicked successfully")
+        
+        return "gmx_folder_list_page"  # Expected next page
+
     def handle_login_page(self, page: Page) -> str:
         """
         Handle GMX login page - full authentication flow

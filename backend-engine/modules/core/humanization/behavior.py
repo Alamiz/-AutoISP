@@ -71,3 +71,28 @@ class HumanBehavior:
         else:
             element.scroll_into_view_if_needed()
             self._random_delay(300, 600)
+    
+    def scroll_page_by(self, page: Page, y_amount: int):
+        """Scrolls the page by a given amount with human-like behavior."""
+        self._random_delay(200, 500)  # Delay before starting scroll
+
+        # Simulate scrolling in smaller, random steps
+        current_scroll_y = page.evaluate("() => window.scrollY")
+        target_scroll_y = current_scroll_y + y_amount
+
+        direction = 1 if y_amount > 0 else -1
+        remaining_scroll = abs(y_amount)
+
+        while remaining_scroll > 0:
+            step_size = random.randint(50, 200)  # Scroll in chunks of 50-200 pixels
+            if step_size > remaining_scroll:
+                step_size = remaining_scroll
+
+            scroll_by = step_size * direction
+            page.evaluate(f"window.scrollBy(0, {scroll_by})")
+            remaining_scroll -= step_size
+
+            # Random delay between scroll steps
+            self._random_delay(50, 150)  # Short delay between steps
+
+        self._random_delay(200, 500)  # Delay after finishing scroll

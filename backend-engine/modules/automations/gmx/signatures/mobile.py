@@ -4,6 +4,16 @@ PAGE_SIGNATURES = {
         "required_sublink": "www.gmx.net",
         "checks": [
             {
+                "name": "Account avatar",
+                "css_selector": 'div.login-wrapper  > account-avatar',
+                "deep_search": True,
+                "contains_text": None,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": False
+            },
+            {
                 "name": "Register button",
                 "css_selector": 'button.register__button',
                 "deep_search": True,
@@ -23,6 +33,66 @@ PAGE_SIGNATURES = {
                 "require_english": False,
                 "description": "",
                 "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Login button",
+                "css_selector": 'form.login-link.login-mobile > button[type="submit"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+            {
+                "name": "Email input",
+                "css_selector": 'form[action*="registrierung.gmx.net"] input[type="text"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Register button",
+                "css_selector": 'form[action*="registrierung.gmx.net"] button[type="submit"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_logged_in_page": {
+        "description": "GMX Logged In page.",
+        "required_sublink": "www.gmx.net",
+        "checks": [
+            {
+                "name": "Register button",
+                "css_selector": 'button.register__button',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Account avatar",
+                "css_selector": 'div.login-wrapper  > account-avatar',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
                 "should_exist": True
             },
             {
@@ -107,7 +177,7 @@ PAGE_SIGNATURES = {
     },
     "gmx_folder_list_page": {
         "description": "GMX folder list page.",
-        "required_sublink": "lightmailer-bs.gmx.net/folderlist",
+        "required_sublink": "gmx.net/folderlist",
         "checks": [
             {
                 "name": "Logout button",

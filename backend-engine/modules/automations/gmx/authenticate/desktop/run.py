@@ -51,6 +51,7 @@ class GMXAuthentication(HumanAction):
         self.flow_handler = GMXFlowHandler(self, email, password)
 
 
+    @retry(max_retries=3, delay=5, required=True)
     def execute(self) -> bool:
         """
         Runs authentication flow for GMX
@@ -87,7 +88,6 @@ class GMXAuthentication(HumanAction):
             # Close browser
             self.browser.close()
 
-    @retry(max_retries=3, delay=5, required=True)
     def authenticate(self, page: Page):
         """
         State-based authentication flow
@@ -96,7 +96,7 @@ class GMXAuthentication(HumanAction):
         # Navigate to GMX
         page.goto("https://www.gmx.net/")
         self.human_behavior.read_delay()
-        page.wait_for_timeout(100_100_100)
+        # page.wait_for_timeout(100_100_100)
 
         current_page_id = identify_page(page, page.url, self.signatures)
         self.logger.info(f"Current page: {current_page_id}")
