@@ -108,6 +108,37 @@ export async function apiPut<T, B>(
   return res.json();
 }
 
+export async function apiPatch<T, B>(
+  endpoint: string,
+  body: B,
+  apiType: ApiType = "master"
+): Promise<T> {
+  const { baseUrl, headers } = getApiConfig(apiType);
+
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  let data: ApiErrorDetails | T | null = null;
+  try {
+    data = (await res.json()) as T;
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const message =
+      (data as ApiErrorDetails)?.detail ||
+      (data as ApiErrorDetails)?.message ||
+      `Failed to patch to ${endpoint}: ${res.status}`;
+    throw new ApiError(message, res.status, data as ApiErrorDetails);
+  }
+
+  return data as T;
+}
+
 export async function apiDelete<T, B>(
   endpoint: string,
   body?: B,

@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Shield } from "lucide-react"
 import { useFormik } from "formik";
 import { accountSchema } from "@/lib/validation/accountSchema"
-import { apiPost, apiPut } from "@/lib/api"
+import { apiPatch, apiPost, apiPut } from "@/lib/api"
 import { Account } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -102,7 +102,7 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
   }
 
   async function updateAccount(values: any) {
-    await apiPut(`/api/accounts/${editingAccount?.id}/`, {
+    await apiPatch(`/api/accounts/${editingAccount?.id}/`, {
       credentials: {
         password: values.password,
         recovery_email: values.recovery_email || undefined,
