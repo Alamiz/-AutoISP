@@ -96,7 +96,7 @@ class GMXAuthentication(HumanAction):
         # Navigate to GMX
         page.goto("https://www.gmx.net/")
         self.human_behavior.read_delay()
-        page.wait_for_timeout(100_100_100)
+        # page.wait_for_timeout(100_100_100)
 
         current_page_id = identify_page(page, page.url, self.signatures)
         self.logger.info(f"Current page: {current_page_id}")
