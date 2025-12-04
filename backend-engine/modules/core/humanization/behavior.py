@@ -54,6 +54,21 @@ class HumanBehavior:
         
         element.click(force=force)
     
+    def select(self, element: Locator, value: str):
+        """Select option in dropdown with human-like behavior"""
+        # Small delay before interacting with the dropdown
+        self._random_delay(*self.mouse_move_duration_range)
+
+        # Occasionally hover before selecting
+        if random.random() > 0.7:  # 30% chance
+            element.hover()
+            self._random_delay(200, 500)
+
+        element.select_option(value)
+
+        # Small delay after selection
+        self._random_delay(100, 300)
+    
     def wait_before_action(self):
         """Random delay between actions (simulating human decision-making)"""
         self._random_delay(*self.action_delay_range)
@@ -62,15 +77,28 @@ class HumanBehavior:
         """Simulate reading/processing information"""
         self._random_delay(*self.reading_delay_range)
     
-    def scroll_into_view(self, element: Locator, smooth: bool = True):
-        """Scroll to element with human-like behavior"""
-        if smooth and random.random() > 0.5:
-            # Sometimes scroll past and then back
-            element.evaluate("el => el.scrollIntoView({behavior: 'smooth', block: 'center'})")
-            self._random_delay(500, 1000)
+    def scroll_into_view(self, element: Optional[Locator] = None, page: Optional[Page] = None, y_amount: Optional[int] = None, smooth: bool = True):
+        """
+        Scrolls to an element with human-like behavior, or scrolls the page by a defined amount.
+
+        If `element` is provided, it scrolls the element into view.
+        If `element` is None, and `page` and `y_amount` are provided, it scrolls the page by `y_amount`.
+        """
+        if element:
+            self._random_delay(200, 500)  # Delay before scrolling to element
+            if smooth and random.random() > 0.5:
+                # Sometimes scroll past and then back
+                element.evaluate("el => el.scrollIntoView({behavior: 'smooth', block: 'center'})")
+                self._random_delay(500, 1000)
+            else:
+                element.scroll_into_view_if_needed()
+                self._random_delay(300, 600)
+            self._random_delay(200, 500) # Delay after scrolling to element
+        elif page and y_amount is not None:
+            self.scroll_page_by(page, y_amount)
         else:
-            element.scroll_into_view_if_needed()
-            self._random_delay(300, 600)
+            # If neither element nor scroll amount is provided, just a small human-like delay
+            self._random_delay(100, 300)
     
     def scroll_page_by(self, page: Page, y_amount: int):
         """Scrolls the page by a given amount with human-like behavior."""

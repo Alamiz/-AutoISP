@@ -18,6 +18,8 @@ class GMXAuthentication(HumanAction):
         "gmx_register_page": "handle_register_page",
         "gmx_logged_in_page": "handle_logged_in_page",
         "gmx_login_page": "handle_login_page",
+        "gmx_inbox_ads_preferences_popup_1": "handle_inbox_ads_preferences_popup_1",
+        "gmx_inbox_ads_preferences_popup_2": "handle_inbox_ads_preferences_popup_2",
         "gmx_folder_list_page": "handle_folder_list_page",
         "unknown": "handle_unknown_page"
     }
@@ -94,13 +96,6 @@ class GMXAuthentication(HumanAction):
         # Navigate to GMX
         page.goto("https://lightmailer-bs.gmx.net/")
         self.human_behavior.read_delay()
-        # page.wait_for_timeout(100_100_100)
-
-        # page.wait_for_timeout(15_000)
-
-        current_page_id = identify_page(page, page.url, self.signatures)
-        self.logger.info(f"Current page: {current_page_id}")
-
 
         # page.wait_for_timeout(100_100_100)
 
@@ -111,6 +106,7 @@ class GMXAuthentication(HumanAction):
             iteration += 1
             
             # Identify current page
+            page.wait_for_timeout(10_000)
             current_page_id = identify_page(page, page.url, self.signatures)
             self.logger.info(f"[Iteration {iteration}] Current page: {current_page_id}")
             

@@ -17,6 +17,7 @@ class WebDEAuthentication(HumanAction):
     FLOW_MAP = {
         "webde_register_page": "handle_register_page",
         "webde_login_page": "handle_login_page",
+        "webde_logged_in_page": "handle_logged_in_page",
         "webde_inbox_ads_preferences_popup_1": "handle_inbox_ads_preferences_popup_1",
         "webde_inbox_ads_preferences_popup_2": "handle_inbox_ads_preferences_popup_2",
         # "webde_inbox_smart_features_popup": "handle_inbox_smart_features_popup",
@@ -98,14 +99,6 @@ class WebDEAuthentication(HumanAction):
         self.human_behavior.read_delay()
         # page.wait_for_timeout(100_100_100)
 
-        # page.wait_for_timeout(15_000)
-
-        current_page_id = identify_page(page, page.url, self.signatures)
-        self.logger.info(f"Current page: {current_page_id}")
-
-
-        # page.wait_for_timeout(100_100_100)
-
         iteration = 0
         current_page_id = None
         
@@ -113,6 +106,8 @@ class WebDEAuthentication(HumanAction):
             iteration += 1
             
             # Identify current page
+            page.wait_for_timeout(10_000)
+
             current_page_id = identify_page(page, page.url, self.signatures)
             self.logger.info(f"[Iteration {iteration}] Current page: {current_page_id}")
             

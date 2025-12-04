@@ -175,6 +175,118 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "gmx_inbox_ads_preferences_popup_1": {
+        "description": "GMX email ads preferences popup (core).",
+        "required_sublink": "gmx.net",
+        "checks": [
+            {
+                "name": "Advertising core pop-up",
+                "css_selector": 'iframe.permission-core-iframe',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_inbox_ads_preferences_popup_2": {
+        "description": "GMX email ads preferences popup.",
+        "required_sublink": "gmx.net",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="permission"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Advertising popup deny button",
+                "css_selector": 'button#deny',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Advertising popup accept button",
+                "css_selector": 'button#cta',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_inbox_smart_features_popup": {
+        "description": "GMX email smart features popup.",
+        "required_sublink": "gmx.net",
+        "checks": [
+            {
+                "name": "Check inbox iframe",
+                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Inbox iframe",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Emails sidebar",
+                "css_selector": 'webmailer-mail-sidebar#sidebar',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar",
+                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Smart features pop-up",
+                "css_selector": 'iframe#thirdPartyFrame_upp_dialog',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Smart features container iframe",
+                "css_selector": 'iframe[src*="spl.web.de/smart-inbox/twoinone"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_folder_list_page": {
         "description": "GMX folder list page.",
         "required_sublink": "gmx.net/folderlist",

@@ -92,7 +92,7 @@ class ReportNotSpam(HumanAction):
             iteration += 1
             
             # Identify current page
-            page.wait_for_timeout(2_000)
+            page.wait_for_timeout(4_000)
             current_page_id = identify_page(page, page.url, self.signatures)
             
             # Override state if action is completed

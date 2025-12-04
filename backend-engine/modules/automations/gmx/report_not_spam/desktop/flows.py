@@ -35,7 +35,7 @@ class ReportNotSpamFlowHandler():
         
         return "gmx_spam"
 
-    def _search_emails(self, page: Page, keyword: str):
+    def _search_emails(self, page: Page, keyword: str, search_folder: str):
         """Helper method to search emails using GMX search box"""
         self.logger.info(f"Searching for emails with keyword: {keyword}")
         
@@ -46,13 +46,37 @@ class ReportNotSpamFlowHandler():
             text=keyword,
             deep_search=True
         )
-        
-        # Click search button
-        self.human_action.human_click(
-            page,
-            selectors=['button.webmailer-mail-list-search-input__button--submit'],
-            deep_search=True
-        )
+
+        if not search_folder:
+            # Click search button
+            self.human_action.human_click(
+                page,
+                selectors=['button.webmailer-mail-list-search-input__button--submit'],
+                deep_search=True
+            )
+
+        else:
+            # Click search options button
+            self.human_action.human_click(
+                page,
+                selectors=['button.webmailer-mail-list-search-options__button'],
+                deep_search=True
+            )
+            
+            # Select spam folder
+            self.human_action.human_select(
+                page,
+                selectors=['select[name="searchParamFolderId"]'],
+                value=search_folder,
+                deep_search=True
+            )        
+            
+            # Click search button
+            self.human_action.human_click(
+                page,
+                selectors=['div.webmailer-mail-list-search-options__container div.lux-button-container--end button[type="submit"]'],
+                deep_search=True
+            )
         
         page.wait_for_timeout(2000)
         self.logger.info("Search completed")
@@ -64,7 +88,7 @@ class ReportNotSpamFlowHandler():
         self.logger.info(f"Detected spam page - searching for email with text: {self.search_text}")
         
         # Use GMX search to filter emails
-        self._search_emails(page, self.search_text)
+        # self._search_emails(page, self.search_text, "Spam")
         
         # Keep processing emails until no more matches are found
         while True:
@@ -85,13 +109,20 @@ class ReportNotSpamFlowHandler():
             
             for item in email_items:
                 try:
-                    # Extract email ID (e.g., from id="id1764755051039737362")
-                    email_id_attr = item.get_attribute("id")
-                    if email_id_attr and email_id_attr.startswith("id"):
-                        # Extract numeric part (e.g., "1764755051039737362")
-                        email_id_number = email_id_attr[2:]  # Remove "id" prefix
-                        self.reported_email_ids.append(email_id_number)
-                        self.logger.info(f"Stored email ID: {email_id_number}")
+                    # Check if subject contains search text
+                    subject = self.human_action._find_element_with_humanization(item, ["div.list-mail-item__subject"])
+                    if self.search_text.lower() in subject.inner_text().lower():
+                        found_match = True
+                        
+                        # Extract email ID (e.g., from id="id1764755051039737362")
+                        email_id_attr = item.get_attribute("id")
+                        if email_id_attr and email_id_attr.startswith("id"):
+                            # Extract numeric part (e.g., "1764755051039737362")
+                            email_id_number = email_id_attr[2:]  # Remove "id" prefix
+                            self.reported_email_ids.append(email_id_number)
+                            self.logger.info(f"Stored email ID: {email_id_number}")
+                    else:
+                        continue
                     
                     # Click to open (simulate human behavior)
                     self.human_action.human_behavior.click(item)
@@ -133,7 +164,7 @@ class ReportNotSpamFlowHandler():
             page.wait_for_timeout(2000)
             
             # Use search to filter emails in inbox
-            self._search_emails(page, self.search_text)
+            self._search_emails(page, self.search_text, "Posteingang")
             
             # Open each reported email by matching its ID
             for email_id_number in self.reported_email_ids:

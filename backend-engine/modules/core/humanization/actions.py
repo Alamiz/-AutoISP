@@ -77,3 +77,14 @@ class HumanAction(ABC):
         element = self._find_element_with_humanization(page, selectors, deep_search=deep_search)
 
         self.human_behavior.click(element, force=force)
+
+    
+    def human_select(self, page: Page, selectors: list[str], value: str, deep_search: bool = False):
+        """
+        Find and select an option in a dropdown element with human-like behavior.
+        Uses deep search if the element might be inside shadow DOM or nested iframes.
+        """
+        self.human_behavior.wait_before_action()
+        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search)
+        self.human_behavior.select(element, value)
+    

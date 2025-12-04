@@ -4,6 +4,16 @@ PAGE_SIGNATURES = {
         "required_sublink": "web.de",
         "checks": [
             {
+                "name": "Account avatar",
+                "css_selector": 'div.login-wrapper  > account-avatar',
+                "deep_search": True,
+                "contains_text": None,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": False
+            },
+            {
                 "name": "Register button",
                 "css_selector": 'button.register__button',
                 "deep_search": True,
@@ -61,7 +71,7 @@ PAGE_SIGNATURES = {
     },
     "webde_logged_in_page": {
         "description": "WebDE Logged In page.",
-        "required_sublink": "www.web.de",
+        "required_sublink": "web.de",
         "checks": [
             {
                 "name": "Register button",
@@ -97,7 +107,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "Email input",
-                "css_selector": 'form[action*="registrierung.gmx.net"] input[type="text"]',
+                "css_selector": 'form[action*="registrierung.web.de"] input[type="text"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -108,7 +118,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "Register button",
-                "css_selector": 'form[action*="registrierung.gmx.net"] button[type="submit"]',
+                "css_selector": 'form[action*="registrierung.web.de"] button[type="submit"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,

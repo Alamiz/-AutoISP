@@ -96,10 +96,8 @@ class GMXAuthentication(HumanAction):
         # Navigate to GMX
         page.goto("https://www.gmx.net/")
         self.human_behavior.read_delay()
-        # page.wait_for_timeout(100_100_100)
 
-        current_page_id = identify_page(page, page.url, self.signatures)
-        self.logger.info(f"Current page: {current_page_id}")
+        # page.wait_for_timeout(100_100_100)
 
         iteration = 0
         current_page_id = None
@@ -108,6 +106,7 @@ class GMXAuthentication(HumanAction):
             iteration += 1
             
             # Identify current page
+            page.wait_for_timeout(10_000)
             current_page_id = identify_page(page, page.url, self.signatures)
             self.logger.info(f"[Iteration {iteration}] Current page: {current_page_id}")
             

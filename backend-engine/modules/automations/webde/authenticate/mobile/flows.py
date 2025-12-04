@@ -49,6 +49,8 @@ class WebdeFlowHandler:
             selectors=['form button[type="submit"]'],
         )
         
+        page.wait_for_timeout(2000)
+
         # Fill password
         self.human_action.human_fill(
             page,
@@ -67,6 +69,34 @@ class WebdeFlowHandler:
         
         return "webde_folder_list"  # Expected next page
     
+    def handle_logged_in_page(self, page: Page) -> str:
+        """
+        Handle Webde logged in page - full authentication flow (mobile)
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected logged in page - starting mobile full authentication")
+        
+        # Click profile avatar
+        self.human_action.human_click(
+            page,
+            selectors=['div.login-wrapper  > account-avatar'],
+        )
+                
+        page.wait_for_timeout(2000)
+        self.logger.info("Profile avatar clicked successfully")
+        
+        # Click continue to inbox button
+        self.human_action.human_click(
+            page,
+            selectors=['div#appa-account-flyout > section.account-avatar__flyout-content > section.appa-account-avatar__buttons > button:nth-of-type(2)'],
+            deep_search=True
+        )
+                
+        page.wait_for_timeout(2000)
+        self.logger.info("Continue to inbox button clicked successfully")
+        
+        return "webde_folder_list_page"  # Expected next page
+
     def handle_inbox_ads_preferences_popup_1(self, page: Page) -> str:
         """
         Handle inbox page with ads preferences popup (type 1)

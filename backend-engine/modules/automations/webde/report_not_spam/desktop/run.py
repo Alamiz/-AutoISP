@@ -5,12 +5,12 @@ from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.decorators import retry, RequiredActionFailed
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
-from .flows import ReportNotSpamFlowHandler
+from automations.webde.report_not_spam.desktop.flows import ReportNotSpamFlowHandler
 from automations.webde.signatures.desktop import PAGE_SIGNATURES
 
 class ReportNotSpam(HumanAction):
     """
-    State-based WebDE report not spam orchestrator
+    State-based webde report not spam orchestrator
     """
     
     # Define the flow map: page_identifier -> handler_method
@@ -93,6 +93,7 @@ class ReportNotSpam(HumanAction):
             iteration += 1
             
             # Identify current page
+            page.wait_for_timeout(4_000)
             current_page_id = identify_page(page, page.url, self.signatures)
             
             # Override state if action is completed

@@ -58,6 +58,42 @@ class GMXFlowHandler:
         
         return "gmx_folder_list_page"  # Expected next page
 
+    def handle_inbox_ads_preferences_popup_1(self, page: Page) -> str:
+        """
+        Handle inbox page with ads preferences popup (type 1)
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected preferences popup (type 1) - clicking accept button")
+        
+        self.human_action.human_click(
+            page,
+            selectors=["button#save-all-pur"],
+            deep_search=True
+        )
+        
+        page.wait_for_timeout(1500)
+        self.logger.info("Accept button clicked successfully")
+        
+        return "gmx_folder_list_page"  # Expected next page
+
+    def handle_inbox_ads_preferences_popup_2(self, page: Page) -> str:
+        """
+        Handle inbox page with ads preferences popup (type 2)
+        Returns: Next expected page identifier
+        """
+        self.logger.info("Detected preferences popup (type 2) - clicking deny button")
+        
+        self.human_action.human_click(
+            page,
+            selectors=["button#deny"],
+            deep_search=True
+        )
+        
+        page.wait_for_timeout(1500)
+        self.logger.info("Deny button clicked successfully")
+        
+        return "gmx_folder_list_page"  # Expected next page
+
     def handle_login_page(self, page: Page) -> str:
         """
         Handle GMX login page - full authentication flow
