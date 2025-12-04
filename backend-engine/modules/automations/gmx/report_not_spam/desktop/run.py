@@ -1,31 +1,17 @@
+# automations/gmx/report_not_spam/desktop/run.py
 import logging
 from playwright.sync_api import Page
-from automations.gmx.authenticate.desktop.run import GMXAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
-from core.utils.decorators import retry, RequiredActionFailed
 from core.humanization.actions import HumanAction
-from core.utils.identifier import identify_page
-from .flows import ReportNotSpamFlowHandler
+from automations.gmx.authenticate.desktop.run import GMXAuthentication
+from core.flow_engine.runner import StepRunner
+from .steps import NavigateToSpamStep, HandleUnknownPageStep
 from automations.gmx.signatures.desktop import PAGE_SIGNATURES
 
 class ReportNotSpam(HumanAction):
     """
-    State-based GMX report not spam orchestrator
+    GMX Report Not Spam automation using step-based flow
     """
-    
-    # Define the flow map: page_identifier -> handler_method
-    FLOW_MAP = {
-        "gmx_inbox": "handle_inbox_page",
-        "gmx_spam": "handle_spam_page",
-        "unknown": "handle_unknown_page"
-    }
-    
-    # Define goal states (report not spam is complete)
-    GOAL_STATES = {"task_completed"}
-    
-    # Maximum flow iterations to prevent infinite loops
-    MAX_FLOW_ITERATIONS = 10
-    
     def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", search_text=None):
         super().__init__()
         self.email = email
@@ -36,91 +22,46 @@ class ReportNotSpam(HumanAction):
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
-        self.action_completed = False
+        self.reported_email_ids = []
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
             proxy_config=proxy_config,
             user_agent_type=user_agent_type
         )
-        
-        # Initialize flow handler
-        self.flow_handler = ReportNotSpamFlowHandler(self, email, password, search_text)
 
-    @retry(max_retries=3, delay=5, required=True)
+        # Human behavior helper
+        self.human_action = self
+
     def execute(self):
-        self.logger.info(f"Starting Report Not Spam for {self.email}")
-        
+        self.logger.info(f"Starting GMX Report Not Spam for {self.email}")
         try:
-            # Start browser with proxy configuration
             self.browser.start()
-            
-            # Create new page
             page = self.browser.new_page()
-            
+
             # Authenticate first
-            # We reuse the authentication automation to get us to the inbox
-            gmx_auth = GMXAuthentication(self.email, self.password, self.proxy_config, self.user_agent_type, signatures=self.signatures)
+            gmx_auth = GMXAuthentication(
+                self.email, self.password, self.proxy_config, self.user_agent_type, signatures=self.signatures
+            )
             gmx_auth.authenticate(page)
 
-            # Report not spam using state-based flow
-            self.report_not_spam(page)
+            # Start the step-based flow
+            # ✅ Don't pass page to constructor - steps receive it in run()
+            start_step = NavigateToSpamStep(self, self.logger)
+            runner = StepRunner(start_step)
             
-            self.logger.info(f"Report not spam successful for {self.email}")
+            # ✅ Pass page to run() method
+            result = runner.run(page)
+            
+            if result.status.value == "failure":
+                self.logger.error(f"Flow failed: {result.message}")
+                return {"status": "error", "message": result.message}
+
+            self.logger.info(f"Report Not Spam completed for {self.email}")
             return {"status": "success", "message": "Reported not spam"}
-        
-        except RequiredActionFailed as e:
-            self.logger.error(f"Report not spam failed for {self.email}: {e}")
-            return {"status": "failed", "message": str(e)}
+
         except Exception as e:
-            self.logger.error(f"Unexpected error for {self.email}: {e}")
+            self.logger.error(f"Error in Report Not Spam: {e}")
             return {"status": "error", "message": str(e)}
         finally:
-            # Close browser
             self.browser.close()
-
-    def report_not_spam(self, page: Page):
-        """
-        State-based report not spam flow
-        Automatically handles different page states until reaching goal state
-        """
-        # We assume we are already authenticated and likely at inbox
-        
-        iteration = 0
-        current_page_id = None
-        
-        while iteration < self.MAX_FLOW_ITERATIONS:
-            iteration += 1
-            
-            # Identify current page
-            page.wait_for_timeout(4_000)
-            current_page_id = identify_page(page, page.url, self.signatures)
-            
-            # Override state if action is completed
-            if self.action_completed:
-                current_page_id = "task_completed"
-                
-            self.logger.info(f"[Iteration {iteration}] Current page: {current_page_id}")
-            
-            # Check if we've reached goal state
-            if current_page_id in self.GOAL_STATES:
-                self.logger.info(f"Goal state reached: {current_page_id}")
-                return
-            
-            # Get the handler method for this page
-            handler_method_name = self.FLOW_MAP.get(current_page_id, "handle_unknown_page")
-            handler_method = getattr(self.flow_handler, handler_method_name)
-            
-            # Execute the handler
-            expected_next_page = handler_method(page)
-            self.logger.info(f"Executed handler: {handler_method_name}, expecting: {expected_next_page}")
-            
-            # Wait for page transition
-            page.wait_for_load_state("load")
-            self.human_behavior.read_delay()
-        
-        # If we exit the loop without reaching goal state
-        raise RequiredActionFailed(
-            f"Failed to reach goal state after {self.MAX_FLOW_ITERATIONS} iterations. "
-            f"Last page: {current_page_id}"
-        )
