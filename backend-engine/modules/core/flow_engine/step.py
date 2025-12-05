@@ -20,7 +20,7 @@ class Step:
     Base Step: deterministic unit of action in a flow.
     Implement `run` in subclasses.
     """
-    max_retries = 1  # per step, override if needed
+    max_retries = 2  # per step
 
     def __init__(self, human_action=None, logger=None):
         self.human = human_action

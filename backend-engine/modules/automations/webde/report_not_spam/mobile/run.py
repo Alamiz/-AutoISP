@@ -2,124 +2,139 @@ import logging
 from playwright.sync_api import Page
 from automations.webde.authenticate.mobile.run import WebDEAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
-from core.utils.decorators import retry, RequiredActionFailed
+from core.utils.retry_decorators import RequiredActionFailed
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
-from .flows import ReportNotSpamFlowHandler
+from core.flow_engine.smart_flow import SequentialFlow
+from core.flow_engine.state_handler import StateHandlerRegistry
+from core.flow_engine.step import StepStatus
+from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
+from .handlers import UnknownPageHandler
 from automations.webde.signatures.mobile import PAGE_SIGNATURES
+
 
 class ReportNotSpam(HumanAction):
     """
-    State-based WebDE mobile report not spam orchestrator
+    web.de Mobile Report Not Spam using SequentialFlow
     """
     
-    # Define the flow map: page_identifier -> handler_method
-    FLOW_MAP = {
-        "webde_folder_list_page": "handle_folder_list_page",
-        "webde_spam": "handle_spam_page",
-        "unknown": "handle_unknown_page"
-    }
-    
-    # Define goal states (report not spam is complete)
-    GOAL_STATES = {"task_completed"}
-    
-    # Maximum flow iterations to prevent infinite loops
-    MAX_FLOW_ITERATIONS = 15
-    
-    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile", search_text=None):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile", search_text=None, max_flow_retries=3):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
         self.search_text = search_text
+        self.max_flow_retries = max_flow_retries
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
-        self.action_completed = False
+        self.reported_email_ids = []
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
             proxy_config=proxy_config,
             user_agent_type=user_agent_type
         )
-        
-        # Initialize flow handler
-        self.flow_handler = ReportNotSpamFlowHandler(self, email, password, search_text)
 
-    @retry(max_retries=3, delay=5, required=True)
+    def _setup_state_handlers(self) -> StateHandlerRegistry:
+        """Setup state handler registry for unexpected page states."""
+        registry = StateHandlerRegistry(
+            identifier_func=identify_page,
+            signatures=self.signatures,
+            logger=self.logger
+        )
+        registry.register("unknown", UnknownPageHandler(self, self.logger))
+        return registry
+
+    def _execute_flow(self, page: Page) -> dict:
+        """Execute the automation flow using SequentialFlow."""
+        try:
+            state_registry = self._setup_state_handlers()
+
+            steps = [
+                NavigateToSpamStep(self, self.logger),
+                ReportSpamEmailsStep(self, self.logger),
+                OpenReportedEmailsStep(self, self.logger),
+            ]
+
+            flow = SequentialFlow(steps, state_registry=state_registry, logger=self.logger)
+            result = flow.run(page)
+            
+            if result.status == StepStatus.FAILURE:
+                return {"status": "error", "message": result.message, "retry_recommended": True}
+
+            return {
+                "status": "success",
+                "message": "Reported not spam",
+                "emails_processed": len(self.reported_email_ids)
+            }
+
+        except Exception as e:
+            self.logger.error(f"Exception in flow execution: {e}", exc_info=True)
+            return {"status": "error", "message": str(e), "retry_recommended": True}
+
     def execute(self):
         self.logger.info(f"Starting Report Not Spam (Mobile) for {self.email}")
         
+        flow_attempt = 0
+        last_result = None
+        
         try:
-            # Start browser with proxy configuration
             self.browser.start()
-            
-            # Create new page
             page = self.browser.new_page()
-            
+
             # Authenticate first
-            webde_auth = WebDEAuthentication(self.email, self.password, self.proxy_config, self.user_agent_type, signatures=self.signatures)
-            webde_auth.authenticate(page)
+            webde_auth = WebDEAuthentication(
+                self.email, self.password, self.proxy_config,
+                self.user_agent_type, signatures=self.signatures
+            )
 
-            # Report not spam using state-based flow
-            self.report_not_spam(page)
+            try:
+                webde_auth.authenticate(page)
+            except Exception as e:
+                self.logger.error(f"Authentication failed: {e}")
+                return {"status": "error", "message": "Authentication failed"}
             
-            self.logger.info(f"Report not spam successful for {self.email}")
-            return {"status": "success", "message": "Reported not spam"}
-        
-        except RequiredActionFailed as e:
-            self.logger.error(f"Report not spam failed for {self.email}: {e}")
-            return {"status": "failed", "message": str(e)}
-        except Exception as e:
-            self.logger.error(f"Unexpected error for {self.email}: {e}")
-            return {"status": "error", "message": str(e)}
-        finally:
-            # Close browser
-            self.browser.close()
+            self.logger.info("Authentication successful")
 
-    def report_not_spam(self, page: Page):
-        """
-        State-based report not spam flow
-        Automatically handles different page states until reaching goal state
-        """
-        # We assume we are already authenticated
-        
-        iteration = 0
-        current_page_id = None
-        
-        while iteration < self.MAX_FLOW_ITERATIONS:
-            iteration += 1
-            
-            # Identify current page
-            page.wait_for_timeout(4_000)
-            current_page_id = identify_page(page, page.url, self.signatures)
-            
-            # Override state if action is completed
-            if self.action_completed:
-                current_page_id = "task_completed"
+            # Flow-level retry loop
+            while flow_attempt < self.max_flow_retries:
+                flow_attempt += 1
                 
-            self.logger.info(f"[Iteration {iteration}] Current page: {current_page_id}")
+                self.logger.info(f"FLOW ATTEMPT {flow_attempt}/{self.max_flow_retries}")
+                self.reported_email_ids = []
+                
+                result = self._execute_flow(page)
+                last_result = result
+                
+                if result["status"] == "success":
+                    self.logger.info(f"Flow completed successfully on attempt {flow_attempt}")
+                    return result
+                
+                if not result.get("retry_recommended", False):
+                    return result
+                
+                if flow_attempt < self.max_flow_retries:
+                    wait_time = 5000 * flow_attempt
+                    self.logger.info(f"Waiting {wait_time/1000}s before retry...")
+                    page.wait_for_timeout(wait_time)
+                    
+                    try:
+                        page.goto("https://lightmailer-bs.web.de/")
+                        page.wait_for_load_state("domcontentloaded")
+                    except Exception as e:
+                        self.logger.warning(f"Failed to reset to main page: {e}")
             
-            # Check if we've reached goal state
-            if current_page_id in self.GOAL_STATES:
-                self.logger.info(f"Goal state reached: {current_page_id}")
-                return
-            
-            # Get the handler method for this page
-            handler_method_name = self.FLOW_MAP.get(current_page_id, "handle_unknown_page")
-            handler_method = getattr(self.flow_handler, handler_method_name)
-            
-            # Execute the handler
-            expected_next_page = handler_method(page)
-            self.logger.info(f"Executed handler: {handler_method_name}, expecting: {expected_next_page}")
-            
-            # Wait for page transition
-            page.wait_for_load_state("load")
-            self.human_behavior.read_delay()
-        
-        # If we exit the loop without reaching goal state
-        raise RequiredActionFailed(
-            f"Failed to reach goal state after {self.MAX_FLOW_ITERATIONS} iterations. "
-            f"Last page: {current_page_id}"
-        )
+            self.logger.error(f"Flow failed after {self.max_flow_retries} attempts")
+            return {
+                "status": "error",
+                "message": f"Flow failed after {self.max_flow_retries} attempts",
+                "last_error": last_result.get('message') if last_result else None
+            }
+
+        except Exception as e:
+            self.logger.error(f"Critical error in automation: {e}", exc_info=True)
+            return {"status": "error", "message": f"Critical error: {str(e)}"}
+        finally:
+            self.browser.close()

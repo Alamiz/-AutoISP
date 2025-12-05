@@ -1,4 +1,4 @@
-# automations/gmx/report_not_spam/steps.py
+# automations/webde/report_not_spam/desktop/steps.py
 import logging
 from playwright.sync_api import Page
 from core.humanization.actions import HumanAction
@@ -27,7 +27,6 @@ class ReportSpamEmailsStep(Step):
             keyword = getattr(self.human, "search_text", "")
             self.logger.info(f"Reporting emails with keyword: {keyword}")
 
-            # Track reported emails
             if not hasattr(self.human, "reported_email_ids"):
                 self.human.reported_email_ids = []
 
@@ -53,7 +52,6 @@ class ReportSpamEmailsStep(Step):
                                 self.human.reported_email_ids.append(email_id_number)
                                 self.logger.info(f"Stored email ID: {email_id_number}")
 
-                            # Click to open and report as not spam
                             self.human.human_behavior.click(item)
                             self.human.human_behavior.scroll_into_view(item)
                             self.human.human_click(
@@ -116,24 +114,19 @@ class OpenReportedEmailsStep(Step):
                 self.human.human_behavior.scroll_into_view(target_item)
                 self.logger.info(f"Opened reported email {email_id_number}")
 
-                # Click link or image inside the email body iframe
+                # Click link or image inside the email body iframe (desktop)
                 try:
-                    # Get the iframe element using deep_find_elements
                     iframes = deep_find_elements(page, 'iframe[name="detail-body-iframe"]')
                     if iframes:
-                        iframe_element = iframes[0]
-                        content_frame = iframe_element.content_frame()
+                        content_frame = iframes[0].content_frame()
                         if content_frame:
-                            # Search for links inside the iframe
                             links = content_frame.query_selector_all("a")
-                            self.logger.info(f"Found {len(links)} links in iframe")
                             if links:
                                 self.human.human_behavior.click(links[0])
                                 self.logger.info("Clicked link inside email")
                                 page.wait_for_timeout(3000)
                             else:
                                 imgs = content_frame.query_selector_all("img")
-                                self.logger.info(f"Found {len(imgs)} images in iframe")
                                 if imgs:
                                     self.human.human_behavior.click(imgs[0])
                                     self.logger.info("Clicked image inside email")
@@ -145,14 +138,3 @@ class OpenReportedEmailsStep(Step):
 
         except Exception as e:
             return StepResult(status=StepStatus.RETRY, message=f"Failed to open reported emails: {e}")
-
-
-class HandleUnknownPageStep(Step):
-    def run(self, page: Page) -> StepResult:
-        try:
-            self.logger.warning("Unknown page detected. Redirecting to inbox...")
-            page.goto("https://www.gmx.net/mail/client/inbox")
-            page.wait_for_timeout(2000)
-            return StepResult(status=StepStatus.SUCCESS, message="Redirected to inbox")
-        except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to handle unknown page: {e}")

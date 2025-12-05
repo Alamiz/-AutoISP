@@ -1,0 +1,2 @@
+217.154.192.206:9119:auroproxy:auroraproxy9595
+82.165.206.152:9119:auroproxy:auroraproxy9595
