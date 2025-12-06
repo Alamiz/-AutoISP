@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Minus, Square, Copy, X } from 'lucide-react';
+import { useProvider } from '@/contexts/provider-context';
 
 export default function Titlebar() {
   const [isMaximized, setIsMaximized] = useState(false);
+  const { selectedProvider } = useProvider();
 
   useEffect(() => {
     // Listen for maximize/unmaximize events from Electron
@@ -30,8 +32,14 @@ export default function Titlebar() {
       <div className="flex-1 h-full" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
 
       {/* App title (optional) */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 text-zinc-400 text-xs font-medium pointer-events-none">
-        Auto ISP
+      <div className="absolute left-1/2 transform -translate-x-1/2 text-zinc-400 text-xs font-medium pointer-events-none flex items-center gap-2">
+        <span>Auto ISP</span>
+        {selectedProvider && (
+          <>
+            <span className="text-zinc-600">/</span>
+            <span className="text-zinc-200">{selectedProvider.name}</span>
+          </>
+        )}
       </div>
 
       {/* Window controls */}
