@@ -40,10 +40,10 @@ export default function HomePage() {
       <main className={`flex-1 overflow-auto transition-all duration-300`}>
         <AccountProvider>
 
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 h-full flex flex-col">
             {/* <HeroSection /> */}
             {/* <QuickActions /> */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 h-full">
               {/* Left Column - Dashboard & Controls */}
               <div className="xl:col-span-1 space-y-6">
                 {/* <Dashboard /> */}
@@ -57,7 +57,7 @@ export default function HomePage() {
               </div>
 
               {/* Right Column - Live Logs */}
-              <div className="xl:col-span-1">
+              <div className="xl:col-span-1 h-full min-h-0">
                 <LiveLogPanel />
               </div>
             </div>

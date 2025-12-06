@@ -23,6 +23,7 @@ import { apiPost } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useAccounts } from "@/hooks/useAccounts"
+import { useProvider } from "@/contexts/provider-context"
 import { gmxAutomations, webdeAutomations } from "@/data/automations"
 
 // Map provider names to their automation lists
@@ -32,7 +33,9 @@ const automationsByProvider = {
 }
 
 export function AutomationControls() {
-  const [selectedProvider, setSelectedProvider] = useState<"gmx" | "webde">("gmx")
+  const { selectedProvider: globalProvider } = useProvider()
+  const selectedProvider = globalProvider?.name === "Web.de" ? "webde" : "gmx"
+
   const [availableAutomations, setAvailableAutomations] = useState<Automation[]>(gmxAutomations)
   const [selectedAutomations, setSelectedAutomations] = useState<string[]>([])
   const [scheduleType, setScheduleType] = useState<"now" | "later">("now")
@@ -191,26 +194,6 @@ export function AutomationControls() {
 
             {/* Automation Selection */}
             <TabsContent value="select" className="space-y-4">
-              {/* Provider Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Email Provider</Label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between bg-input border-border">
-                      <span className="capitalize">{selectedProvider}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-full">
-                    <DropdownMenuItem onClick={() => setSelectedProvider("gmx")}>
-                      GMX
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSelectedProvider("webde")}>
-                      web.de
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-foreground">Available Automations</h4>
                 <div className="space-y-2">

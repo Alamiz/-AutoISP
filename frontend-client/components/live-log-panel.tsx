@@ -127,8 +127,8 @@ export function LiveLogPanel() {
 
     return (
         <>
-            <Card className="bg-card border-border">
-                <CardHeader>
+            <Card className="bg-card border-border h-full flex flex-col">
+                <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-foreground">Live Activity</CardTitle>
                         <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ export function LiveLogPanel() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 flex-1 flex flex-col min-h-0">
                     {/* Running Jobs */}
                     {/* {runningJobs.length > 0 && (
             <div className="space-y-3">
@@ -174,7 +174,7 @@ export function LiveLogPanel() {
           )} */}
 
                     {/* Log Filters */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -199,8 +199,8 @@ export function LiveLogPanel() {
                     </div>
 
                     {/* Live Logs */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                    <div className="space-y-3 flex-1 flex flex-col min-h-0">
+                        <div className="flex items-center justify-between flex-shrink-0">
                             <h4 className="text-sm font-medium text-foreground">
                                 Live Logs ({filteredLogs.length})
                                 {/* {isPaused && <Badge className="ml-2 bg-yellow-500/10 text-yellow-400">Paused</Badge>} */}
@@ -216,7 +216,7 @@ export function LiveLogPanel() {
                         </div>
                         <ScrollArea
                             ref={scrollAreaRef}
-                            className={`${isExpanded ? "h-96" : "h-48"} rounded-lg border border-border bg-accent/10`}
+                            className="flex-1 rounded-lg border border-border bg-accent/10"
                         >
                             <div className="p-3 space-y-1">
                                 {filteredLogs.map((log, index) => (

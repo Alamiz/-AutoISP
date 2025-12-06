@@ -14,6 +14,7 @@ import { Account } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useProvider } from "@/contexts/provider-context"
 
 interface AccountDrawerProps {
   open: boolean
@@ -24,12 +25,15 @@ interface AccountDrawerProps {
 
 export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSaved }: AccountDrawerProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const { selectedProvider: globalProvider } = useProvider()
+  const defaultProvider = globalProvider?.name === "Web.de" ? "webde" : "gmx"
+
   const formik = useFormik({
     initialValues: {
       email: "",
       password: "",
       label: "",
-      provider: "gmx",
+      provider: defaultProvider,
       type: "desktop",
       recovery_email: "",
       number: "",
@@ -162,7 +166,8 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  {/* Provider selection removed - uses global context */}
+                  {/* <div className="space-y-2">
                     <Label htmlFor="provider">Provider</Label>
                     <Select
                       onValueChange={(value) => formik.setFieldValue("provider", value)}
@@ -176,7 +181,7 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
                         <SelectItem value="webde">WEB.DE</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div> */}
 
                   <div className="space-y-2">
                     <Label htmlFor="type">Type</Label>
