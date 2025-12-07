@@ -1,17 +1,25 @@
 import httpx
 from fastapi.exceptions import HTTPException
 import logging
+from modules.core.token_storage import token_storage
 
 logger = logging.getLogger(__name__)
 
 # Configuration for the external API
 EXTERNAL_ACCOUNT_API_BASE_URL = "http://localhost:8000/api/accounts" 
 
+def _get_headers():
+    token = token_storage.get_token()
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
 def _fetch_accounts_from_external_api():
     """Fetches all accounts from the external API."""
     try:
         with httpx.Client() as client:
-            response = client.get(EXTERNAL_ACCOUNT_API_BASE_URL + "/")
+            response = client.get(EXTERNAL_ACCOUNT_API_BASE_URL + "/", headers=_get_headers())
             response.raise_for_status()  # Raise an exception for bad status codes
             return response.json()
     except httpx.RequestError as exc:
@@ -25,7 +33,7 @@ def _fetch_account_by_id_from_external_api(account_id: str):
     """Fetches a single account by ID from the external API."""
     try:
         with httpx.Client() as client:
-            response = client.get(f"{EXTERNAL_ACCOUNT_API_BASE_URL}/{account_id}/")
+            response = client.get(f"{EXTERNAL_ACCOUNT_API_BASE_URL}/{account_id}/", headers=_get_headers())
             response.raise_for_status()
             return response.json()
     except httpx.RequestError as exc:

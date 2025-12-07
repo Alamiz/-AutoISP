@@ -1,4 +1,3 @@
-
 class TokenStorage:
     _instance = None
     _token = None

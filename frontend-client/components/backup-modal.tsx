@@ -86,37 +86,37 @@ export function BackupModal({
   }
 
   // 🔹 WebSocket connection for real-time progress
-  useEffect(() => {
-    console.log("account", account)
-    if (!account) return
+  // useEffect(() => {
+  //   console.log("account", account)
+  //   if (!account) return
 
-    const ws = new WebSocket(`ws://localhost:8001/backups/${account.id}/progress`)
+  //   const ws = new WebSocket(`ws://localhost:8001/backups/${account.id}/progress`)
 
-    ws.onopen = () => console.log("Backup WebSocket opened")
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log("Backup Progress:", data)
-      if (data.percent !== undefined) {
-        console.log("Backup Progress:", data.percent)
-        setBackupProgress(data.percent)
-        setStepText(data.step)
-      }
-      if (data.status === "completed") {
-        setBackupStatus("success")
-        setIsBackingUp(false)
-        onBackupComplete()
-        toast.success("Backup completed successfully")
-      }
-    }
+  //   ws.onopen = () => console.log("Backup WebSocket opened")
+  //   ws.onmessage = (event) => {
+  //     const data = JSON.parse(event.data)
+  //     console.log("Backup Progress:", data)
+  //     if (data.percent !== undefined) {
+  //       console.log("Backup Progress:", data.percent)
+  //       setBackupProgress(data.percent)
+  //       setStepText(data.step)
+  //     }
+  //     if (data.status === "completed") {
+  //       setBackupStatus("success")
+  //       setIsBackingUp(false)
+  //       onBackupComplete()
+  //       toast.success("Backup completed successfully")
+  //     }
+  //   }
 
-    ws.onclose = () => console.log("Backup WebSocket closed")
-    ws.onerror = (err) => {
-      setBackupStatus("error")
-      toast.error("Backup connection failed")
-    }
+  //   ws.onclose = () => console.log("Backup WebSocket closed")
+  //   ws.onerror = (err) => {
+  //     setBackupStatus("error")
+  //     toast.error("Backup connection failed")
+  //   }
 
-    return () => ws.close()
-  }, [account])
+  //   return () => ws.close()
+  // }, [account])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

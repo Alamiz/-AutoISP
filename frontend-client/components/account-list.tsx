@@ -265,7 +265,7 @@ export function AccountList() {
                         <History className="h-4 w-4 mr-2" />
                         View History
                       </DropdownMenuItem>
-                      {/* <DropdownMenuSub>
+                      <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
                           <Database className="h-4 w-4 mr-4 text-muted-foreground" />
                           Backup & Restore
@@ -280,7 +280,7 @@ export function AccountList() {
                             Restore Backup
                           </DropdownMenuItem>
                         </DropdownMenuSubContent>
-                      </DropdownMenuSub> */}
+                      </DropdownMenuSub>
                       <DropdownMenuItem onClick={() => handleEditAccount(account)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Account
@@ -332,12 +332,12 @@ export function AccountList() {
         history={currentHistory}
       />
 
-      {/* <BackupModal
+      <BackupModal
         open={!!backupAccount}
         onOpenChange={(open) => !open && setBackupAccount(null)}
         account={backupAccount}
         onBackupComplete={handleBackupComplete}
-      /> */}
+      />
 
       <RestoreModal
         open={!!restoreAccount}
