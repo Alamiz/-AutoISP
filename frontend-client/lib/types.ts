@@ -51,12 +51,23 @@ export interface Account {
 }
 
 
+export interface AutomationParam {
+  name: string;
+  label: string;
+  type: "text" | "number" | "boolean" | "textarea";
+  placeholder?: string;
+  required?: boolean;
+  defaultValue?: string | number | boolean;
+}
+
 export interface Automation {
   id: string
   name: string
   description: string
-  category: "email" | "inbox" | "attachments" | "maintenance" | "browsing" | "test"
+  category: "email" | "inbox" | "attachments" | "maintenance" | "browsing" | "Test" | "Auth" | "Email" | "Maintenance" | "Browsing" // Added capitalized versions to match data
   estimatedDuration: string
+  provider?: "gmx" | "webde" | "all"
+  params?: AutomationParam[]
   parameters?: Record<string, any>
 }
 

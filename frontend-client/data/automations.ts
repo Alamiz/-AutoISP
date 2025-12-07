@@ -1,41 +1,91 @@
 import { Automation } from "@/lib/types";
 
-export const gmxAutomations: Automation[] = [
+export const automations: Automation[] = [
+    // GMX Automations
     {
-        id: "authenticate",
+        id: "gmx-auth",
         name: "Authenticate",
-        description: "Authenticate to GMX",
-        category: "browsing",
-        estimatedDuration: "1-2 minutes",
+        description: "Login to GMX account and verify session.",
+        category: "Auth",
+        provider: "gmx",
+        estimatedDuration: "30s",
+    },
+    {
+        id: "gmx-report-not-spam",
+        name: "Report Not Spam",
+        description: "Find emails by keyword in Spam folder and move them to Inbox.",
+        category: "Email",
+        provider: "gmx",
+        estimatedDuration: "2m",
+        params: [
+            {
+                name: "keyword",
+                label: "Search Keyword",
+                type: "text",
+                placeholder: "e.g. 'Welcome'",
+                required: true,
+            },
+        ],
     },
     {
         id: "open_profile",
-        name: "Open profile",
-        description: "Open profile for a specefic duration for test purposes.",
-        category: "test",
-        estimatedDuration: "unkown",
-        parameters: {
-            duration: { type: "number", label: "Duration (seconds)", required: true },
-        },
-    }
-]
+        name: "Open Profile",
+        description: "Open the browser with the user profile for manual interaction.",
+        category: "Test",
+        provider: "gmx",
+        estimatedDuration: "10m",
+        params: [
+            {
+                name: "duration",
+                label: "Duration (in minutes)",
+                type: "number",
+                placeholder: "e.g. '10'",
+                required: true,
+            },
+        ],
+    },
 
-export const webdeAutomations: Automation[] = [
+    // Web.de Automations
     {
-        id: "authenticate",
+        id: "webde-auth",
         name: "Authenticate",
-        description: "Authenticate to web.de",
-        category: "browsing",
-        estimatedDuration: "1-2 minutes",
+        description: "Login to Web.de account and verify session.",
+        category: "Auth",
+        provider: "webde",
+        estimatedDuration: "30s",
+    },
+    {
+        id: "webde-report-not-spam",
+        name: "Report Not Spam",
+        description: "Find emails by keyword in Spam folder and move them to Inbox.",
+        category: "Email",
+        provider: "webde",
+        estimatedDuration: "2m",
+        params: [
+            {
+                name: "keyword",
+                label: "Search Keyword",
+                type: "text",
+                placeholder: "e.g. 'Welcome'",
+                required: true,
+            },
+        ],
     },
     {
         id: "open_profile",
-        name: "Open profile",
-        description: "Open profile for a specefic duration for test purposes.",
-        category: "test",
-        estimatedDuration: "unkown",
-        parameters: {
-            duration: { type: "number", label: "Duration (seconds)", required: true },
-        },
-    }
-]
+        name: "Open Profile",
+        description: "Open the browser with the user profile for manual interaction.",
+        category: "Test",
+        provider: "webde",
+        estimatedDuration: "10m",
+        params: [
+            {
+                name: "duration",
+                label: "Duration (in minutes)",
+                type: "number",
+                placeholder: "e.g. '10'",
+                required: true,
+            },
+        ],
+    },
+];

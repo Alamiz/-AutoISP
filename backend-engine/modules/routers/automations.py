@@ -47,7 +47,8 @@ def trigger_automation(request: AutomationRequest, background_tasks: BackgroundT
                 isp=account.provider,
                 automation_name=request.automation_id,
                 proxy_config=account.proxy_settings,
-                device_type=account.type
+                device_type=account.type,
+                **request.parameters
             )
 
         return {

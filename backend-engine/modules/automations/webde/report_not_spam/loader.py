@@ -9,7 +9,7 @@ def run(email, password, device_type="desktop", proxy_config=None, **kwargs):
     automation_class = MobileReportNotSpam if device_type == "mobile" else DesktopReportNotSpam
     
     # Extract specific parameters
-    search_text = kwargs.get("text")
+    search_text = kwargs.get("keyword")
     
     automation = automation_class(
         email=email, 

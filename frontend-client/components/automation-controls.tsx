@@ -4,12 +4,6 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -18,25 +12,20 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Play, Settings, Clock, Zap, Mail, Archive, Paperclip, Shield, Search, FlaskConical } from "lucide-react"
 import { AutomationScheduler } from "./automation-scheduler"
-import type { Automation } from "@/lib/types"
 import { apiPost } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useAccounts } from "@/hooks/useAccounts"
 import { useProvider } from "@/contexts/provider-context"
-import { gmxAutomations, webdeAutomations } from "@/data/automations"
-
-// Map provider names to their automation lists
-const automationsByProvider = {
-  gmx: gmxAutomations,
-  webde: webdeAutomations,
-}
+import { automations } from "@/data/automations"
+import { Automation } from "@/lib/types"
 
 export function AutomationControls() {
   const { selectedProvider: globalProvider } = useProvider()
-  const selectedProvider = globalProvider?.name === "Web.de" ? "webde" : "gmx"
+  // Map global provider name to automation provider key
+  const selectedProviderKey = globalProvider?.name === "Web.de" ? "webde" : "gmx"
 
-  const [availableAutomations, setAvailableAutomations] = useState<Automation[]>(gmxAutomations)
+  const [availableAutomations, setAvailableAutomations] = useState<Automation[]>([])
   const [selectedAutomations, setSelectedAutomations] = useState<string[]>([])
   const [scheduleType, setScheduleType] = useState<"now" | "later">("now")
   const [showScheduler, setShowScheduler] = useState(false)
@@ -48,12 +37,14 @@ export function AutomationControls() {
 
   // Update available automations when provider changes
   useEffect(() => {
-    setAvailableAutomations(automationsByProvider[selectedProvider])
+    const filtered = automations.filter(a => a.provider === selectedProviderKey)
+    setAvailableAutomations(filtered)
+
     // Clear selections when switching providers
     setSelectedAutomations([])
     setAutomationParams({})
     setActiveTab("select")
-  }, [selectedProvider])
+  }, [selectedProviderKey])
 
   const handleAutomationToggle = (automationId: string, checked: boolean) => {
     if (checked) {
@@ -78,17 +69,15 @@ export function AutomationControls() {
 
   const getCategoryIcon = (category: Automation["category"]) => {
     switch (category) {
-      case "email":
+      case "Email":
         return <Mail className="h-4 w-4" />
-      case "inbox":
-        return <Archive className="h-4 w-4" />
-      case "attachments":
-        return <Paperclip className="h-4 w-4" />
-      case "maintenance":
+      case "Auth":
         return <Shield className="h-4 w-4" />
-      case "browsing":
+      case "Maintenance":
+        return <Settings className="h-4 w-4" />
+      case "Browsing":
         return <Search className="h-4 w-4" />
-      case "test":
+      case "Test":
         return <FlaskConical className="h-4 w-4" />
       default:
         return <Zap className="h-4 w-4" />
@@ -97,17 +86,15 @@ export function AutomationControls() {
 
   const getCategoryColor = (category: Automation["category"]) => {
     switch (category) {
-      case "email":
+      case "Email":
         return "bg-blue-500/10 text-blue-400 border-blue-500/20"
-      case "inbox":
+      case "Auth":
         return "bg-green-500/10 text-green-400 border-green-500/20"
-      case "attachments":
-        return "bg-purple-500/10 text-purple-400 border-purple-500/20"
-      case "maintenance":
+      case "Maintenance":
         return "bg-orange-500/10 text-orange-400 border-orange-500/20"
-      case "browsing":
+      case "Browsing":
         return "bg-sky-500/10 text-sky-400 border-sky-500/20"
-      case "test":
+      case "Test":
         return "bg-pink-500/10 text-pink-400 border-pink-500/20"
       default:
         return "bg-gray-500/10 text-gray-400 border-gray-500/20"
@@ -120,7 +107,6 @@ export function AutomationControls() {
         automation_id: automation.id,
         parameters: automationParams[automationId] || {},
         account_ids: selectedAccounts.map(acc => acc.id),
-        provider: selectedProvider,
       },
         "local"
       )
@@ -163,12 +149,12 @@ export function AutomationControls() {
   )
 
   const hasRequiredParams = selectedAutomationObjects.every((automation) => {
-    const params = automation.parameters || {}
+    const params = automation.params || []
     const userParams = automationParams[automation.id] || {}
 
-    return Object.entries(params).every(([key, config]) => {
-      if (config.required) {
-        return userParams[key] && userParams[key].toString().trim() !== ""
+    return params.every((param) => {
+      if (param.required) {
+        return userParams[param.name] && userParams[param.name].toString().trim() !== ""
       }
       return true
     })
@@ -216,13 +202,12 @@ export function AutomationControls() {
                           <Badge className={getCategoryColor(automation.category)}>{automation.category}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mb-1">{automation.description}</p>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{automation.estimatedDuration}</span>
-                        </div>
                       </div>
                     </div>
                   ))}
+                  {availableAutomations.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No automations available for this provider.</p>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -232,8 +217,8 @@ export function AutomationControls() {
               <div className="space-y-4">
                 <h4 className="text-sm font-medium text-foreground">Configure Parameters</h4>
                 {selectedAutomationObjects.map((automation) => {
-                  const params = automation.parameters || {}
-                  const hasParams = Object.keys(params).length > 0
+                  const params = automation.params || []
+                  const hasParams = params.length > 0
 
                   return (
                     <div key={automation.id} className="p-4 rounded-lg border border-border bg-accent/20">
@@ -244,33 +229,24 @@ export function AutomationControls() {
 
                       {hasParams ? (
                         <div className="space-y-3">
-                          {Object.entries(params).map(([paramKey, config]) => (
-                            <div key={paramKey} className="space-y-1">
+                          {params.map((param) => (
+                            <div key={param.name} className="space-y-1">
                               <Label className="text-sm text-foreground">
-                                {config.label}
-                                {config.required && <span className="text-red-400 ml-1">*</span>}
+                                {param.label}
+                                {param.required && <span className="text-red-400 ml-1">*</span>}
                               </Label>
-                              {config.type === "textarea" ? (
-                                <Textarea
-                                  value={automationParams[automation.id]?.[paramKey] || ""}
-                                  onChange={(e) => handleParameterChange(automation.id, paramKey, e.target.value)}
-                                  placeholder={`Enter ${config.label.toLowerCase()}`}
-                                  className="bg-input border-border"
-                                  rows={3}
-                                />
-                              ) : config.type === "number" ? (
+                              {param.type === "text" ? ( // Simplified for now, can expand types
                                 <Input
-                                  type="number"
-                                  value={automationParams[automation.id]?.[paramKey] || ""}
-                                  onChange={(e) => handleParameterChange(automation.id, paramKey, e.target.value)}
-                                  placeholder={`Enter ${config.label.toLowerCase()}`}
+                                  value={automationParams[automation.id]?.[param.name] || ""}
+                                  onChange={(e) => handleParameterChange(automation.id, param.name, e.target.value)}
+                                  placeholder={param.placeholder || `Enter ${param.label.toLowerCase()}`}
                                   className="bg-input border-border"
                                 />
                               ) : (
                                 <Input
-                                  value={automationParams[automation.id]?.[paramKey] || ""}
-                                  onChange={(e) => handleParameterChange(automation.id, paramKey, e.target.value)}
-                                  placeholder={`Enter ${config.label.toLowerCase()}`}
+                                  value={automationParams[automation.id]?.[param.name] || ""}
+                                  onChange={(e) => handleParameterChange(automation.id, param.name, e.target.value)}
+                                  placeholder={param.placeholder || `Enter ${param.label.toLowerCase()}`}
                                   className="bg-input border-border"
                                 />
                               )}
@@ -293,7 +269,7 @@ export function AutomationControls() {
                   <h4 className="text-sm font-medium text-foreground">Execution Summary</h4>
                   <div className="p-3 rounded-lg border border-border bg-accent/20">
                     <p className="text-sm text-foreground mb-2">
-                      Provider: <span className="font-medium capitalize">{selectedProvider}</span>
+                      Provider: <span className="font-medium capitalize">{selectedProviderKey}</span>
                     </p>
                     <p className="text-sm text-foreground mb-2">
                       {selectedAutomations.length} automation{selectedAutomations.length > 1 ? "s" : ""} selected
@@ -303,7 +279,6 @@ export function AutomationControls() {
                         <div key={automation.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                           {getCategoryIcon(automation.category)}
                           <span>{automation.name}</span>
-                          <span>({automation.estimatedDuration})</span>
                         </div>
                       ))}
                     </div>
