@@ -4,6 +4,7 @@ import * as React from "react"
 
 export interface Provider {
     name: string
+    slug: string
     logo: React.ElementType
     plan: string
 }

@@ -51,7 +51,7 @@ export default function HomePage() {
               </div>
 
               {/* Middle Column - Account Management & Templates */}
-              <div className="xl:col-span-2 space-y-6">
+              <div className="xl:col-span-2 space-y-6 h-full min-h-0">
                 <AccountList />
                 {/* <AutomationTemplates /> */}
               </div>

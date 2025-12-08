@@ -1,24 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw } from "lucide-react"
+import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw, Smartphone, Monitor, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight } from "lucide-react"
 import { AccountDrawer } from "./account-drawer"
 import { BulkUploader } from "./bulk-uploader"
 import { AccountHistoryModal } from "./account-history-modal"
-import { apiDelete, apiGet } from "@/lib/api"
+import { apiDelete, apiGet, apiPatch } from "@/lib/api"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Account, HistoryEntry, PaginatedResponse } from "@/lib/types"
 import { BackupModal } from "./backup-modal"
 import { RestoreModal } from "./restore-modal"
 import { formatBytes } from "@/utils/formatters"
 import { useAccounts } from "@/hooks/useAccounts"
+import { useProvider } from "@/contexts/provider-context"
 import { toast } from "sonner"
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 export function AccountList() {
   const [showAddAccount, setShowAddAccount] = useState(false)
   const [showBulkUpload, setShowBulkUpload] = useState(false)
@@ -28,16 +38,27 @@ export function AccountList() {
   const { selectedAccounts, setSelectedAccounts } = useAccounts();
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
+  const { selectedProvider } = useProvider()
+
+  // Pagination State
+  const [page, setPage] = useState(1)
+  const pageSize = 10 // Assuming default page size
 
   const queryClient = useQueryClient()
 
-  const { data: accounts } = useQuery<Account[]>({
-    queryKey: ["accounts"],
+  const { data: paginatedData, isLoading } = useQuery<PaginatedResponse<Account>>({
+    queryKey: ["accounts", page, selectedProvider?.slug],
     queryFn: async () => {
-      const data = await apiGet<PaginatedResponse<Account>>("/api/accounts");
-      return data.results;
-    }
+      if (!selectedProvider) return { count: 0, next: null, previous: null, results: [] };
+      return await apiGet<PaginatedResponse<Account>>(`/api/accounts?page=${page}&provider=${selectedProvider.slug}`);
+    },
+    enabled: !!selectedProvider,
+    placeholderData: (previousData) => previousData, // Keep previous data while fetching new page
   })
+
+  const accounts = paginatedData?.results || []
+  const totalCount = paginatedData?.count || 0
+  const totalPages = Math.ceil(totalCount / pageSize)
 
   const handleAccountUpdated = () => {
     queryClient.invalidateQueries({ queryKey: ["accounts"] })
@@ -83,21 +104,21 @@ export function AccountList() {
     },
 
     onMutate: async (accountId: string) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
+      const previousData = queryClient.getQueryData(["accounts", page])
 
-      // Snapshot the previous value
-      const previousAccounts = queryClient.getQueryData(["accounts"])
+      queryClient.setQueryData(["accounts", page], (old: PaginatedResponse<Account> | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          results: old.results.filter(acc => acc.id !== accountId)
+        }
+      })
 
-      // Optimistically update to the new value
-      queryClient.setQueryData(["accounts"], (old: Account[]) =>
-        old ? old.filter(acc => acc.id !== accountId) : []
-      )
-
-      return { previousAccounts }
+      return { previousData }
     },
     onError: (err, accountId, context) => {
-      queryClient.setQueryData(["accounts"], context?.previousAccounts)
+      queryClient.setQueryData(["accounts", page], context?.previousData)
     }
   })
 
@@ -112,14 +133,19 @@ export function AccountList() {
     },
     onMutate: async (accountIds: string[]) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
-      const previousAccounts = queryClient.getQueryData(["accounts"])
-      queryClient.setQueryData(["accounts"], (old: Account[]) =>
-        old ? old.filter(acc => !accountIds.includes(acc.id)) : []
-      )
-      return { previousAccounts }
+      const previousData = queryClient.getQueryData(["accounts", page])
+
+      queryClient.setQueryData(["accounts", page], (old: PaginatedResponse<Account> | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          results: old.results.filter(acc => !accountIds.includes(acc.id))
+        }
+      })
+      return { previousData }
     },
     onError: (err, accountIds, context) => {
-      queryClient.setQueryData(["accounts"], context?.previousAccounts)
+      queryClient.setQueryData(["accounts", page], context?.previousData)
       toast.error("Failed to delete accounts")
     },
     onSuccess: () => {
@@ -138,45 +164,162 @@ export function AccountList() {
 
   const handleBackupComplete = () => {
     if (backupAccount) {
-      queryClient.setQueryData(["accounts"], (old: Account[]) =>
-        old.map((account) =>
-          account.id === backupAccount.id
-            ? {
-              ...account,
-              hasBackup: true,
-              lastBackupDate: "Just now",
-              backupSize: "2.1 MB",
-            }
-            : account,
-        ),
-      )
+      // Invalidate to refresh backup status
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
     }
   }
 
   const handleRestoreComplete = () => {
     if (restoreAccount) {
       console.log("[v0] Restore completed for account:", restoreAccount.email)
-      // Optionally refresh account data here
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
     }
   }
 
-  const handleToggleStatus = (accountId: string) => {
-    console.log("Toggle status for account:", accountId)
-    // setAccounts(
-    //   accounts.map((account) =>
-    //     account.id === accountId
-    //       ? { ...account, status: account.status === "disabled" ? "idle" : "disabled" }
-    //       : account,
-    //   ),
-    // )
+  const toggleDeviceType = useMutation({
+    mutationFn: async (account: Account) => {
+      const newType = account.type === "mobile" ? "desktop" : "mobile"
+      await apiPatch(`/api/accounts/${account.id}/`, { type: newType })
+      return { accountId: account.id, newType }
+    },
+    onMutate: async (account) => {
+      await queryClient.cancelQueries({ queryKey: ["accounts"] })
+      const previousData = queryClient.getQueryData(["accounts", page])
+
+      const newType = account.type === "mobile" ? "desktop" : "mobile"
+
+      queryClient.setQueryData(["accounts", page], (old: PaginatedResponse<Account> | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          results: old.results.map(acc => acc.id === account.id ? { ...acc, type: newType } : acc)
+        }
+      })
+
+      return { previousData }
+    },
+    onError: (err, account, context) => {
+      queryClient.setQueryData(["accounts", page], context?.previousData)
+      toast.error("Failed to update device type")
+    },
+    onSuccess: (data) => {
+      toast.success(`Device type updated to ${data.newType}`)
+    }
+  })
+
+  // Helper to generate pagination items
+  const renderPaginationItems = () => {
+    const items = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={page === i}
+              onClick={(e) => {
+                e.preventDefault()
+                setPage(i)
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        )
+      }
+    } else {
+      // Logic for ellipsis
+      let startPage = Math.max(1, page - 2)
+      let endPage = Math.min(totalPages, page + 2)
+
+      if (page <= 3) {
+        endPage = 5
+      } else if (page >= totalPages - 2) {
+        startPage = totalPages - 4
+      }
+
+      if (startPage > 1) {
+        items.push(
+          <PaginationItem key={1}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                setPage(1)
+              }}
+            >
+              1
+            </PaginationLink>
+          </PaginationItem>
+        )
+        if (startPage > 2) {
+          items.push(
+            <PaginationItem key="ellipsis-start">
+              <PaginationEllipsis />
+            </PaginationItem>
+          )
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={page === i}
+              onClick={(e) => {
+                e.preventDefault()
+                setPage(i)
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        )
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          items.push(
+            <PaginationItem key="ellipsis-end">
+              <PaginationEllipsis />
+            </PaginationItem>
+          )
+        }
+        items.push(
+          <PaginationItem key={totalPages}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                setPage(totalPages)
+              }}
+            >
+              {totalPages}
+            </PaginationLink>
+          </PaginationItem>
+        )
+      }
+    }
+
+    return items
   }
 
   return (
     <>
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border flex flex-col h-full min-h-0">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground">Accounts</CardTitle>
+            <CardTitle className="text-foreground flex items-center gap-2">
+              Accounts
+              {selectedAccounts.length > 0 && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({selectedAccounts.length} selected)
+                </span>
+              )}
+            </CardTitle>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -207,110 +350,169 @@ export function AccountList() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {accounts?.map((account) => {
-              // const lastBackup = account.backups[account.backups.length - 1];
-              // const hasBackup = lastBackup && lastBackup.filename;
+        <CardContent className="flex-1 overflow-hidden p-0">
+          <div className="h-full overflow-y-auto p-6 space-y-3">
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading accounts...</div>
+            ) : accounts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">No accounts found.</div>
+            ) : (
+              accounts.map((account) => {
+                const hasProxy = account.proxy_settings && account.proxy_settings.host;
+                const proxyText = hasProxy ? `${account.proxy_settings?.host}:${account.proxy_settings?.port}` : "No Proxy";
 
-              return (
-                <div
-                  key={account.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
-                >
-                  <Checkbox
-                    checked={selectedAccounts.includes(account)}
-                    onCheckedChange={(checked) => handleSelectAccount(account, !!checked)}
-                  />
+                return (
+                  <div
+                    key={account.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                  >
+                    <Checkbox
+                      checked={selectedAccounts.includes(account)}
+                      onCheckedChange={(checked) => handleSelectAccount(account, !!checked)}
+                    />
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium text-foreground truncate">{account.email}</p>
-                      <Badge variant="secondary" className="text-xs">
-                        {account.label}
-                      </Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-foreground truncate">{account.email}</p>
+                        <Badge variant="secondary" className="text-xs">
+                          {account.label}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <Badge className={getStatusColor(account.status)}>{account.status}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">{account.latest_automation}</p>
+                      <div className="flex flex-wrap items-center mt-2 gap-2 text-xs">
+                        {/* Device Switcher */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => toggleDeviceType.mutate(account)}
+                              >
+                                {account.type === "mobile" ? (
+                                  <Smartphone className="h-4 w-4 text-blue-400" />
+                                ) : (
+                                  <Monitor className="h-4 w-4 text-purple-400" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Switch to {account.type === "mobile" ? "Desktop" : "Mobile"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        {/* Proxy Status */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center">
+                                {hasProxy ? (
+                                  <ShieldCheck className="h-4 w-4 text-green-400" />
+                                ) : (
+                                  <ShieldAlert className="h-4 w-4 text-muted-foreground/50" />
+                                )}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{proxyText}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      {/* <span>Last: {new Date(account.activities[account.activities.length - 1].executed_at).toLocaleString() ?? "Nan"}</span> */}
-                      <Badge className={getStatusColor(account.status)}>{account.status}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">{account.latest_automation}</p>
-                    <div className="flex flex-wrap items-center mt-2 gap-2 text-xs">
-                      {/* <Database
-                        className={`h-3 w-3 ${hasBackup ? "text-green-400" : "text-muted-foreground"}`}
-                      />
-                      <span className={`text-xs ${hasBackup ? "text-green-400" : "text-muted-foreground"}`}>
-                        {hasBackup ? (
-                          <>
-                            Backup: {lastBackup.filename}{" "}
-                            <span className="text-muted-foreground">
-                              ({formatBytes(lastBackup.file_size)})
-                            </span>
-                          </>
-                        ) : (
-                          "No backup"
-                        )}
-                      </span> */}
-                    </div>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-popover border-border">
+                        <DropdownMenuItem onClick={() => handleShowhistory(account)}>
+                          <History className="h-4 w-4 mr-2" />
+                          View History
+                        </DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Database className="h-4 w-4 mr-4 text-muted-foreground" />
+                            Backup & Restore
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="bg-popover border-border">
+                            <DropdownMenuItem onClick={() => setBackupAccount(account)}>
+                              <Database className="h-4 w-4 mr-2" />
+                              {account.backups.length > 0 ? "Update Backup" : "Create Backup"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setRestoreAccount(account)} disabled={!account.backups[account.backups.length - 1]?.filename}>
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Restore Backup
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuItem onClick={() => handleEditAccount(account)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Account
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteAccount(account?.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2 text-destructive" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
+                )
+              })
+            )}
+          </div>
+        </CardContent>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-popover border-border">
-                      <DropdownMenuItem onClick={() => handleShowhistory(account)}>
-                        <History className="h-4 w-4 mr-2" />
-                        View History
-                      </DropdownMenuItem>
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>
-                          <Database className="h-4 w-4 mr-4 text-muted-foreground" />
-                          Backup & Restore
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="bg-popover border-border">
-                          <DropdownMenuItem onClick={() => setBackupAccount(account)}>
-                            <Database className="h-4 w-4 mr-2" />
-                            {account.backups.length > 0 ? "Update Backup" : "Create Backup"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setRestoreAccount(account)} disabled={!account.backups[account.backups.length - 1]?.filename}>
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Restore Backup
-                          </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-                      <DropdownMenuItem onClick={() => handleEditAccount(account)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Account
-                      </DropdownMenuItem>
-                      {/* <DropdownMenuItem onClick={() => handleToggleStatus(account.id)}>
-                        {account.status === "disabled" ? <CheckCircle className="h-4 w-4 mr-2" /> : <CircleSlashIcon className="h-4 w-4 mr-2" />}
-                        {account.status === "disabled" ? "Enable" : "Disable"}
-                      </DropdownMenuItem> */}
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteAccount(account?.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2 text-destructive" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )
-            })}
+        {/* Pagination Footer */}
+        <CardFooter className="border-t border-border p-4 flex items-center justify-between bg-card">
+          <div className="text-sm text-muted-foreground">
+            {totalCount > 0 ? (
+              <>Total: {totalCount} accounts</>
+            ) : (
+              <>Page {page}</>
+            )}
           </div>
 
-          {selectedAccounts.length > 0 && (
-            <div className="mt-4 p-3 bg-accent/30 rounded-lg border border-border">
-              <p className="text-sm text-foreground">
-                {selectedAccounts.length} account{selectedAccounts.length > 1 ? "s" : ""} selected
-              </p>
-            </div>
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (paginatedData?.previous) setPage(p => Math.max(1, p - 1))
+                    }}
+                    className={!paginatedData?.previous ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+
+                {renderPaginationItems()}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (paginatedData?.next) setPage(p => p + 1)
+                    }}
+                    className={!paginatedData?.next ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           )}
-        </CardContent>
+        </CardFooter>
       </Card>
 
       <AccountDrawer

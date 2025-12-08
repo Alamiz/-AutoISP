@@ -38,7 +38,7 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
 
   // Local state for split email fields
   const [username, setUsername] = useState("")
-  const [domain, setDomain] = useState("")
+  const [domain, setDomain] = useState("gmx.de")
 
   const formik = useFormik({
     initialValues: {
@@ -89,7 +89,7 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
     if (editingAccount) {
       const emailParts = editingAccount.email.split("@")
       const initialUsername = emailParts[0] || ""
-      const initialDomain = emailParts[1] || (editingAccount.provider === "webde" ? "web.de" : "gmx.net")
+      const initialDomain = emailParts[1] || (editingAccount.provider === "webde" ? "web.de" : "gmx.de")
 
       setUsername(initialUsername)
       setDomain(initialDomain)
@@ -114,7 +114,7 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
       setUsername("")
       // Set default domain based on provider
       const currentProvider = globalProvider?.name === "Web.de" ? "webde" : "gmx"
-      setDomain(currentProvider === "webde" ? "web.de" : "gmx.net")
+      setDomain(currentProvider === "webde" ? "web.de" : "gmx.de")
       formik.setFieldValue("provider", currentProvider)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

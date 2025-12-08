@@ -124,14 +124,7 @@ export interface ApiResponse<T = any> {
   timestamp: string
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-}
+
 
 // WebSocket event types
 export interface WebSocketEvent {

@@ -131,22 +131,22 @@ export function LiveLogPanel() {
                 <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-foreground">Live Activity</CardTitle>
-                        <div className="flex items-center gap-2">
-                            {/* <Button
+                        {/* <div className="flex items-center gap-2">
+                            <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsPaused(!isPaused)}
                 className={isPaused ? "text-yellow-400" : "text-green-400"}
               >
                 {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-              </Button> */}
+              </Button>
                             <Button variant="ghost" size="sm" onClick={exportLogs}>
                                 <Download className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
                                 {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                             </Button>
-                        </div>
+                        </div> */}
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4 flex-1 flex flex-col min-h-0">
