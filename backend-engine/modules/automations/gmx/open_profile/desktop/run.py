@@ -50,7 +50,7 @@ class OpenProfile(HumanAction):
             self.logger.info("Profile opened. Waiting for manual interaction...")
             
             # Keep open for the specified duration or until closed
-            page.wait_for_timeout(self.duration * 60 * 1000)
+            page.wait_for_timeout(int(self.duration)* 60 * 1000)
             
             return {"status": "success", "message": "Profile opened"}
         
