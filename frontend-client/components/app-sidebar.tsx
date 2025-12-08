@@ -71,21 +71,21 @@ const data = {
       url: "/",
       icon: Home,
     },
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: BarChart3,
-    },
-    {
-      title: "Accounts",
-      url: "/accounts",
-      icon: User,
-    },
-    {
-      title: "Automations",
-      url: "/automations",
-      icon: Bot,
-    },
+    // {
+    //   title: "Dashboard",
+    //   url: "/dashboard",
+    //   icon: BarChart3,
+    // },
+    // {
+    //   title: "Accounts",
+    //   url: "/accounts",
+    //   icon: User,
+    // },
+    // {
+    //   title: "Automations",
+    //   url: "/automations",
+    //   icon: Bot,
+    // },
   ],
 }
 

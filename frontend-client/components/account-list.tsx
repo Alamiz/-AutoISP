@@ -105,9 +105,9 @@ export function AccountList() {
 
     onMutate: async (accountId: string) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
-      const previousData = queryClient.getQueryData(["accounts", page])
+      const previousData = queryClient.getQueryData(["accounts", page, selectedProvider?.slug])
 
-      queryClient.setQueryData(["accounts", page], (old: PaginatedResponse<Account> | undefined) => {
+      queryClient.setQueryData(["accounts", page, selectedProvider?.slug], (old: PaginatedResponse<Account> | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -118,7 +118,7 @@ export function AccountList() {
       return { previousData }
     },
     onError: (err, accountId, context) => {
-      queryClient.setQueryData(["accounts", page], context?.previousData)
+      queryClient.setQueryData(["accounts", page, selectedProvider?.slug], context?.previousData)
     }
   })
 
@@ -133,9 +133,9 @@ export function AccountList() {
     },
     onMutate: async (accountIds: string[]) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
-      const previousData = queryClient.getQueryData(["accounts", page])
+      const previousData = queryClient.getQueryData(["accounts", page, selectedProvider?.slug])
 
-      queryClient.setQueryData(["accounts", page], (old: PaginatedResponse<Account> | undefined) => {
+      queryClient.setQueryData(["accounts", page, selectedProvider?.slug], (old: PaginatedResponse<Account> | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -145,7 +145,7 @@ export function AccountList() {
       return { previousData }
     },
     onError: (err, accountIds, context) => {
-      queryClient.setQueryData(["accounts", page], context?.previousData)
+      queryClient.setQueryData(["accounts", page, selectedProvider?.slug], context?.previousData)
       toast.error("Failed to delete accounts")
     },
     onSuccess: () => {
@@ -184,11 +184,11 @@ export function AccountList() {
     },
     onMutate: async (account) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
-      const previousData = queryClient.getQueryData(["accounts", page])
+      const previousData = queryClient.getQueryData(["accounts", page, selectedProvider?.slug])
 
       const newType = account.type === "mobile" ? "desktop" : "mobile"
 
-      queryClient.setQueryData(["accounts", page], (old: PaginatedResponse<Account> | undefined) => {
+      queryClient.setQueryData(["accounts", page, selectedProvider?.slug], (old: PaginatedResponse<Account> | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -199,7 +199,7 @@ export function AccountList() {
       return { previousData }
     },
     onError: (err, account, context) => {
-      queryClient.setQueryData(["accounts", page], context?.previousData)
+      queryClient.setQueryData(["accounts", page, selectedProvider?.slug], context?.previousData)
       toast.error("Failed to update device type")
     },
     onSuccess: (data) => {
