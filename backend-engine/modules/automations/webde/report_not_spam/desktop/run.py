@@ -55,8 +55,10 @@ class ReportNotSpam(HumanAction):
             
             # Authenticate first
             webde_auth = WebDEAuthentication(
-                self.email, self.password, self.proxy_config,
-                self.user_agent_type, signatures=self.signatures
+                self.email, 
+                self.password, 
+                self.proxy_config,
+                self.user_agent_type
             )
             webde_auth.authenticate(page)
 

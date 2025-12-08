@@ -3,7 +3,7 @@ import { Automation } from "@/lib/types";
 export const automations: Automation[] = [
     // GMX Automations
     {
-        id: "authentication",
+        id: "authenticate",
         name: "Authenticate",
         description: "Login to GMX account and verify session.",
         category: "Auth",
@@ -47,7 +47,7 @@ export const automations: Automation[] = [
 
     // Web.de Automations
     {
-        id: "authentication",
+        id: "authenticate",
         name: "Authenticate",
         description: "Login to Web.de account and verify session.",
         category: "Auth",

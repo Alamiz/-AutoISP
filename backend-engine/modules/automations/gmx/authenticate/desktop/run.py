@@ -5,6 +5,7 @@ from core.utils.retry_decorators import RequiredActionFailed
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import StatefulFlow
+from core.flow_engine.navigation import navigate_with_retry
 from core.flow_engine.state_handler import StateHandlerRegistry
 from core.flow_engine.step import StepStatus
 from .handlers import (
@@ -15,7 +16,7 @@ from .handlers import (
     SmartFeaturesPopupHandler,
     UnknownPageHandler,
 )
-
+from core.pages_signatures.gmx.desktop import PAGE_SIGNATURES
 
 class GMXAuthentication(HumanAction):
     """
@@ -28,13 +29,13 @@ class GMXAuthentication(HumanAction):
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", signatures=None):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop"):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
-        self.signatures = signatures
+        self.signatures = PAGE_SIGNATURES
         
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
@@ -119,8 +120,8 @@ class GMXAuthentication(HumanAction):
         State-based authentication using StatefulFlow.
         Automatically handles different page states until reaching goal state.
         """
-        # Navigate to GMX
-        page.goto("https://www.gmx.net/")
+        # Navigate to GMX with retry on network errors
+        navigate_with_retry(page, "https://www.gmx.net/", max_retries=3, logger=self.logger)
         self.human_behavior.read_delay()
         
         # Setup state handlers

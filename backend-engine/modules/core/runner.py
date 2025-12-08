@@ -3,6 +3,7 @@ import logging
 import sys
 import os
 
+
 def run_automation(email, password, isp, automation_name, proxy_config=None, device_type="desktop", **kwargs):
     """
     Global runner for any automation.
@@ -10,7 +11,7 @@ def run_automation(email, password, isp, automation_name, proxy_config=None, dev
     """
 
     logger = logging.getLogger("autoisp")
-    profile = email.split('@')[0]
+    profile = email.replace("@", "_").replace(".", "_")
 
     if getattr(sys, 'frozen', False):
         modules_path = sys._MEIPASS

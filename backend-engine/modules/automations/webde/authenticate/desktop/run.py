@@ -15,7 +15,7 @@ from .handlers import (
     SmartFeaturesPopupHandler,
     UnknownPageHandler,
 )
-
+from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
 
 class WebDEAuthentication(HumanAction):
     """
@@ -25,13 +25,13 @@ class WebDEAuthentication(HumanAction):
     GOAL_STATES = {"webde_inbox"}
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", signatures=None):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop"):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
-        self.signatures = signatures
+        self.signatures = PAGE_SIGNATURES
         
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]

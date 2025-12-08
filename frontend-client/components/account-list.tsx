@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw, Smartphone, Monitor, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw, Smartphone, Monitor, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, Check } from "lucide-react"
 import { AccountDrawer } from "./account-drawer"
 import { BulkUploader } from "./bulk-uploader"
 import { AccountHistoryModal } from "./account-history-modal"
@@ -20,6 +20,8 @@ import { useAccounts } from "@/hooks/useAccounts"
 import { useProvider } from "@/contexts/provider-context"
 import { toast } from "sonner"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useJobs } from "@/contexts/jobs-context"
+import { Loader2, Clock } from "lucide-react"
 import {
   Pagination,
   PaginationContent,
@@ -39,6 +41,7 @@ export function AccountList() {
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
   const { selectedProvider } = useProvider()
+  const { getAccountJob, isAccountBusy } = useJobs()
 
   // Pagination State
   const [page, setPage] = useState(1)
@@ -392,7 +395,33 @@ export function AccountList() {
                         </Badge>}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <Badge className={getStatusColor(account.status)}>{account.status}</Badge>
+                        {/* <Badge className={getStatusColor(account.status)}>{account.status}</Badge> */}
+                        {/* Job Status Indicator */}
+                        {(() => {
+                          const job = getAccountJob(account.id);
+                          if (job?.status === "running") {
+                            return (
+                              <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 flex items-center gap-1">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Running
+                              </Badge>
+                            );
+                          }
+                          if (job?.status === "queued") {
+                            return (
+                              <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Queued
+                              </Badge>
+                            );
+                          }
+                          return (
+                            <Badge className="bg-green-500/10 text-green-400 border-green-500/20 flex items-center gap-1">
+                              <Check className="h-3 w-3" />
+                              Idle
+                            </Badge>
+                          );
+                        })()}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 truncate">{account.latest_automation}</p>
                       <div className="flex flex-wrap items-center mt-2 gap-2 text-xs">

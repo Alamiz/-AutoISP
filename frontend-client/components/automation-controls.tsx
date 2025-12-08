@@ -17,6 +17,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useAccounts } from "@/hooks/useAccounts"
 import { useProvider } from "@/contexts/provider-context"
+import { useJobs } from "@/contexts/jobs-context"
 import { automations } from "@/data/automations"
 import { Automation } from "@/lib/types"
 
@@ -34,6 +35,9 @@ export function AutomationControls() {
 
   const { selectedAccounts, setSelectedAccounts } = useAccounts()
   const queryClient = useQueryClient()
+  const { busyAccountIds } = useJobs()
+  const availableAccounts = selectedAccounts.filter(acc => !busyAccountIds.has(acc.id))
+  const busyAccounts = selectedAccounts.filter(acc => busyAccountIds.has(acc.id))
 
   // Update available automations when provider changes
   useEffect(() => {
@@ -106,7 +110,7 @@ export function AutomationControls() {
       return await apiPost('/automations/run', {
         automation_id: automation.id,
         parameters: automationParams[automationId] || {},
-        account_ids: selectedAccounts.map(acc => acc.id),
+        account_ids: availableAccounts.map(acc => acc.id),
       },
         "local"
       )
@@ -322,6 +326,11 @@ export function AutomationControls() {
                 )}
                 {selectedAccounts.length === 0 && (
                   <p className="text-sm text-red-400">* Please select accounts in order to start automations.</p>
+                )}
+                {busyAccounts.length > 0 && (
+                  <p className="text-sm text-orange-400">
+                    * {busyAccounts.length} account(s) already have running/queued jobs and will be skipped.
+                  </p>
                 )}
               </div>
             </TabsContent>

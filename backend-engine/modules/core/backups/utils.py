@@ -37,7 +37,7 @@ async def run_backup(account_id: str):
         if not account or 'email' not in account:
              raise ValueError(f"Could not retrieve email for account {account_id}")
              
-        email_username = account['email'].split('@')[0]
+        email_username = account['email'].replace("@", "_").replace(".", "_")
         profile_name = f"Profile_{email_username}"
         
         if not (profile_manager.chrome_data_path / profile_name).exists():
@@ -219,7 +219,7 @@ async def restore_backup(account_id: str | None, backup_id: str):
         else:
              # If we have account_id, we can derive profile_name
              account = get_account_by_id(account_id)
-             email_username = account['email'].split('@')[0]
+             email_username = account['email'].replace("@", "_").replace(".", "_")
              profile_name = f"Profile_{email_username}"
 
         if not profile_name:

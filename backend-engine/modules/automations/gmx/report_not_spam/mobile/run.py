@@ -107,8 +107,7 @@ class ReportNotSpam(HumanAction):
                 self.email,
                 self.password,
                 self.proxy_config,
-                self.user_agent_type,
-                signatures=self.signatures
+                self.user_agent_type
             )
 
             try:

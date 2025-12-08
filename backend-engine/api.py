@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from modules.routers import automations, auth, backup
+from modules.routers import automations, auth, backup, jobs
 from modules.core.utils.logger import configure_logger
 
 logger = configure_logger()
@@ -19,6 +19,7 @@ app.add_middleware(
 app.include_router(automations.router)
 app.include_router(auth.router)
 app.include_router(backup.router)
+app.include_router(jobs.router)
 
 @app.get("/")
 def root():

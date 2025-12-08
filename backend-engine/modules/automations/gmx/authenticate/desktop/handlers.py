@@ -62,7 +62,7 @@ class LoginPageHandler(StateHandler):
         except Exception as e:
             if self.logger:
                 self.logger.error(f"LoginPageHandler: Failed - {e}")
-            return "abort"
+            return "retry"
 
 
 class LoggedInPageHandler(StateHandler):
@@ -89,7 +89,7 @@ class LoggedInPageHandler(StateHandler):
         except Exception as e:
             if self.logger:
                 self.logger.error(f"LoggedInPageHandler: Failed - {e}")
-            return "abort"
+            return "retry"
 
 
 class AdsPreferencesPopup1Handler(StateHandler):
@@ -192,4 +192,4 @@ class UnknownPageHandler(StateHandler):
         except Exception as e:
             if self.logger:
                 self.logger.error(f"UnknownPageHandler: Failed - {e}")
-            return "abort"
+            return "retry"

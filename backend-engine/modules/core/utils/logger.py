@@ -25,11 +25,10 @@ class MasterAPILogHandler(logging.Handler):
             headers["Authorization"] = f"Bearer {token}"
 
         try:
-            print("Inserting log: ", payload)
             requests.post(self.master_url, data=json.dumps(payload), headers=headers, timeout=2)
         except Exception as e:
             # Fail silently to avoid recursive logging
-            print("Log insertion failed: ", e)
+            pass
 
 def configure_logger():
     logger = logging.getLogger()

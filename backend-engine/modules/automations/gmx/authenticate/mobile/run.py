@@ -15,7 +15,7 @@ from .handlers import (
     AdsPreferencesPopup2Handler,
     UnknownPageHandler,
 )
-
+from core.pages_signatures.gmx.mobile import PAGE_SIGNATURES
 
 class GMXAuthentication(HumanAction):
     """
@@ -25,13 +25,13 @@ class GMXAuthentication(HumanAction):
     GOAL_STATES = {"gmx_folder_list_page"}
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile", signatures=None):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile"):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
-        self.signatures = signatures
+        self.signatures = PAGE_SIGNATURES
         
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
@@ -82,7 +82,6 @@ class GMXAuthentication(HumanAction):
         try:
             self.browser.start()
             page = self.browser.new_page()
-            page.wait_for_timeout(100_100_100)
 
             self.authenticate(page)
             self.logger.info(f"Authentication successful for {self.email}")

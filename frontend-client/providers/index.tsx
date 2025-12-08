@@ -5,6 +5,7 @@ import { QueryProvider } from "./query-provider"
 import { BreadcrumbProvider } from "@/components/breadcrumb-context";
 import { UserProvider } from "@/contexts/user-context";
 import { ProviderProvider } from "@/contexts/provider-context";
+import { JobsProvider } from "@/contexts/jobs-context";
 import { auth } from "@/lib/auth";
 import { apiPost } from "@/lib/api";
 
@@ -29,10 +30,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <QueryProvider>
         <UserProvider>
           <ProviderProvider>
-            {children}
+            <JobsProvider>
+              {children}
+            </JobsProvider>
           </ProviderProvider>
         </UserProvider>
       </QueryProvider>
     </BreadcrumbProvider>
   );
 }
+
