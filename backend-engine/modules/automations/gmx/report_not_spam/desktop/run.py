@@ -9,7 +9,7 @@ from .steps import NavigateToSpamStep
 from .handlers import (
     UnknownPageHandler,
 )
-from automations.gmx.signatures.desktop import PAGE_SIGNATURES
+from core.pages_signatures.gmx.desktop import PAGE_SIGNATURES
 
 class ReportNotSpam(HumanAction):
     """

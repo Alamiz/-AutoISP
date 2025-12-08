@@ -10,8 +10,7 @@ from core.flow_engine.state_handler import StateHandlerRegistry
 from core.flow_engine.step import StepStatus
 from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
 from .handlers import UnknownPageHandler
-from automations.webde.signatures.mobile import PAGE_SIGNATURES
-
+from core.pages_signatures.webde.mobile import PAGE_SIGNATURES
 
 class ReportNotSpam(HumanAction):
     """

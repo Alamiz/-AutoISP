@@ -9,8 +9,7 @@ from core.flow_engine.step import StepStatus
 from core.utils.identifier import identify_page
 from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
 from .handlers import UnknownPageHandler
-from automations.gmx.signatures.mobile import PAGE_SIGNATURES
-
+from core.pages_signatures.gmx.mobile import PAGE_SIGNATURES
 
 class ReportNotSpam(HumanAction):
     """
