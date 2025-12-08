@@ -15,6 +15,11 @@ interface AccountHistoryModalProps {
 
 export function AccountHistoryModal({ open, onOpenChange, accountEmail, history }: AccountHistoryModalProps) {
 
+  // Sort history by executed_at descending (most recent first)
+  const sortedHistory = [...history].sort((a, b) =>
+    new Date(b.executed_at).getTime() - new Date(a.executed_at).getTime()
+  )
+
   const getResultIcon = (result: HistoryEntry["status"]) => {
     switch (result) {
       case "success":
@@ -39,10 +44,10 @@ export function AccountHistoryModal({ open, onOpenChange, accountEmail, history 
 
   const formatDuration = (executedAt: string, completedAt: string) => {
     if (!completedAt) return "In progress..."
-    
+
     const start = new Date(executedAt).getTime()
     const end = new Date(completedAt).getTime()
-    const diff = end - start
+    const diff = Math.abs(end - start) // Use absolute value to avoid negative
 
     if (diff < 1000) return `${diff}ms`
     if (diff < 60000) return `${Math.floor(diff / 1000)}s`
@@ -62,7 +67,7 @@ export function AccountHistoryModal({ open, onOpenChange, accountEmail, history 
 
         <ScrollArea className="h-96 mt-4">
           <div className="space-y-3">
-            {history.map((entry) => (
+            {sortedHistory.map((entry) => (
               <div key={entry.id} className="p-4 rounded-lg border border-border bg-accent/20">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -72,14 +77,14 @@ export function AccountHistoryModal({ open, onOpenChange, accountEmail, history 
                   </div>
                   <span className="text-xs text-muted-foreground">{formatDuration(entry.executed_at, entry.completed_at)}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-2 line-clamp-2" style={{ 
-                      wordBreak: 'break-word',
-                      overflowWrap: 'anywhere',
-                      whiteSpace: 'pre-wrap',
-                      maxWidth: '100%'
-                    }}>
-                    {entry.details}
-                  </p>
+                <p className="text-sm text-muted-foreground mb-2 line-clamp-2" style={{
+                  wordBreak: 'break-word',
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-wrap',
+                  maxWidth: '100%'
+                }}>
+                  {entry.details}
+                </p>
                 <p className="text-xs text-muted-foreground">{new Date(entry.executed_at).toLocaleString()}</p>
               </div>
             ))}

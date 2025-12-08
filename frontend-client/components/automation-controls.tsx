@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Play, Settings, Clock, Zap, Mail, Archive, Paperclip, Shield, Search, FlaskConical } from "lucide-react"
+import { Play, Settings, Clock, Zap, Mail, Archive, Paperclip, Shield, Search, FlaskConical, Loader2 } from "lucide-react"
 import { AutomationScheduler } from "./automation-scheduler"
 import { apiPost } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -305,11 +305,15 @@ export function AutomationControls() {
                 <div className="flex gap-2 pt-4">
                   <Button
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                    disabled={!hasRequiredParams || selectedAccounts.length === 0}
+                    disabled={!hasRequiredParams || selectedAccounts.length === 0 || runAutomations.isPending}
                     onClick={handleRunAutomations}
                   >
-                    <Play className="h-4 w-4 mr-2" />
-                    {scheduleType === "now" ? "Run Now" : "Schedule"}
+                    {runAutomations.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4 mr-2" />
+                    )}
+                    {runAutomations.isPending ? "Submitting..." : (scheduleType === "now" ? "Run Now" : "Schedule")}
                   </Button>
                   {/* <Button
                     variant="outline"

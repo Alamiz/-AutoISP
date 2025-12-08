@@ -1,8 +1,10 @@
 # app/routers/automations.py
+from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from modules.core.runner import run_automation
 from modules.core.job_manager import job_manager, Job
 from modules.crud.account import get_account_by_id
+from modules.crud.activity import ActivityManager
 from pydantic import BaseModel
 from typing import List
 
@@ -18,8 +20,12 @@ def execute_job(job: Job):
     """
     Job execution callback - called by job_manager when a job starts.
     This runs in a background thread.
+    Logs activity on completion (success or failure).
     """
     params = job.execution_params
+    
+    # Record start time
+    executed_at = datetime.utcnow().isoformat()
     
     try:
         result = run_automation(
@@ -31,10 +37,41 @@ def execute_job(job: Job):
             device_type=params.get("device_type", "desktop"),
             **params.get("extra_params", {})
         )
+        
+        # Record completion time
+        completed_at = datetime.utcnow().isoformat()
+        
+        # Log success activity
+        ActivityManager.create_activity(
+            action="run_automation",
+            status="success",
+            account_id=job.account_id,
+            details=f"Automation '{job.automation_name}' completed successfully",
+            metadata={"automation_id": job.automation_id, "device_type": params.get("device_type", "desktop")},
+            executed_at=executed_at,
+            completed_at=completed_at
+        )
+        
         job_manager.complete_job(job.id, success=True)
         return result
+        
     except Exception as e:
-        job_manager.complete_job(job.id, success=False, error=str(e))
+        # Record completion time
+        completed_at = datetime.utcnow().isoformat()
+        error_msg = str(e)
+        
+        # Log failure activity
+        ActivityManager.create_activity(
+            action="run_automation",
+            status="failed",
+            account_id=job.account_id,
+            details=f"Automation '{job.automation_name}' failed: {error_msg}",
+            metadata={"automation_id": job.automation_id, "error": error_msg, "device_type": params.get("device_type", "desktop")},
+            executed_at=executed_at,
+            completed_at=completed_at
+        )
+        
+        job_manager.complete_job(job.id, success=False, error=error_msg)
         raise
 
 

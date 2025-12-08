@@ -17,7 +17,7 @@ class ActivityManager:
         status: str,
         account_id: str,
         details: str = "",
-        metadata: str = "",
+        metadata: dict = None,
         executed_at: str = None,
         completed_at: str = None
     ):
@@ -35,7 +35,7 @@ class ActivityManager:
             "status": status,
             "executed_at": executed_at,
             "completed_at": completed_at,
-            "metadata": metadata,
+            "metadata": metadata or {},
             "account": account_id,
         }
 

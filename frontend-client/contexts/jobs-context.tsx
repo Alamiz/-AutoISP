@@ -28,6 +28,7 @@ interface JobsContextType {
     isAccountBusy: (accountId: string) => boolean
     getAccountJob: (accountId: string) => Job | undefined
     busyAccountIds: Set<string>
+    onJobComplete: (callback: (job: Job) => void) => () => void
 }
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined)
@@ -40,6 +41,7 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
     const [isConnected, setIsConnected] = useState(false)
     const wsRef = useRef<WebSocket | null>(null)
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const jobCompleteCallbacksRef = useRef<Set<(job: Job) => void>>(new Set())
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) return
@@ -116,6 +118,8 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
                     running: prev.running.filter((j) => j.id !== data.job.id),
                     completed: [data.job, ...prev.completed.slice(0, 9)],
                 }))
+                // Notify all subscribers that a job completed
+                jobCompleteCallbacksRef.current.forEach((callback) => callback(data.job))
                 break
 
             case "job_cancelled":
@@ -164,8 +168,17 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
         [jobs.running, jobs.queued]
     )
 
+    // Register callback for job completion events
+    const onJobComplete = useCallback((callback: (job: Job) => void) => {
+        jobCompleteCallbacksRef.current.add(callback)
+        // Return unsubscribe function
+        return () => {
+            jobCompleteCallbacksRef.current.delete(callback)
+        }
+    }, [])
+
     return (
-        <JobsContext.Provider value={{ jobs, isConnected, isAccountBusy, getAccountJob, busyAccountIds }}>
+        <JobsContext.Provider value={{ jobs, isConnected, isAccountBusy, getAccountJob, busyAccountIds, onJobComplete }}>
             {children}
         </JobsContext.Provider>
     )

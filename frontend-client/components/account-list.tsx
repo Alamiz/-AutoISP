@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,13 +41,21 @@ export function AccountList() {
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
   const { selectedProvider } = useProvider()
-  const { getAccountJob, isAccountBusy } = useJobs()
+  const { getAccountJob, isAccountBusy, onJobComplete } = useJobs()
 
   // Pagination State
   const [page, setPage] = useState(1)
   const pageSize = 10 // Assuming default page size
 
   const queryClient = useQueryClient()
+
+  // Refetch accounts when a job completes (to get updated activities)
+  useEffect(() => {
+    const unsubscribe = onJobComplete(() => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
+    })
+    return unsubscribe
+  }, [onJobComplete, queryClient])
 
   const { data: paginatedData, isLoading } = useQuery<PaginatedResponse<Account>>({
     queryKey: ["accounts", page, selectedProvider?.slug],
