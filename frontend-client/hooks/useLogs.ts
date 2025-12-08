@@ -7,6 +7,7 @@ export function useLogs() {
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:8000/ws/logs"); // adjust URL for backend
 
+    socket.onopen = () => console.log("WebSocket connected");
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);

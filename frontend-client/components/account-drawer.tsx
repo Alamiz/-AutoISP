@@ -23,10 +23,22 @@ interface AccountDrawerProps {
   onAccountSaved: () => void
 }
 
+const GMX_DOMAINS = [
+  "gmx.de"
+]
+
+const WEBDE_DOMAINS = [
+  "web.de"
+]
+
 export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSaved }: AccountDrawerProps) {
   const [showPassword, setShowPassword] = useState(false)
   const { selectedProvider: globalProvider } = useProvider()
   const defaultProvider = globalProvider?.name === "Web.de" ? "webde" : "gmx"
+
+  // Local state for split email fields
+  const [username, setUsername] = useState("")
+  const [domain, setDomain] = useState("")
 
   const formik = useFormik({
     initialValues: {
@@ -62,8 +74,26 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
     }
   })
 
+  // Update formik email when username or domain changes
+  useEffect(() => {
+    if (username && domain) {
+      formik.setFieldValue("email", `${username}@${domain}`)
+    } else if (username) {
+      // If domain is missing, just set username (will fail validation but keeps state)
+      formik.setFieldValue("email", username)
+    }
+  }, [username, domain])
+
+  // Initialize form and local state when editing or opening
   useEffect(() => {
     if (editingAccount) {
+      const emailParts = editingAccount.email.split("@")
+      const initialUsername = emailParts[0] || ""
+      const initialDomain = emailParts[1] || (editingAccount.provider === "webde" ? "web.de" : "gmx.net")
+
+      setUsername(initialUsername)
+      setDomain(initialDomain)
+
       formik.setValues({
         email: editingAccount.email || "",
         password: editingAccount.credentials?.password || "",
@@ -80,9 +110,31 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
       })
     } else {
       formik.resetForm()
+      // Reset local state
+      setUsername("")
+      // Set default domain based on provider
+      const currentProvider = globalProvider?.name === "Web.de" ? "webde" : "gmx"
+      setDomain(currentProvider === "webde" ? "web.de" : "gmx.net")
+      formik.setFieldValue("provider", currentProvider)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingAccount])
+  }, [editingAccount, open]) // Added open to reset when opening fresh
+
+  // Update domain options when provider changes (though provider is now global/fixed per drawer context usually)
+  // But if we want to support switching provider inside drawer (which we removed), we'd need this.
+  // Since we removed provider switcher from drawer, we rely on globalProvider.
+  // However, formik.values.provider might be set from editingAccount.
+
+  const currentProvider = formik.values.provider as "gmx" | "webde"
+  const availableDomains = currentProvider === "webde" ? WEBDE_DOMAINS : GMX_DOMAINS
+
+  // Ensure domain is valid for provider
+  useEffect(() => {
+    if (currentProvider && !availableDomains.includes(domain)) {
+      setDomain(availableDomains[0])
+    }
+  }, [currentProvider])
+
 
   async function addAccount(values: any) {
     await apiPost("/api/accounts/", {
@@ -152,38 +204,42 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
 
               <TabsContent value="general" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...formik.getFieldProps("email")}
-                    disabled={!!editingAccount}
-                    className="bg-input border-border"
-                  />
+                  <Label htmlFor="username">Email Address</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={!!editingAccount}
+                        className="bg-input border-border col-span-3"
+                        placeholder="username"
+                      />
+                    </div>
+                    <Select
+                      value={domain}
+                      onValueChange={setDomain}
+                      disabled={!!editingAccount}
+                    >
+                      <SelectTrigger className="bg-input border-border">
+                        <SelectValue placeholder="@domain" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableDomains.map(d => (
+                          <SelectItem key={d} value={d}>@{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {formik.touched.email && formik.errors.email && (
                     <div className="text-red-500 text-xs">{formik.errors.email}</div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-4 gap-12">
                   {/* Provider selection removed - uses global context */}
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="provider">Provider</Label>
-                    <Select
-                      onValueChange={(value) => formik.setFieldValue("provider", value)}
-                      value={formik.values.provider}
-                    >
-                      <SelectTrigger className="bg-input border-border">
-                        <SelectValue placeholder="Select provider" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gmx">GMX</SelectItem>
-                        <SelectItem value="webde">WEB.DE</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div> */}
-
-                  <div className="space-y-2">
+                  <div className="col-span-1 space-y-2">
                     <Label htmlFor="type">Type</Label>
                     <Select
                       onValueChange={(value) => formik.setFieldValue("type", value)}
@@ -198,15 +254,14 @@ export function AccountDrawer({ open, onOpenChange, editingAccount, onAccountSav
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="label">Label (Optional)</Label>
-                  <Input
-                    id="label"
-                    {...formik.getFieldProps("label")}
-                    className="bg-input border-border"
-                  />
+                  <div className="col-span-3 space-y-2">
+                    <Label htmlFor="label">Label (Optional)</Label>
+                    <Input
+                      id="label"
+                      {...formik.getFieldProps("label")}
+                      className="bg-input border-border"
+                    />
+                  </div>
                 </div>
               </TabsContent>
 

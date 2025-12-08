@@ -216,7 +216,7 @@ export function LiveLogPanel() {
                         </div>
                         <ScrollArea
                             ref={scrollAreaRef}
-                            className="flex-1 rounded-lg border border-border bg-accent/10"
+                            className="flex-1 rounded-lg border border-border bg-accent/10 overflow-auto"
                         >
                             <div className="p-3 space-y-1">
                                 {filteredLogs.map((log, index) => (

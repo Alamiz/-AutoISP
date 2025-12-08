@@ -3,7 +3,7 @@ import { Automation } from "@/lib/types";
 export const automations: Automation[] = [
     // GMX Automations
     {
-        id: "gmx-auth",
+        id: "authentication",
         name: "Authenticate",
         description: "Login to GMX account and verify session.",
         category: "Auth",
@@ -11,7 +11,7 @@ export const automations: Automation[] = [
         estimatedDuration: "30s",
     },
     {
-        id: "gmx-report-not-spam",
+        id: "report_not_spam",
         name: "Report Not Spam",
         description: "Find emails by keyword in Spam folder and move them to Inbox.",
         category: "Email",
@@ -47,7 +47,7 @@ export const automations: Automation[] = [
 
     // Web.de Automations
     {
-        id: "webde-auth",
+        id: "authentication",
         name: "Authenticate",
         description: "Login to Web.de account and verify session.",
         category: "Auth",
@@ -55,7 +55,7 @@ export const automations: Automation[] = [
         estimatedDuration: "30s",
     },
     {
-        id: "webde-report-not-spam",
+        id: "report_not_spam",
         name: "Report Not Spam",
         description: "Find emails by keyword in Spam folder and move them to Inbox.",
         category: "Email",
