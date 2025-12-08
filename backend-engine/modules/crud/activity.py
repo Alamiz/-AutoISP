@@ -3,11 +3,12 @@ from fastapi.exceptions import HTTPException
 import logging
 from datetime import datetime
 from modules.core.token_storage import token_storage
+from modules.core.config import MASTER_API_URL
 
 logger = logging.getLogger(__name__)
 
 # Configuration for the external API
-EXTERNAL_ACTIVITY_API_BASE_URL = "http://localhost:8000/api/activity"
+EXTERNAL_ACTIVITY_API_BASE_URL = f"{MASTER_API_URL}/api/activity"
 
 class ActivityManager:
     @staticmethod

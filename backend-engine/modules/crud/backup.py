@@ -2,11 +2,12 @@ import httpx
 from fastapi.exceptions import HTTPException
 import logging
 from modules.core.token_storage import token_storage
+from modules.core.config import MASTER_API_URL
 
 logger = logging.getLogger(__name__)
 
 # Configuration for the external API
-EXTERNAL_BACKUP_API_BASE_URL = "http://localhost:8000/api/backups"
+EXTERNAL_BACKUP_API_BASE_URL = f"{MASTER_API_URL}/api/backups"
 
 class BackupManager:
     @staticmethod

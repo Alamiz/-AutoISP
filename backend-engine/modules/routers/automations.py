@@ -30,8 +30,9 @@ def trigger_automation(request: AutomationRequest, background_tasks: BackgroundT
 
             # Extract correct password from credentials
             password = None
-            if account.credentials and "password" in account.credentials:
-                password = account.credentials["password"]
+            credentials = account.get("credentials", {})
+            if credentials and "password" in credentials:
+                password = credentials["password"]
 
             if not password:
                 failed_accounts.append(
@@ -42,12 +43,12 @@ def trigger_automation(request: AutomationRequest, background_tasks: BackgroundT
             # Schedule automation with correct arguments
             background_tasks.add_task(
                 run_automation,
-                email=account.email,
+                email=account.get("email"),
                 password=password,
-                isp=account.provider,
+                isp=account.get("provider"),
                 automation_name=request.automation_id,
-                proxy_config=account.proxy_settings,
-                device_type=account.type,
+                proxy_config=account.get("proxy_settings"),
+                device_type=account.get("type", "desktop"),
                 **request.parameters
             )
 
