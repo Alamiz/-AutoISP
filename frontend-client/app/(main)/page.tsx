@@ -43,21 +43,21 @@ export default function HomePage() {
           <div className="p-6 space-y-6 h-full flex flex-col">
             {/* <HeroSection /> */}
             {/* <QuickActions /> */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 h-full">
+            <div className="grid grid-cols-1 2xl:grid-cols-4 gap-8 h-full">
               {/* Left Column - Dashboard & Controls */}
-              <div className="xl:col-span-1 space-y-6">
+              <div className="2xl:col-span-1 space-y-6">
                 {/* <Dashboard /> */}
                 <AutomationControls />
               </div>
 
               {/* Middle Column - Account Management & Templates */}
-              <div className="xl:col-span-2 space-y-6 h-full min-h-0">
+              <div className="2xl:col-span-2 space-y-6 h-full min-h-0">
                 <AccountList />
                 {/* <AutomationTemplates /> */}
               </div>
 
               {/* Right Column - Live Logs */}
-              <div className="xl:col-span-1 h-full min-h-0">
+              <div className="2xl:col-span-1 h-full min-h-0">
                 <LiveLogPanel />
               </div>
             </div>

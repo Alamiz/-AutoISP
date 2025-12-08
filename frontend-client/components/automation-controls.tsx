@@ -285,7 +285,7 @@ export function AutomationControls() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                {/* <div className="space-y-3">
                   <h4 className="text-sm font-medium text-foreground">Schedule</h4>
                   <Select value={scheduleType} onValueChange={(value: "now" | "later") => setScheduleType(value)}>
                     <SelectTrigger className="bg-input border-border">
@@ -296,7 +296,7 @@ export function AutomationControls() {
                       <SelectItem value="later">Schedule for Later</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <div className="flex gap-2 pt-4">
                   <Button
@@ -307,14 +307,14 @@ export function AutomationControls() {
                     <Play className="h-4 w-4 mr-2" />
                     {scheduleType === "now" ? "Run Now" : "Schedule"}
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="icon"
                     className="border-border hover:bg-accent bg-transparent"
                     disabled={selectedAccounts.length === 0}
                   >
                     <Settings className="h-4 w-4" />
-                  </Button>
+                  </Button> */}
                 </div>
 
                 {!hasRequiredParams && (

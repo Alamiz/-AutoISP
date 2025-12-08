@@ -312,7 +312,20 @@ export function AccountList() {
       <Card className="bg-card border-border flex flex-col h-full min-h-0">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-3">
+              <Checkbox
+                checked={accounts.length > 0 && accounts.every(acc => selectedAccounts.some(s => s.id === acc.id))}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    // Add all accounts on current page that aren't already selected
+                    const newSelections = accounts.filter(acc => !selectedAccounts.some(s => s.id === acc.id));
+                    setSelectedAccounts([...selectedAccounts, ...newSelections]);
+                  } else {
+                    // Remove all accounts on current page from selection
+                    setSelectedAccounts(selectedAccounts.filter(s => !accounts.some(acc => acc.id === s.id)));
+                  }
+                }}
+              />
               Accounts
               {selectedAccounts.length > 0 && (
                 <span className="text-sm font-normal text-muted-foreground">
@@ -367,16 +380,16 @@ export function AccountList() {
                     className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                   >
                     <Checkbox
-                      checked={selectedAccounts.includes(account)}
+                      checked={selectedAccounts.some(acc => acc.id === account.id)}
                       onCheckedChange={(checked) => handleSelectAccount(account, !!checked)}
                     />
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-medium text-foreground truncate">{account.email}</p>
-                        <Badge variant="secondary" className="text-xs">
+                        {account.label && <Badge variant="secondary" className="text-xs">
                           {account.label}
-                        </Badge>
+                        </Badge>}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <Badge className={getStatusColor(account.status)}>{account.status}</Badge>
@@ -437,7 +450,7 @@ export function AccountList() {
                           <History className="h-4 w-4 mr-2" />
                           View History
                         </DropdownMenuItem>
-                        <DropdownMenuSub>
+                        {/* <DropdownMenuSub>
                           <DropdownMenuSubTrigger>
                             <Database className="h-4 w-4 mr-4 text-muted-foreground" />
                             Backup & Restore
@@ -452,7 +465,7 @@ export function AccountList() {
                               Restore Backup
                             </DropdownMenuItem>
                           </DropdownMenuSubContent>
-                        </DropdownMenuSub>
+                        </DropdownMenuSub> */}
                         <DropdownMenuItem onClick={() => handleEditAccount(account)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Account

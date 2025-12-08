@@ -49,14 +49,24 @@ function getApiConfig(apiType: ApiType): ApiConfig {
   return { baseUrl, headers };
 }
 
+function handleUnauthorized() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem("auth_tokens");
+    document.cookie = 'auth_tokens=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    window.location.href = "/login";
+  }
+}
+
 export async function apiGet<T>(endpoint: string, apiType: ApiType = "master"): Promise<T> {
   const { baseUrl, headers } = getApiConfig(apiType);
 
-  // GET requests usually don't have Content-Type, but it doesn't hurt. 
-  // However, we should remove it if it causes issues with some servers.
-  // For now, keeping it as getApiConfig adds it.
-
   const res = await fetch(`${baseUrl}${endpoint}`, { headers });
+
+  if (res.status === 401 && apiType === "master") {
+    handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
+
   if (!res.ok) throw new Error(`Failed to fetch ${endpoint}: ${res.status}`);
   return res.json();
 }
@@ -73,6 +83,12 @@ export async function apiPost<T, B>(
     headers,
     body: JSON.stringify(body),
   });
+
+  // Don't auto-logout on login endpoint failures
+  if (res.status === 401 && apiType === "master" && !endpoint.includes("/api/token/")) {
+    handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
 
   let data: ApiErrorDetails | T | null = null;
   try {
@@ -104,6 +120,12 @@ export async function apiPut<T, B>(
     headers,
     body: JSON.stringify(body),
   });
+
+  if (res.status === 401 && apiType === "master") {
+    handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
+
   if (!res.ok) throw new Error(`Failed to put to ${endpoint}: ${res.status}`);
   return res.json();
 }
@@ -120,6 +142,11 @@ export async function apiPatch<T, B>(
     headers,
     body: JSON.stringify(body),
   });
+
+  if (res.status === 401 && apiType === "master") {
+    handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
 
   let data: ApiErrorDetails | T | null = null;
   try {
@@ -151,6 +178,11 @@ export async function apiDelete<T, B>(
     headers,
     ...(body && { body: JSON.stringify(body) })
   });
+
+  if (res.status === 401 && apiType === "master") {
+    handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
 
   // Throw error if not ok
   if (!res.ok) throw new Error(`Failed to delete ${endpoint}: ${res.status}`);
