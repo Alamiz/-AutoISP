@@ -3,8 +3,11 @@ import * as path from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import kill from 'tree-kill';
 import log from 'electron-log';
+import net from 'net';
 
 let mainWindow: BrowserWindow | null;
+let loadingWindow: BrowserWindow | null;
+let logWindow: BrowserWindow | null = null;
 let pythonProcess: ChildProcess | null = null;
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -14,6 +17,9 @@ import serve from 'electron-serve';
 const serveURL = serve({ directory: path.join(__dirname, '../../out') });
 
 function createWindow() {
+    if (loadingWindow)
+        loadingWindow.close();
+
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -29,12 +35,9 @@ function createWindow() {
 
     if (isDev) {
         mainWindow.loadURL('http://localhost:3000');
+        mainWindow.webContents.openDevTools();
     } else {
         serveURL(mainWindow);
-    }
-
-    if (isDev) {
-        mainWindow.webContents.openDevTools();
     }
 
     Menu.setApplicationMenu(null);
@@ -49,6 +52,54 @@ function createWindow() {
 
     mainWindow.on('closed', () => {
         mainWindow = null;
+    });
+}
+
+function createLoadingWindow() {
+    loadingWindow = new BrowserWindow({
+        width: 500,
+        height: 450,
+        frame: false
+    });
+
+    Menu.setApplicationMenu(null);
+    loadingWindow.loadFile(path.join(__dirname, "../loading.html"));
+}
+
+function createLogWindow() {
+    if (logWindow) {
+        logWindow.focus();
+        return;
+    }
+
+    logWindow = new BrowserWindow({
+        width: 600,
+        height: 900,
+        minWidth: 600,
+        minHeight: 900,
+        // No parent - independent window for separate taskbar entry
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+        },
+        frame: false,
+        title: 'Live Activity Log',
+        skipTaskbar: false, // Ensure it shows in taskbar
+    });
+
+    if (isDev) {
+        logWindow.loadURL('http://localhost:3000/logs');
+    } else {
+        logWindow.loadFile(path.join(__dirname, '../../out/logs.html'));
+    }
+
+    logWindow.on('closed', () => {
+        logWindow = null;
+        // Notify main window that log panel should be shown again
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('log-panel:attached');
+        }
     });
 }
 
@@ -76,6 +127,11 @@ function startPythonBackend() {
     pythonProcess = spawn(pythonExecutable, apiScript, {
         cwd: backendPath,
         stdio: 'inherit',
+        env: {
+            ...process.env,
+            PYTHONIOENCODING: 'utf-8',
+            PYTHONLEGACYWINDOWSSTDIO: 'utf-8',
+        }
     });
 
     pythonProcess.on('error', (err) => {
@@ -88,31 +144,72 @@ function startPythonBackend() {
 }
 
 function killPythonBackend() {
-    if (pythonProcess) {
-        console.log('Killing Python backend...');
-        pythonProcess.kill();
+    if (pythonProcess && pythonProcess.pid) {
+        const pid = pythonProcess.pid;
+        console.log(`Killing Python backend (PID: ${pid})...`);
 
-        // Try to kill the process using tree-kill
         try {
-            if (!pythonProcess.pid) return;
-            kill(pythonProcess.pid, "SIGTERM", (err) => {
-                if (err) log.error("Failed to kill Python backend process due to:", err)
-                else log.info("Python backend process killed!")
-            })
+            // On Windows, use taskkill with /F (force) and /T (terminate child processes)
+            if (process.platform === 'win32') {
+                const { execSync } = require('child_process');
+                execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
+                log.info(`Python backend process (PID: ${pid}) killed via taskkill`);
+            } else {
+                // On Unix, use tree-kill
+                kill(pid, 'SIGKILL', (err) => {
+                    if (err) log.error("Failed to kill Python backend process:", err);
+                    else log.info("Python backend process killed!");
+                });
+            }
         } catch (error) {
-            log.error("Failed to kill Python backend process:", error)
+            // taskkill might fail if process already dead, which is fine
+            log.warn(`taskkill error (process may already be dead):`, error);
         }
 
         pythonProcess = null;
     }
 }
 
-app.on('ready', () => {
-    startPythonBackend();
-    createWindow();
-});
+function waitForBackend(port: number, host = "127.0.0.1", retries = 20, delay = 500) {
+    return new Promise<void>((resolve, reject) => {
+        let attempts = 0;
+
+        const check = () => {
+            const socket = net.connect(port, host, () => {
+                socket.end();
+                resolve(); // backend is ready
+            });
+
+            socket.on("error", () => {
+                if (++attempts < retries) {
+                    setTimeout(check, delay); // retry
+                } else {
+                    reject(new Error("Backend did not start in time"));
+                }
+            });
+        };
+
+        check();
+    });
+}
+
+app.whenReady().then(
+    async () => {
+        startPythonBackend();
+        createLoadingWindow();
+
+        try {
+            await waitForBackend(8001);
+            createWindow();
+        } catch (error) {
+            log.error("Backend failed to start:", error);
+            app.quit();
+        }
+    }
+)
 
 app.on('window-all-closed', () => {
+    killPythonBackend(); // Kill backend when all windows close
     if (process.platform !== 'darwin') {
         app.quit();
     }
@@ -146,6 +243,11 @@ ipcMain.on('window:resize', (event, width: number, height: number) => {
 ipcMain.on('window:open-devtools', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     win?.webContents.openDevTools();
+});
+
+// Log panel detachment
+ipcMain.on('log-panel:detach', () => {
+    createLogWindow();
 });
 
 app.on('activate', () => {

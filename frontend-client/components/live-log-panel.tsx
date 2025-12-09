@@ -19,12 +19,18 @@ import {
     CheckCircle,
     Info,
     AlertTriangle,
+    ExternalLink,
 } from "lucide-react"
 import { LogDetailModal } from "./log-detail-modal"
 import type { LogEntry, RunningJob } from "@/lib/types"
 import { useLogs } from "@/hooks/useLogs"
 
-export function LiveLogPanel() {
+interface LiveLogPanelProps {
+    isDetached?: boolean;
+    onDetach?: () => void;
+}
+
+export function LiveLogPanel({ isDetached = false, onDetach }: LiveLogPanelProps) {
     // const [logs, setLogs] = useState<LogEntry[]>([])
     const [runningJobs, setRunningJobs] = useState<RunningJob[]>([])
     const [isExpanded, setIsExpanded] = useState(false)
@@ -40,10 +46,7 @@ export function LiveLogPanel() {
     // Auto-scroll to bottom when new logs arrive
     useEffect(() => {
         if (autoScroll && scrollAreaRef.current) {
-            const scrollElement = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
-            if (scrollElement) {
-                scrollElement.scrollTop = scrollElement.scrollHeight
-            }
+            scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
         }
     }, [logs, autoScroll])
 
@@ -127,10 +130,21 @@ export function LiveLogPanel() {
 
     return (
         <>
-            <Card className="bg-card border-border h-full flex flex-col">
+            <Card className={`bg-card h-full flex flex-col ${isDetached ? 'border-0 shadow-none rounded-none' : 'border-border'}`}>
                 <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-foreground">Live Activity</CardTitle>
+                        {!isDetached && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onDetach ? onDetach() : window.electronAPI?.detachLogPanel()}
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                title="Open in new window"
+                            >
+                                <ExternalLink className="h-4 w-4" />
+                            </Button>
+                        )}
                         {/* <div className="flex items-center gap-2">
                             <Button
                 variant="ghost"
@@ -149,7 +163,7 @@ export function LiveLogPanel() {
                         </div> */}
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4 flex-1 flex flex-col min-h-0">
+                <CardContent className="gap-4 flex-1 flex flex-col min-h-0 overflow-hidden p-4">
                     {/* Running Jobs */}
                     {/* {runningJobs.length > 0 && (
             <div className="space-y-3">
@@ -199,7 +213,7 @@ export function LiveLogPanel() {
                     </div>
 
                     {/* Live Logs */}
-                    <div className="space-y-3 flex-1 flex flex-col min-h-0">
+                    <div className="gap-3 flex-1 flex flex-col min-h-0 overflow-hidden">
                         <div className="flex items-center justify-between flex-shrink-0">
                             <h4 className="text-sm font-medium text-foreground">
                                 Live Logs ({filteredLogs.length})
@@ -214,9 +228,9 @@ export function LiveLogPanel() {
                                 Auto-scroll
                             </Button>
                         </div>
-                        <ScrollArea
+                        <div
                             ref={scrollAreaRef}
-                            className="flex-1 rounded-lg border border-border bg-accent/10 overflow-auto"
+                            className="flex-1 rounded-lg border border-border bg-accent/10 overflow-y-auto min-h-0"
                         >
                             <div className="p-3 space-y-1">
                                 {filteredLogs.map((log, index) => (
@@ -244,7 +258,7 @@ export function LiveLogPanel() {
                                     </div>
                                 )}
                             </div>
-                        </ScrollArea>
+                        </div>
                     </div>
                 </CardContent>
             </Card>

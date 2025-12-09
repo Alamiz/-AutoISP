@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   output: 'export',
+  assetPrefix: isProd ? './' : undefined,
 };
 
 export default nextConfig;

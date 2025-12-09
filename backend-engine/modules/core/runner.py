@@ -14,7 +14,7 @@ def run_automation(email, password, isp, automation_name, proxy_config=None, dev
     profile = email.replace("@", "_").replace(".", "_")
 
     if getattr(sys, 'frozen', False):
-        modules_path = sys._MEIPASS
+        modules_path = os.path.join(sys._MEIPASS, 'modules')
     else:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         modules_path = os.path.abspath(os.path.join(current_dir, ".."))

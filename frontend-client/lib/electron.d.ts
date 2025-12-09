@@ -12,6 +12,10 @@ declare global {
       removeMaximizeListener?: (callback: () => void) => void;
       removeUnmaximizeListener?: (callback: () => void) => void;
       openDevTools: () => void;
+      // Log panel detachment
+      detachLogPanel: () => void;
+      onLogPanelAttached: (callback: () => void) => void;
+      removeLogPanelAttachedListener?: (callback: () => void) => void;
     };
   }
 }

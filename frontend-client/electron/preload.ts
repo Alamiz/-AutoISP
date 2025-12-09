@@ -22,4 +22,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeListener('window-unmaximized', callback);
     },
     openDevTools: () => ipcRenderer.send('window:open-devtools'),
+
+    // Log panel detachment
+    detachLogPanel: () => ipcRenderer.send('log-panel:detach'),
+    onLogPanelAttached: (callback: () => void) => {
+        ipcRenderer.on('log-panel:attached', callback);
+    },
+    removeLogPanelAttachedListener: (callback: () => void) => {
+        ipcRenderer.removeListener('log-panel:attached', callback);
+    },
 });

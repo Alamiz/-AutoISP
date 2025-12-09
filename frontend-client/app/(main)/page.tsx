@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 // import { Dashboard } from "@/components/dashboard"
 import { AccountList } from "@/components/account-list"
 import { AutomationControls } from "@/components/automation-controls"
@@ -14,6 +15,30 @@ import { AccountProvider } from "@/providers/account-provider"
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
 
 export default function HomePage() {
+  const [isLogPanelDetached, setIsLogPanelDetached] = useState(false)
+
+  useEffect(() => {
+    // Clear logs on initial load
+    localStorage.removeItem("auto_isp_logs")
+
+    // Listen for when log panel window is closed
+    const handleAttached = () => {
+      setIsLogPanelDetached(false)
+    }
+
+    window.electronAPI?.onLogPanelAttached(handleAttached)
+
+    return () => {
+      window.electronAPI?.removeLogPanelAttachedListener?.(handleAttached)
+    }
+  }, [])
+
+  // Handle detach - set state when user clicks detach
+  const handleDetach = () => {
+    window.electronAPI?.detachLogPanel()
+    setIsLogPanelDetached(true)
+  }
+
   return (
     <div className="flex h-full bg-background">
       <PageBreadcrumb>
@@ -43,7 +68,7 @@ export default function HomePage() {
           <div className="p-6 space-y-6 h-full flex flex-col">
             {/* <HeroSection /> */}
             {/* <QuickActions /> */}
-            <div className="grid grid-cols-1 2xl:grid-cols-4 gap-8 h-full">
+            <div className={`grid grid-cols-1 ${isLogPanelDetached ? '2xl:grid-cols-3' : '2xl:grid-cols-4'} gap-8 2xl:h-full`}>
               {/* Left Column - Dashboard & Controls */}
               <div className="2xl:col-span-1 space-y-6">
                 {/* <Dashboard /> */}
@@ -51,15 +76,17 @@ export default function HomePage() {
               </div>
 
               {/* Middle Column - Account Management & Templates */}
-              <div className="2xl:col-span-2 space-y-6 h-full min-h-0">
+              <div className={`${isLogPanelDetached ? '2xl:col-span-2' : '2xl:col-span-2'} space-y-6 min-h-[400px] 2xl:h-full 2xl:min-h-0`}>
                 <AccountList />
                 {/* <AutomationTemplates /> */}
               </div>
 
-              {/* Right Column - Live Logs */}
-              <div className="2xl:col-span-1 h-full min-h-0">
-                <LiveLogPanel />
-              </div>
+              {/* Right Column - Live Logs (hidden when detached) */}
+              {!isLogPanelDetached && (
+                <div className="2xl:col-span-1 min-h-[300px] 2xl:h-full 2xl:min-h-0">
+                  <LiveLogPanel onDetach={handleDetach} />
+                </div>
+              )}
             </div>
           </div>
         </AccountProvider>
