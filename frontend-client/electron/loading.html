@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -181,7 +182,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: 
+            background-image:
                 linear-gradient(rgba(39, 39, 42, 0.3) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(39, 39, 42, 0.3) 1px, transparent 1px);
             background-size: 50px 50px;
@@ -194,6 +195,7 @@
                 opacity: 0;
                 transform: translateY(-30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -204,16 +206,20 @@
             from {
                 opacity: 0;
             }
+
             to {
                 opacity: 1;
             }
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
                 border-color: #27272a;
             }
+
             50% {
                 transform: scale(1.03);
                 border-color: #3f3f46;
@@ -224,6 +230,7 @@
             from {
                 transform: rotate(0deg);
             }
+
             to {
                 transform: rotate(360deg);
             }
@@ -234,10 +241,12 @@
                 width: 0%;
                 background-position: 0% 50%;
             }
+
             50% {
                 width: 70%;
                 background-position: 100% 50%;
             }
+
             100% {
                 width: 100%;
                 background-position: 200% 50%;
@@ -245,10 +254,14 @@
         }
 
         @keyframes dotBounce {
-            0%, 80%, 100% {
+
+            0%,
+            80%,
+            100% {
                 transform: translateY(0) scale(1);
                 background: #71717a;
             }
+
             40% {
                 transform: translateY(-16px) scale(1.15);
                 background: #a1a1aa;
@@ -256,21 +269,28 @@
         }
 
         @keyframes fadeInOut {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 0.6;
             }
+
             50% {
                 opacity: 1;
             }
         }
 
         @keyframes float {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translate(0, 0) scale(1);
             }
+
             33% {
                 transform: translate(40px, -40px) scale(1.1);
             }
+
             66% {
                 transform: translate(-30px, 30px) scale(0.9);
             }
@@ -280,12 +300,14 @@
             0% {
                 transform: translateY(0);
             }
+
             100% {
                 transform: translateY(50px);
             }
         }
     </style>
 </head>
+
 <body>
     <div class="grid-overlay"></div>
     <div class="bg-shape shape1"></div>
@@ -295,10 +317,12 @@
     <div class="loading-container">
         <div class="logo-container">
             <div class="gmail-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <img src="../public/logo.png" alt="AutoISP Logo"
+                    style="width: 72px; height: 72px; object-fit: contain; position: relative; z-index: 1;">
+                <!-- svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M22 6l-10 7L2 6" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                </svg> -->
             </div>
             <h1>AutoISP</h1>
             <p class="subtitle">Streamline your workflow</p>
@@ -308,7 +332,7 @@
             <div class="progress-bar">
                 <div class="progress-fill"></div>
             </div>
-            
+
             <div class="loading-dots">
                 <div class="dot"></div>
                 <div class="dot"></div>
@@ -334,7 +358,7 @@
         setInterval(() => {
             currentIndex = (currentIndex + 1) % statusMessages.length;
             statusText.style.opacity = '0';
-            
+
             setTimeout(() => {
                 statusText.textContent = statusMessages[currentIndex];
                 statusText.style.opacity = '1';
@@ -342,4 +366,5 @@
         }, 3000);
     </script>
 </body>
+
 </html>
