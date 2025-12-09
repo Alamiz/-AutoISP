@@ -57,6 +57,10 @@ export function AccountList() {
     return unsubscribe
   }, [onJobComplete, queryClient])
 
+  useEffect(() => {
+    setSelectedAccounts([])
+  }, [selectedProvider])
+
   const { data: paginatedData, isLoading } = useQuery<PaginatedResponse<Account>>({
     queryKey: ["accounts", page, selectedProvider?.slug],
     queryFn: async () => {

@@ -34,5 +34,5 @@ def run_automation(email, password, isp, automation_name, proxy_config=None, dev
         return loader.run(email=email, password=password, device_type=device_type, proxy_config=proxy_config, **kwargs)
 
     except Exception as e:
-        logger.exception(f"Failed to run automation {automation_name}: {e}")
-        raise
+        logger.error(f"Failed to run automation {automation_name}: {e}")
+        return {"status": "failed", "message": str(e)}

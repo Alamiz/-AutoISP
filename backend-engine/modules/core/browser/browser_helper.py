@@ -96,7 +96,7 @@ class PlaywrightBrowserFactory:
         # Proxy configuration
         if self.proxy_config:
             proxy_settings = {
-                'server': f"{self.proxy_config['type']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
+                'server': f"{self.proxy_config['protocol']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
             }
             
             if 'username' in self.proxy_config and 'password' in self.proxy_config:

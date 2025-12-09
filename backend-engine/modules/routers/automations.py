@@ -44,10 +44,15 @@ def execute_job(job: Job):
         # Log success activity
         ActivityManager.create_activity(
             action="run_automation",
-            status="success",
+            status=result.get("status", "success"),
             account_id=job.account_id,
-            details=f"Automation '{job.automation_name}' completed successfully",
-            metadata={"automation_id": job.automation_id, "device_type": params.get("device_type", "desktop")},
+            details=result.get("message", ""),
+            metadata={
+                "automation_id": job.automation_id, 
+                "device_type": params.get("device_type", "desktop"),
+                "status": result.get("status", "success"),
+                "message": result.get("message", "")
+            },
             executed_at=executed_at,
             completed_at=completed_at
         )

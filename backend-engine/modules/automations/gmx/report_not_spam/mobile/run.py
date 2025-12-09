@@ -71,7 +71,7 @@ class ReportNotSpam(HumanAction):
             
             if result.status == StepStatus.FAILURE:
                 return {
-                    "status": "error",
+                    "status": "failed",
                     "message": result.message,
                     "retry_recommended": True
                 }
@@ -85,7 +85,7 @@ class ReportNotSpam(HumanAction):
         except Exception as e:
             self.logger.error(f"Exception in flow execution: {e}", exc_info=True)
             return {
-                "status": "error",
+                "status": "failed",
                 "message": str(e),
                 "retry_recommended": True
             }
@@ -114,7 +114,7 @@ class ReportNotSpam(HumanAction):
                 gmx_auth.authenticate(page)
             except Exception as e:
                 self.logger.error(f"Authentication failed: {e}")
-                return {"status": "error", "message": "Authentication failed"}
+                return {"status": "failed", "message": "Authentication failed"}
             
             self.logger.info("Authentication successful")
 
@@ -148,13 +148,13 @@ class ReportNotSpam(HumanAction):
             
             self.logger.error(f"Flow failed after {self.max_flow_retries} attempts")
             return {
-                "status": "error",
+                "status": "failed",
                 "message": f"Flow failed after {self.max_flow_retries} attempts",
                 "last_error": last_result.get('message')
             }
 
         except Exception as e:
             self.logger.error(f"Critical error in automation: {e}", exc_info=True)
-            return {"status": "error", "message": f"Critical error: {str(e)}"}
+            return {"status": "failed", "message": f"Critical error: {str(e)}"}
         finally:
             self.browser.close()

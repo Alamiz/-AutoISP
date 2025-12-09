@@ -43,6 +43,6 @@ class OpenProfile(HumanAction):
         
         except Exception as e:
             self.logger.error(f"Error opening profile: {e}")
-            return {"status": "error", "message": str(e)}
+            return {"status": "failed", "message": str(e)}
         finally:
             self.browser.close()

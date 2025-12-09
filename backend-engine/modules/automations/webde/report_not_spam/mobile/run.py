@@ -61,7 +61,7 @@ class ReportNotSpam(HumanAction):
             result = flow.run(page)
             
             if result.status == StepStatus.FAILURE:
-                return {"status": "error", "message": result.message, "retry_recommended": True}
+                return {"status": "failed", "message": result.message, "retry_recommended": True}
 
             return {
                 "status": "success",
@@ -71,7 +71,7 @@ class ReportNotSpam(HumanAction):
 
         except Exception as e:
             self.logger.error(f"Exception in flow execution: {e}", exc_info=True)
-            return {"status": "error", "message": str(e), "retry_recommended": True}
+            return {"status": "failed", "message": str(e), "retry_recommended": True}
 
     def execute(self):
         self.logger.info(f"Starting Report Not Spam (Mobile) for {self.email}")
@@ -95,7 +95,7 @@ class ReportNotSpam(HumanAction):
                 webde_auth.authenticate(page)
             except Exception as e:
                 self.logger.error(f"Authentication failed: {e}")
-                return {"status": "error", "message": "Authentication failed"}
+                return {"status": "failed", "message": "Authentication failed"}
             
             self.logger.info("Authentication successful")
 
@@ -129,13 +129,13 @@ class ReportNotSpam(HumanAction):
             
             self.logger.error(f"Flow failed after {self.max_flow_retries} attempts")
             return {
-                "status": "error",
+                "status": "failed",
                 "message": f"Flow failed after {self.max_flow_retries} attempts",
                 "last_error": last_result.get('message') if last_result else None
             }
 
         except Exception as e:
             self.logger.error(f"Critical error in automation: {e}", exc_info=True)
-            return {"status": "error", "message": f"Critical error: {str(e)}"}
+            return {"status": "failed", "message": f"Critical error: {str(e)}"}
         finally:
             self.browser.close()

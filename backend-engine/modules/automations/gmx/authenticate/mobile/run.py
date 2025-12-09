@@ -71,12 +71,12 @@ class GMXAuthentication(HumanAction):
             self.logger.warning(f"Error checking goal: {e}")
             return False
 
-    def execute(self) -> bool:
+    def execute(self) -> dict:
         """Runs authentication flow for GMX Mobile"""
         self.logger.info(f"Starting mobile authentication for {self.email}")
         
         if self.proxy_config:
-            proxy_info = f"{self.proxy_config['type']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
+            proxy_info = f"{self.proxy_config['protocol']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
             self.logger.info(f"Using proxy: {proxy_info}")
 
         try:
@@ -85,14 +85,14 @@ class GMXAuthentication(HumanAction):
 
             self.authenticate(page)
             self.logger.info(f"Authentication successful for {self.email}")
-            return True
+            return {"status": "success", "message": "Authentication completed successfully"}
         
         except RequiredActionFailed as e:
             self.logger.error(f"Authentication failed for {self.email}: {e}")
-            return False
+            return {"status": "failed", "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error for {self.email}: {e}")
-            return False
+            return {"status": "failed", "message": str(e)}
         finally:
             self.browser.close()
 

@@ -90,7 +90,7 @@ class ReportNotSpam(HumanAction):
             
             if result.status.value == "failure":
                 return {
-                    "status": "error", 
+                    "status": "failed", 
                     "message": result.message,
                     "retry_recommended": True  # Signal that retry might help
                 }
@@ -104,7 +104,7 @@ class ReportNotSpam(HumanAction):
         except Exception as e:
             self.logger.error(f"Exception in flow execution: {e}", exc_info=True)
             return {
-                "status": "error", 
+                "status": "failed", 
                 "message": str(e),
                 "retry_recommended": True
             }
@@ -138,7 +138,7 @@ class ReportNotSpam(HumanAction):
                 gmx_auth.authenticate(page)
             except Exception as e:
                 self.logger.error(f"Authentication failed: {e}")
-                return {"status": "error", "message": "Authentication failed"}
+                return {"status": "failed", "message": "Authentication failed"}
 
             self.logger.info("Authentication successful")
 
@@ -190,7 +190,7 @@ class ReportNotSpam(HumanAction):
             # All retries exhausted
             self.logger.error(f"Flow failed after {self.max_flow_retries} attempts")
             return {
-                "status": "error",
+                "status": "failed",
                 "message": f"Flow failed after {self.max_flow_retries} attempts. Last error: {last_result.get('message', 'Unknown')}",
                 "attempts": flow_attempt,
                 "last_error": last_result.get('message')
@@ -199,7 +199,7 @@ class ReportNotSpam(HumanAction):
         except Exception as e:
             self.logger.error(f"Critical error in automation: {e}", exc_info=True)
             return {
-                "status": "error", 
+                "status": "failed", 
                 "message": f"Critical error: {str(e)}",
                 "attempts": flow_attempt
             }

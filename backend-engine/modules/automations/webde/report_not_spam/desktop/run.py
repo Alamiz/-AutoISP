@@ -33,7 +33,8 @@ class ReportNotSpam(HumanAction):
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
             proxy_config=proxy_config,
-            user_agent_type=user_agent_type
+            user_agent_type=user_agent_type,
+            headless=False
         )
 
     def _setup_state_handlers(self) -> StateHandlerRegistry:
@@ -73,7 +74,7 @@ class ReportNotSpam(HumanAction):
             return {"status": "failed", "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error for {self.email}: {e}")
-            return {"status": "error", "message": str(e)}
+            return {"status": "failed", "message": str(e)}
         finally:
             self.browser.close()
 
