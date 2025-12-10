@@ -70,6 +70,7 @@ export function AccountList() {
 
   useEffect(() => {
     clearSelection()
+    setPage(1)
   }, [selectedProvider, clearSelection])
 
   const { data: paginatedData, isLoading } = useQuery<PaginatedResponse<Account>>({

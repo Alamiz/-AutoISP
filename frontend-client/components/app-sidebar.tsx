@@ -34,6 +34,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { Separator } from "./ui/separator"
+import { providers } from "@/data/providers"
 
 // Custom logo components
 const GmxLogo = ({ className }: { className?: string }) => (
@@ -95,7 +96,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="pt-10">
-        <ProviderSwitcher providers={data.providers} />
+        <ProviderSwitcher providers={providers} />
       </SidebarHeader>
       <Separator />
       <SidebarContent>

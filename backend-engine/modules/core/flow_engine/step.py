@@ -22,8 +22,8 @@ class Step:
     """
     max_retries = 2  # per step
 
-    def __init__(self, human_action=None, logger=None):
-        self.human = human_action
+    def __init__(self, automation=None, logger=None):
+        self.automation = automation
         self.logger = logger
 
     def run(self, page: Page) -> StepResult:

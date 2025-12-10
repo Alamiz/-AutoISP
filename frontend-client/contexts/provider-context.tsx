@@ -1,5 +1,6 @@
 "use client"
 
+import { providers } from "@/data/providers"
 import * as React from "react"
 
 export interface Provider {
@@ -17,7 +18,7 @@ interface ProviderContextType {
 const ProviderContext = React.createContext<ProviderContextType | undefined>(undefined)
 
 export function ProviderProvider({ children }: { children: React.ReactNode }) {
-    const [selectedProvider, setSelectedProvider] = React.useState<Provider | null>(null)
+    const [selectedProvider, setSelectedProvider] = React.useState<Provider | null>(providers[0])
 
     return (
         <ProviderContext.Provider value={{ selectedProvider, setSelectedProvider }}>

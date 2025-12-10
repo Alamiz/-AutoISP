@@ -76,7 +76,7 @@ function createLogWindow() {
         width: 600,
         height: 900,
         minWidth: 600,
-        minHeight: 900,
+        minHeight: 500,
         // No parent - independent window for separate taskbar entry
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),

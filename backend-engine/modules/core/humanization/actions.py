@@ -4,6 +4,7 @@ from abc import ABC
 from playwright.sync_api import Page
 from core.utils.element_finder import deep_find_elements, ElementNotFound
 from core.humanization.behavior import HumanBehavior
+from typing import Optional
 
 class HumanAction(ABC):
     """
@@ -20,6 +21,7 @@ class HumanAction(ABC):
         page: Page,
         selectors: list[str],
         deep_search: bool = False,
+        timeout: Optional[int] = 3000,
         wait_visible: bool = True
     ):
         """
@@ -43,7 +45,7 @@ class HumanAction(ABC):
             # Fast default search (main DOM only)
             for selector in selectors:
                 try:
-                    element = page.wait_for_selector(selector, timeout=3000)
+                    element = page.wait_for_selector(selector, timeout=timeout)
                     if element:
                         break
                 except TimeoutError:
@@ -59,32 +61,31 @@ class HumanAction(ABC):
         return element
 
     
-    def human_fill(self, page: Page, selectors: list[str], text: str, deep_search: bool = False):
+    def human_fill(self, page: Page, selectors: list[str], text: str, deep_search: bool = False, timeout: Optional[int] = None):
         """
         Find input element and fill it with human-like typing.
         Uses deep_search if the element might be inside shadow DOM or nested iframes.
         """
         self.human_behavior.wait_before_action()
-        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search)
+        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search, timeout=timeout)
         self.human_behavior.type_text(element, text)
         
-    def human_click(self, page: Page, selectors: list[str], deep_search: bool = False, force: bool = False):
+    def human_click(self, page: Page, selectors: list[str], deep_search: bool = False, force: bool = False, timeout: Optional[int] = None):
         """
         Find and click element with human-like behavior.
         Uses deep search if the element might be inside shadow DOM or nested iframes.
         """
         self.human_behavior.wait_before_action()
-        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search)
+        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search, timeout=timeout)
 
         self.human_behavior.click(element, force=force)
 
     
-    def human_select(self, page: Page, selectors: list[str], value: str, deep_search: bool = False):
+    def human_select(self, page: Page, selectors: list[str], value: str, deep_search: bool = False, timeout: Optional[int] = None):
         """
         Find and select an option in a dropdown element with human-like behavior.
         Uses deep search if the element might be inside shadow DOM or nested iframes.
         """
         self.human_behavior.wait_before_action()
-        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search)
+        element = self._find_element_with_humanization(page, selectors, deep_search=deep_search, timeout=timeout)
         self.human_behavior.select(element, value)
-    

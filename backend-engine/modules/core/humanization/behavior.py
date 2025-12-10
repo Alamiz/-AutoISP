@@ -54,6 +54,14 @@ class HumanBehavior:
         
         element.click(force=force)
     
+    def hover(self, element: Locator):
+        """Hover over an element with human-like behavior"""
+        # Small delay before hovering
+        self._random_delay(*self.mouse_move_duration_range)
+        
+        element.hover()
+        self._random_delay(200, 500)
+    
     def select(self, element: Locator, value: str):
         """Select option in dropdown with human-like behavior"""
         # Small delay before interacting with the dropdown
