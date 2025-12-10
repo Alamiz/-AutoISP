@@ -83,7 +83,7 @@ export default function HomePage() {
 
               {/* Right Column - Live Logs (hidden when detached) */}
               {!isLogPanelDetached && (
-                <div className="2xl:col-span-1 min-h-[300px] 2xl:h-full 2xl:min-h-0">
+                <div className="2xl:col-span-1 min-h-[300px] max-h-[700px] 2xl:h-full 2xl:min-h-0">
                   <LiveLogPanel onDetach={handleDetach} />
                 </div>
               )}
