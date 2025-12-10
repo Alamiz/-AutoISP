@@ -33,7 +33,7 @@ export function AutomationControls() {
   const [automationParams, setAutomationParams] = useState<Record<string, Record<string, any>>>({})
   const [activeTab, setActiveTab] = useState("select")
 
-  const { selectedAccounts, setSelectedAccounts } = useAccounts()
+  const { selectedAccounts, clearSelection, getSelectedCount, isAllSelected, excludedIds } = useAccounts()
   const queryClient = useQueryClient()
   const { busyAccountIds } = useJobs()
   const availableAccounts = selectedAccounts.filter(acc => !busyAccountIds.has(acc.id))
@@ -110,7 +110,9 @@ export function AutomationControls() {
       return await apiPost('/automations/run', {
         automation_id: automation.id,
         parameters: automationParams[automationId] || {},
-        account_ids: availableAccounts.map(acc => acc.id),
+        ...(isAllSelected
+          ? { select_all: true, provider: globalProvider?.slug, excluded_ids: Array.from(excludedIds) }
+          : { account_ids: availableAccounts.map(acc => acc.id) }),
       },
         "local"
       )
@@ -144,7 +146,7 @@ export function AutomationControls() {
           }
         }
       }
-      setSelectedAccounts([]);
+      clearSelection();
     }
   }
 
@@ -305,7 +307,7 @@ export function AutomationControls() {
                 <div className="flex gap-2 pt-4">
                   <Button
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                    disabled={!hasRequiredParams || selectedAccounts.length === 0 || runAutomations.isPending}
+                    disabled={!hasRequiredParams || getSelectedCount() === 0 || runAutomations.isPending}
                     onClick={handleRunAutomations}
                   >
                     {runAutomations.isPending ? (
@@ -328,7 +330,7 @@ export function AutomationControls() {
                 {!hasRequiredParams && (
                   <p className="text-sm text-red-400">* Please fill in all required parameters in the Configure tab.</p>
                 )}
-                {selectedAccounts.length === 0 && (
+                {getSelectedCount() === 0 && (
                   <p className="text-sm text-red-400">* Please select accounts in order to start automations.</p>
                 )}
                 {busyAccounts.length > 0 && (

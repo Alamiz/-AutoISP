@@ -37,7 +37,18 @@ export function AccountList() {
   const [showHistory, setShowHistory] = useState<string | null>(null)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   const [currentHistory, setCurrentHistory] = useState<HistoryEntry[]>([])
-  const { selectedAccounts, setSelectedAccounts } = useAccounts();
+  const {
+    selectedAccounts,
+    setSelectedAccounts,
+    isAllSelected,
+    selectAllAccounts,
+    clearSelection,
+    selectAccount,
+    deselectAccount,
+    isAccountSelected,
+    getSelectedCount,
+    setTotalCount
+  } = useAccounts();
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
   const { selectedProvider } = useProvider()
@@ -58,8 +69,8 @@ export function AccountList() {
   }, [onJobComplete, queryClient])
 
   useEffect(() => {
-    setSelectedAccounts([])
-  }, [selectedProvider])
+    clearSelection()
+  }, [selectedProvider, clearSelection])
 
   const { data: paginatedData, isLoading } = useQuery<PaginatedResponse<Account>>({
     queryKey: ["accounts", page, selectedProvider?.slug],
@@ -96,11 +107,17 @@ export function AccountList() {
 
   const handleSelectAccount = (account: Account, checked: boolean) => {
     if (checked) {
-      setSelectedAccounts([...selectedAccounts, account])
+      selectAccount(account)
     } else {
-      setSelectedAccounts(selectedAccounts.filter((acc) => acc.id !== account.id))
+      deselectAccount(account.id)
     }
   }
+
+  // Check if all accounts on current page are selected
+  const isCurrentPageFullySelected = accounts.length > 0 && accounts.every(acc => isAccountSelected(acc.id))
+
+  // Check if we should show the "select all" banner
+  const showSelectAllBanner = isCurrentPageFullySelected && !isAllSelected && totalCount > accounts.length
 
   const handleEditAccount = (account: Account) => {
     setEditingAccount(account)
@@ -325,26 +342,29 @@ export function AccountList() {
   return (
     <>
       <Card className="bg-card border-border flex flex-col h-full min-h-0">
-        <CardHeader>
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-foreground flex items-center gap-3">
               <Checkbox
-                checked={accounts.length > 0 && accounts.every(acc => selectedAccounts.some(s => s.id === acc.id))}
+                checked={isCurrentPageFullySelected}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    // Add all accounts on current page that aren't already selected
-                    const newSelections = accounts.filter(acc => !selectedAccounts.some(s => s.id === acc.id));
-                    setSelectedAccounts([...selectedAccounts, ...newSelections]);
+                    // Add all accounts on current page
+                    accounts.forEach(acc => selectAccount(acc))
                   } else {
-                    // Remove all accounts on current page from selection
-                    setSelectedAccounts(selectedAccounts.filter(s => !accounts.some(acc => acc.id === s.id)));
+                    // Remove all accounts on current page (or clear all if in select-all mode)
+                    if (isAllSelected) {
+                      clearSelection()
+                    } else {
+                      accounts.forEach(acc => deselectAccount(acc.id))
+                    }
                   }
                 }}
               />
               Accounts
-              {selectedAccounts.length > 0 && (
+              {getSelectedCount() > 0 && (
                 <span className="text-sm font-normal text-muted-foreground">
-                  ({selectedAccounts.length} selected)
+                  ({getSelectedCount()}{isAllSelected ? ` of ${totalCount}` : ''} selected)
                 </span>
               )}
             </CardTitle>
@@ -352,7 +372,7 @@ export function AccountList() {
               <Button
                 variant="outline"
                 size="icon"
-                disabled={selectedAccounts.length === 0}
+                disabled={getSelectedCount() === 0}
                 onClick={handleBulkDelete}
                 className="border-border hover:bg-accent text-destructive hover:text-destructive h-8 w-8"
               >
@@ -377,6 +397,40 @@ export function AccountList() {
               </Button>
             </div>
           </div>
+
+          {/* Select All Banner */}
+          {showSelectAllBanner && (
+            <div className="mt-3 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between">
+              <span className="text-sm text-foreground">
+                All {accounts.length} accounts on this page are selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="text-primary h-auto p-0"
+                onClick={() => selectAllAccounts(totalCount)}
+              >
+                Select all {totalCount} accounts
+              </Button>
+            </div>
+          )}
+
+          {/* Select All Active Banner */}
+          {isAllSelected && (
+            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-between">
+              <span className="text-sm text-foreground">
+                All {getSelectedCount()} accounts are selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
           <div className="h-full overflow-y-auto p-6 space-y-3">
@@ -395,7 +449,7 @@ export function AccountList() {
                     className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                   >
                     <Checkbox
-                      checked={selectedAccounts.some(acc => acc.id === account.id)}
+                      checked={isAccountSelected(account.id)}
                       onCheckedChange={(checked) => handleSelectAccount(account, !!checked)}
                     />
 

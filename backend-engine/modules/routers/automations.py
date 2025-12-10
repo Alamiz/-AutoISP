@@ -3,17 +3,21 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from modules.core.runner import run_automation
 from modules.core.job_manager import job_manager, Job
-from modules.crud.account import get_account_by_id
+from modules.crud.account import get_account_by_id, get_account_ids
 from modules.crud.activity import ActivityManager
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
 class AutomationRequest(BaseModel):
-    account_ids: List[str]
+    account_ids: Optional[List[str]] = None  # Used for manual selection
     automation_id: str
     parameters: dict = {}
+    # Select-all mode fields
+    select_all: Optional[bool] = False
+    provider: Optional[str] = None
+    excluded_ids: Optional[List[str]] = []
 
 
 def execute_job(job: Job):
@@ -91,7 +95,19 @@ def trigger_automation(request: AutomationRequest):
         skipped_accounts = []
         failed_accounts = []
 
-        for account_id in request.account_ids:
+        # Determine which account IDs to process
+        if request.select_all and request.provider:
+            # Select-all mode: fetch all account IDs for provider using lightweight endpoint
+            all_ids = get_account_ids(provider=request.provider)
+            
+            # Exclude specified IDs
+            excluded_set = set(request.excluded_ids or [])
+            account_ids = [id for id in all_ids if id not in excluded_set]
+        else:
+            # Manual selection mode
+            account_ids = request.account_ids or []
+
+        for account_id in account_ids:
             # Account IDs are UUID strings; force string to ensure compatibility
             account = get_account_by_id(account_id)
 
