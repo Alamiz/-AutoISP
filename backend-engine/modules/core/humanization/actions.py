@@ -80,7 +80,6 @@ class HumanAction(ABC):
 
         self.human_behavior.click(element, force=force)
 
-    
     def human_select(self, page: Page, selectors: list[str], value: str, deep_search: bool = False, timeout: Optional[int] = None):
         """
         Find and select an option in a dropdown element with human-like behavior.

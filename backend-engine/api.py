@@ -1,5 +1,6 @@
 import sys
 import io
+from dotenv import load_dotenv
 
 # Force UTF-8 encoding for stdout/stderr to fix Windows unicode issues
 if sys.stdout and hasattr(sys.stdout, 'buffer'):
@@ -11,6 +12,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from modules.routers import automations, auth, backup, jobs
 from modules.core.utils.logger import configure_logger
+
+load_dotenv()
 
 logger = configure_logger()
 

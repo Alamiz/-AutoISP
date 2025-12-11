@@ -19,7 +19,7 @@ export function useLogs() {
     let reconnectTimeout: NodeJS.Timeout;
 
     const connect = () => {
-      socket = new WebSocket("ws://localhost:8000/ws/logs"); // adjust URL for backend
+      socket = new WebSocket("ws://139.162.141.200:8000/ws/logs"); // adjust URL for backend
 
       socket.onopen = () => console.log("WebSocket connected");
 

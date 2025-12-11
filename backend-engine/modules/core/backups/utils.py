@@ -10,7 +10,7 @@ from modules.crud.account import get_account_by_id
 from modules.crud.backup import BackupManager
 
 # Configuration
-MASTER_API_URL = "http://localhost:8000/api"
+MASTER_API_URL = "http://139.162.141.200:8000/api"
 
 async def run_backup(account_id: str):
     """

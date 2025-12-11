@@ -8,3 +8,4 @@ pyinstaller
 httpx
 websockets
 requests
+python-dotenv
