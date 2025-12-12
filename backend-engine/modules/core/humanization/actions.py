@@ -29,8 +29,8 @@ class HumanAction(ABC):
         """
 
         # Slight random delay before searching
-        if random.random() > 0.6:
-            self.human_behavior.read_delay()
+        # if random.random() > 0.6:
+        #     self.human_behavior.read_delay()
 
         element = None
 
@@ -80,11 +80,11 @@ class HumanAction(ABC):
 
         self.human_behavior.click(element, force=force)
 
-    def human_select(self, page: Page, selectors: list[str], value: str, deep_search: bool = False, timeout: Optional[int] = None):
+    def human_select(self, page: Page, selectors: list[str], value: Optional[str] = None, label: Optional[str] = None, deep_search: bool = False, timeout: Optional[int] = None):
         """
         Find and select an option in a dropdown element with human-like behavior.
         Uses deep search if the element might be inside shadow DOM or nested iframes.
         """
         self.human_behavior.wait_before_action()
         element = self._find_element_with_humanization(page, selectors, deep_search=deep_search, timeout=timeout)
-        self.human_behavior.select(element, value)
+        self.human_behavior.select(element, value=value, label=label)

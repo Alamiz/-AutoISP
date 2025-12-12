@@ -62,7 +62,7 @@ class HumanBehavior:
         element.hover()
         self._random_delay(200, 500)
     
-    def select(self, element: Locator, value: str):
+    def select(self, element: Locator, value: Optional[str] = None, label: Optional[str] = None):
         """Select option in dropdown with human-like behavior"""
         # Small delay before interacting with the dropdown
         self._random_delay(*self.mouse_move_duration_range)
@@ -72,7 +72,10 @@ class HumanBehavior:
             element.hover()
             self._random_delay(200, 500)
 
-        element.select_option(value)
+        if label:
+            element.select_option(label=label)
+        else:
+            element.select_option(value)
 
         # Small delay after selection
         self._random_delay(100, 300)
@@ -93,20 +96,20 @@ class HumanBehavior:
         If `element` is None, and `page` and `y_amount` are provided, it scrolls the page by `y_amount`.
         """
         if element:
-            self._random_delay(200, 500)  # Delay before scrolling to element
+            self._random_delay(80, 260)  # Delay before scrolling to element
             if smooth and random.random() > 0.5:
                 # Sometimes scroll past and then back
                 element.evaluate("el => el.scrollIntoView({behavior: 'smooth', block: 'center'})")
-                self._random_delay(500, 1000)
+                self._random_delay(170, 420)
             else:
                 element.scroll_into_view_if_needed()
-                self._random_delay(300, 600)
-            self._random_delay(200, 500) # Delay after scrolling to element
+                self._random_delay(150, 300)
+            self._random_delay(80, 260) # Delay after scrolling to element
         elif page and y_amount is not None:
             self.scroll_page_by(page, y_amount)
         else:
             # If neither element nor scroll amount is provided, just a small human-like delay
-            self._random_delay(100, 300)
+            self._random_delay(50, 150)
     
     def scroll_page_by(self, page: Page, y_amount: int):
         """Scrolls the page by a given amount with human-like behavior."""
