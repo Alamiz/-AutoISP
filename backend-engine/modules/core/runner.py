@@ -34,5 +34,10 @@ def run_automation(email, password, isp, automation_name, proxy_config=None, dev
         return loader.run(email=email, password=password, device_type=device_type, proxy_config=proxy_config, **kwargs)
 
     except Exception as e:
+        # Check if it's a cancellation
+        if "JobCancelledException" in str(type(e)):
+             logger.info(f"Automation {automation_name} cancelled for {profile}")
+             return {"status": "cancelled", "message": "Job cancelled by user"}
+             
         logger.error(f"Failed to run automation {automation_name}: {e}")
         return {"status": "failed", "message": str(e)}

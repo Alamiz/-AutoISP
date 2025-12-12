@@ -7,11 +7,13 @@ class HumanBehavior:
     """Simulates human-like interactions with browser elements"""
     
     def __init__(self, 
+                 job_id: Optional[str] = None,
                  typing_speed_range=(50, 150),  # ms per character
                  mouse_move_duration_range=(100, 300),  # ms
                  action_delay_range=(500, 1500),  # ms between actions
                  reading_delay_range=(3000, 5000)):  # ms for "reading"
         
+        self.job_id = job_id
         self.typing_speed_range = typing_speed_range
         self.mouse_move_duration_range = mouse_move_duration_range
         self.action_delay_range = action_delay_range
@@ -19,6 +21,10 @@ class HumanBehavior:
     
     def _random_delay(self, min_ms: int, max_ms: int):
         """Generate random delay in milliseconds"""
+        if self.job_id:
+            from modules.core.job_manager import job_manager
+            job_manager.check_cancellation(self.job_id)
+            
         time.sleep(random.uniform(min_ms, max_ms) / 1000)
     
     def _human_typing_delay(self):

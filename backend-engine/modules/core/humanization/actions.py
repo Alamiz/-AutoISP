@@ -12,9 +12,10 @@ class HumanAction(ABC):
     Browser lifecycle is managed by runner.py
     """
     
-    def __init__(self):
+    def __init__(self, job_id: Optional[str] = None):
         self.logger = logging.getLogger("autoisp")
-        self.human_behavior = HumanBehavior()
+        self.job_id = job_id
+        self.human_behavior = HumanBehavior(job_id=job_id)
     
     def _find_element_with_humanization(
         self,

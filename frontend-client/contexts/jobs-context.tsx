@@ -29,6 +29,8 @@ interface JobsContextType {
     getAccountJob: (accountId: string) => Job | undefined
     busyAccountIds: Set<string>
     onJobComplete: (callback: (job: Job) => void) => () => void
+    stopJob: (jobId: string) => Promise<void>
+    stopAllJobs: () => Promise<void>
 }
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined)
@@ -177,8 +179,24 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
+    const stopJob = useCallback(async (jobId: string) => {
+        try {
+            await fetch(`${LOCAL_API_URL}/jobs/${jobId}/stop`, { method: "POST" })
+        } catch (e) {
+            console.error("Failed to stop job:", e)
+        }
+    }, [])
+
+    const stopAllJobs = useCallback(async () => {
+        try {
+            await fetch(`${LOCAL_API_URL}/jobs/stop-all`, { method: "POST" })
+        } catch (e) {
+            console.error("Failed to stop all jobs:", e)
+        }
+    }, [])
+
     return (
-        <JobsContext.Provider value={{ jobs, isConnected, isAccountBusy, getAccountJob, busyAccountIds, onJobComplete }}>
+        <JobsContext.Provider value={{ jobs, isConnected, isAccountBusy, getAccountJob, busyAccountIds, onJobComplete, stopJob, stopAllJobs }}>
             {children}
         </JobsContext.Provider>
     )

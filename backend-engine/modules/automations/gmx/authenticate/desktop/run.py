@@ -1,7 +1,8 @@
 import logging
-from playwright.sync_api import Page
+from playwright.sync_api import Page, Error as PlaywrightError
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.retry_decorators import RequiredActionFailed
+from core.utils.exceptions import JobCancelledException
 from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import StatefulFlow
@@ -31,8 +32,8 @@ class GMXAuthentication(HumanAction):
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop"):
-        super().__init__()
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", job_id=None):
+        super().__init__(job_id=job_id)
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
@@ -45,7 +46,8 @@ class GMXAuthentication(HumanAction):
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
             proxy_config=proxy_config,
-            user_agent_type=user_agent_type
+            user_agent_type=user_agent_type,
+            job_id=job_id
         )
 
     def _setup_state_handlers(self) -> StateHandlerRegistry:
@@ -109,6 +111,14 @@ class GMXAuthentication(HumanAction):
             self.logger.info(f"Authentication successful for {self.email}")
             return {"status": "success", "message": "Authentication completed successfully"}
         
+        except JobCancelledException:
+            raise
+        except PlaywrightError as e:
+            if "Target closed" in str(e):
+                self.logger.warning(f"Browser closed manually for {self.email}")
+                return {"status": "failed", "message": "Browser closed manually"}
+            self.logger.error(f"Playwright error for {self.email}: {e}")
+            return {"status": "failed", "message": str(e)}
         except RequiredActionFailed as e:
             self.logger.error(f"Authentication failed for {self.email}: {e}")
             return {"status": "failed", "message": str(e)}
@@ -136,7 +146,8 @@ class GMXAuthentication(HumanAction):
             state_registry=state_registry,
             goal_checker=self._is_goal_reached,
             max_steps=self.MAX_FLOW_ITERATIONS,
-            logger=self.logger
+            logger=self.logger,
+            job_id=self.job_id
         )
         
         result = flow.run(page)

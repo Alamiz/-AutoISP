@@ -46,6 +46,7 @@ class PlaywrightBrowserFactory:
         slow_mo: Optional[int] = None,
         proxy_config: Optional[Dict] = None,
         user_agent_type: str = "desktop",  # "desktop" or "mobile"
+        job_id: Optional[str] = None,
     ):
         self.profile_path = os.path.join(ChromeProfileManager().chrome_data_path, profile_dir)
         self.profile_dir = profile_dir
@@ -58,6 +59,7 @@ class PlaywrightBrowserFactory:
         self.slow_mo = slow_mo
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
+        self.job_id = job_id
 
         self._pw = None
         self._context: Optional[BrowserContext] = None
@@ -111,6 +113,11 @@ class PlaywrightBrowserFactory:
 
             self._opened = True
             
+            # Register with registry if job_id is present
+            if self.job_id:
+                from core.browser.registry import browser_registry
+                browser_registry.register(self.job_id, self._pw, self._context)
+            
         except Exception as e:
             print(f"❌ Failed to start browser: {e}")
             raise
@@ -162,6 +169,11 @@ class PlaywrightBrowserFactory:
 
     def close(self):
         """Close context and stop Playwright."""
+        # Unregister first
+        if self.job_id:
+            from core.browser.registry import browser_registry
+            browser_registry.unregister(self.job_id)
+
         if self._context:
             try:
                 self._context.close()

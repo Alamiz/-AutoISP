@@ -20,7 +20,7 @@ class Job(BaseModel):
     account_email: str
     automation_id: str
     automation_name: str
-    status: Literal["queued", "running", "completed", "failed"]
+    status: Literal["queued", "running", "completed", "failed", "cancelling", "cancelled"]
     queued_at: datetime
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -169,7 +169,15 @@ class JobManager:
                 return
             
             job = self.running_job
-            job.status = "completed" if success else "failed"
+            
+            # If it was cancelled, mark as cancelled instead of success/fail
+            if job.status == "cancelling":
+                job.status = "cancelled"
+                success = False # Technically not a success
+                error = "Job cancelled by user"
+            else:
+                job.status = "completed" if success else "failed"
+                
             job.completed_at = datetime.now()
             job.progress = 100 if success else job.progress
             job.error = error
@@ -182,7 +190,7 @@ class JobManager:
             # Clear running job
             self.running_job = None
         
-        event_type = "job_completed" if success else "job_failed"
+        event_type = "job_completed" if success else ("job_cancelled" if job.status == "cancelled" else "job_failed")
         self._broadcast_sync(event_type, job)
         
         # Start next job in queue
@@ -197,7 +205,83 @@ class JobManager:
                     self._broadcast_sync("job_cancelled", cancelled_job)
                     return True
         return False
-    
+
+    def stop_job(self, job_id: str) -> bool:
+        """
+        Stop a specific job.
+        If queued: removes from queue.
+        If running: sets status to 'cancelling' and force closes browser.
+        """
+        print(f"🛑 Attempting to stop job {job_id}")
+        
+        # First check queue
+        if self.cancel_job(job_id):
+            print(f"✅ Job {job_id} cancelled from queue")
+            return True
+            
+        # Check running job
+        with self._lock:
+            if self.running_job:
+                print(f"ℹ️ Current running job: {self.running_job.id}, Status: {self.running_job.status}")
+                if self.running_job.id == job_id:
+                    print(f"⚠️ Stopping running job {job_id}")
+                    self.running_job.status = "cancelling"
+                    self._broadcast_sync("job_cancelling", self.running_job)
+                    
+                    # Force close browser
+                    try:
+                        from modules.core.browser.registry import browser_registry
+                        browser_registry.force_close(job_id)
+                    except Exception as e:
+                        print(f"❌ Error force closing browser: {e}")
+                    
+                    return True
+                else:
+                    print(f"❌ Job ID mismatch: {self.running_job.id} != {job_id}")
+            else:
+                print("ℹ️ No running job found")
+        
+        return False
+
+    def stop_all_jobs(self):
+        """Clear the queue and stop the currently running job."""
+        with self._lock:
+            # Clear queue
+            cancelled_jobs = list(self.queued_jobs)
+            self.queued_jobs.clear()
+            
+            # Stop running job
+            if self.running_job:
+                self.running_job.status = "cancelling"
+                self._broadcast_sync("job_cancelling", self.running_job)
+                
+                # Force close browser
+                from modules.core.browser.registry import browser_registry
+                browser_registry.force_close(self.running_job.id)
+        
+        # Broadcast cancellations for queued jobs
+        for job in cancelled_jobs:
+            self._broadcast_sync("job_cancelled", job)
+
+    def check_cancellation(self, job_id: str):
+        """
+        Check if the specific job is cancelled.
+        Raises JobCancelledException if it is.
+        """
+        from modules.core.utils.exceptions import JobCancelledException
+        
+        # We only care about the running job for this check
+        # because queued jobs are just removed from the list
+        with self._lock:
+            if self.running_job and self.running_job.id == job_id:
+                if self.running_job.status == "cancelling":
+                    raise JobCancelledException(f"Job {job_id} was cancelled")
+            
+            # Also check if the job is no longer the running job (e.g. force stopped and cleared)
+            # But be careful: if we are in the thread of the job, self.running_job SHOULD be us.
+            # If self.running_job is None or different ID, it means we were forcefully removed/replaced?
+            # For now, just checking status is enough.
+            
     def get_snapshot(self) -> dict:
         """Get current state of all jobs for WS connection."""
         with self._lock:

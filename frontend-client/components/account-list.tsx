@@ -53,7 +53,7 @@ export function AccountList() {
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
   const { selectedProvider } = useProvider()
-  const { getAccountJob, isAccountBusy, onJobComplete } = useJobs()
+  const { getAccountJob, isAccountBusy, onJobComplete, stopJob, stopAllJobs, jobs } = useJobs()
 
   // Pagination State
   const [page, setPage] = useState(1)
@@ -400,6 +400,17 @@ export function AccountList() {
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
+              {(jobs.running.length > 0 || jobs.queued.length > 0) && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={stopAllJobs}
+                  className="mr-2"
+                >
+                  <CircleSlashIcon className="h-4 w-4 mr-2" />
+                  Stop All ({jobs.running.length + jobs.queued.length})
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="icon"
@@ -498,18 +509,40 @@ export function AccountList() {
                           const job = getAccountJob(account.id);
                           if (job?.status === "running") {
                             return (
-                              <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 flex items-center gap-1">
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Running
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 flex items-center gap-1">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Running
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                  onClick={() => stopJob(job.id)}
+                                  title="Stop Automation"
+                                >
+                                  <CircleSlashIcon className="h-4 w-4" />
+                                </Button>
+                              </div>
                             );
                           }
                           if (job?.status === "queued") {
                             return (
-                              <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                Queued
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  Queued
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                  onClick={() => stopJob(job.id)}
+                                  title="Remove from Queue"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             );
                           }
                           return (

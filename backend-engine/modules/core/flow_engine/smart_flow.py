@@ -57,6 +57,11 @@ class SequentialFlow(Flow):
         last_result = StepResult(status=StepStatus.SUCCESS)
         
         for i, step in enumerate(self.steps):
+            # Check cancellation
+            if self.logger and hasattr(step, 'job_id') and step.job_id:
+                 from modules.core.job_manager import job_manager
+                 job_manager.check_cancellation(step.job_id)
+            
             step_name = step.__class__.__name__
             
             # Check state before step
@@ -126,15 +131,18 @@ class StatefulFlow(Flow):
     Executes a loop of Identify -> Handle -> Check Goal.
     Useful for non-linear processes like Authentication.
     """
-    def __init__(self, 
-                 state_registry: StateHandlerRegistry, 
-                 goal_checker: Callable[[Page], bool], 
-                 max_steps: int = 20, 
-                 logger=None):
+    def __init__(
+            self, 
+            state_registry: StateHandlerRegistry, 
+            goal_checker: Callable[[Page], bool], 
+            max_steps: int = 20, 
+            job_id: Optional[str] = None,
+            logger=None):
         super().__init__(logger=logger)
         self.state_registry = state_registry
         self.goal_checker = goal_checker
         self.max_steps = max_steps
+        self.job_id = job_id
 
     def run(self, page: Page) -> StepResult:
         steps_taken = 0
@@ -143,6 +151,11 @@ class StatefulFlow(Flow):
 
         while steps_taken < self.max_steps:
             steps_taken += 1
+            
+            # Check cancellation
+            if self.job_id:
+                 from modules.core.job_manager import job_manager
+                 job_manager.check_cancellation(self.job_id)
             
             # 1. Check Goal
             try:

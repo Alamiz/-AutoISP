@@ -31,6 +31,10 @@ def execute_job(job: Job):
     # Record start time
     executed_at = datetime.utcnow().isoformat()
     
+    # Default values for completion
+    is_success = False
+    error_msg = None
+    
     try:
         result = run_automation(
             email=params["email"],
@@ -39,49 +43,68 @@ def execute_job(job: Job):
             automation_name=params["automation_name"],
             proxy_config=params.get("proxy_config"),
             device_type=params.get("device_type", "desktop"),
+            job_id=job.id,
             **params.get("extra_params", {})
         )
         
         # Record completion time
         completed_at = datetime.utcnow().isoformat()
         
-        # Log success activity
-        ActivityManager.create_activity(
-            action="run_automation",
-            status=result.get("status", "success"),
-            account_id=job.account_id,
-            details=result.get("message", ""),
-            metadata={
-                "automation_id": job.automation_id, 
-                "device_type": params.get("device_type", "desktop"),
-                "status": result.get("status", "success"),
-                "message": result.get("message", "")
-            },
-            executed_at=executed_at,
-            completed_at=completed_at
-        )
+        status = result.get("status", "success")
+        is_success = status == "success"
+        message = result.get("message", "")
         
-        job_manager.complete_job(job.id, success=True)
+        print(f"🏁 Job {job.id} execution finished. Status: {status}, Message: {message}")
+        
+        # Log activity
+        try:
+            ActivityManager.create_activity(
+                action="run_automation",
+                status=status,
+                account_id=job.account_id,
+                details=message,
+                metadata={
+                    "automation_id": job.automation_id, 
+                    "device_type": params.get("device_type", "desktop"),
+                    "status": status,
+                    "message": message
+                },
+                executed_at=executed_at,
+                completed_at=completed_at
+            )
+        except Exception as e:
+            print(f"❌ Failed to log activity: {e}")
+        
         return result
         
     except Exception as e:
         # Record completion time
         completed_at = datetime.utcnow().isoformat()
         error_msg = str(e)
+        is_success = False
+        
+        print(f"❌ Job {job.id} execution failed: {error_msg}")
         
         # Log failure activity
-        ActivityManager.create_activity(
-            action="run_automation",
-            status="failed",
-            account_id=job.account_id,
-            details=f"Automation '{job.automation_name}' failed: {error_msg}",
-            metadata={"automation_id": job.automation_id, "error": error_msg, "device_type": params.get("device_type", "desktop")},
-            executed_at=executed_at,
-            completed_at=completed_at
-        )
-        
-        job_manager.complete_job(job.id, success=False, error=error_msg)
+        try:
+            ActivityManager.create_activity(
+                action="run_automation",
+                status="failed",
+                account_id=job.account_id,
+                details=f"Automation '{job.automation_name}' failed: {error_msg}",
+                metadata={"automation_id": job.automation_id, "error": error_msg, "device_type": params.get("device_type", "desktop")},
+                executed_at=executed_at,
+                completed_at=completed_at
+            )
+        except Exception as e:
+            print(f"❌ Failed to log failure activity: {e}")
+            
         raise
+        
+    finally:
+        # ALWAYS complete the job
+        print(f"🧹 Completing job {job.id} (Success: {is_success})")
+        job_manager.complete_job(job.id, success=is_success, error=error_msg)
 
 
 # Register the job runner on module load

@@ -18,8 +18,8 @@ class ReportNotSpam(HumanAction):
     web.de Desktop Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", search_text=None):
-        super().__init__()
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", search_text=None, job_id=None):
+        super().__init__(job_id=job_id)
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
