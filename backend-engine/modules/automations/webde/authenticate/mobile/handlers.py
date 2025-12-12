@@ -2,10 +2,10 @@
 """
 State handlers for web.de Mobile Authentication using StatefulFlow.
 """
-import logging
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.humanization.actions import HumanAction
+from core.utils.element_finder import deep_find_elements
 
 
 class RegisterPageHandler(StateHandler):
@@ -49,6 +49,15 @@ class LoginPageHandler(StateHandler):
             self.human_action.human_fill(page, selectors=['form input#username'], text=self.email)
             self.human_action.human_click(page, selectors=['form button[type="submit"]'])
             page.wait_for_timeout(2000)
+
+            
+            # Check if captcha is present
+            captcha_elements = deep_find_elements(page, 'div[data-testid="captcha-container"]')
+            if captcha_elements:
+                if self.logger:
+                    self.logger.error("LoginPageHandler: Captcha detected")
+                return "abort"
+
             self.human_action.human_fill(page, selectors=['form input#password'], text=self.password)
             self.human_action.human_click(page, selectors=['button[type="submit"][data-testid="button-next"]'])
             
@@ -60,6 +69,16 @@ class LoginPageHandler(StateHandler):
                 self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
 
+class LoginCaptchaPageHandler(StateHandler):
+    """Handle web.de mobile login captcha page"""
+    
+    def __init__(self, human_action: HumanAction, logger=None):
+        super().__init__(logger)
+        self.human_action = human_action
+    
+    def handle(self, page: Page) -> HandlerAction:
+        self.logger.error("LoginCaptchaPageHandler: Captcha detected")
+        return "abort"
 
 class LoggedInPageHandler(StateHandler):
     """Handle web.de mobile logged in page - click continue to inbox"""
@@ -120,6 +139,15 @@ class AdsPreferencesPopup2Handler(StateHandler):
         except Exception as e:
             return "retry"
 
+class SecuritySuspensionHandler(StateHandler):
+    """Handle security suspension page"""
+    
+    def __init__(self, human_action: HumanAction, logger=None):
+        super().__init__(logger)
+        self.human_action = human_action
+    
+    def handle(self, page: Page) -> HandlerAction:
+        return "abort"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to web.de mobile"""

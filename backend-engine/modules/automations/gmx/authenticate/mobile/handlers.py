@@ -2,11 +2,10 @@
 """
 State handlers for GMX Mobile Authentication using StatefulFlow.
 """
-import logging
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.humanization.actions import HumanAction
-
+from core.utils.element_finder import deep_find_elements
 
 class RegisterPageHandler(StateHandler):
     """Handle GMX mobile register page - click login button"""
@@ -59,6 +58,13 @@ class LoginPageHandler(StateHandler):
                 page,
                 selectors=['form button[type="submit"]'],
             )
+
+            # Check if captcha is present
+            captcha_elements = deep_find_elements(page, 'div[data-testid="captcha-container"]')
+            if captcha_elements:
+                if self.logger:
+                    self.logger.error("LoginPageHandler: Captcha detected")
+                return "abort"
             
             # Fill password
             self.human_action.human_fill(
@@ -84,6 +90,17 @@ class LoginPageHandler(StateHandler):
                 self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
 
+
+class LoginCaptchaPageHandler(StateHandler):
+    """Handle web.de mobile login captcha page"""
+    
+    def __init__(self, human_action: HumanAction, logger=None):
+        super().__init__(logger)
+        self.human_action = human_action
+    
+    def handle(self, page: Page) -> HandlerAction:
+        self.logger.error("LoginCaptchaPageHandler: Captcha detected")
+        return "abort"
 
 class LoggedInPageHandler(StateHandler):
     """Handle GMX mobile logged in page - click continue to inbox"""
@@ -170,6 +187,15 @@ class AdsPreferencesPopup2Handler(StateHandler):
                 self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
             return "retry"
 
+class SecuritySuspensionHandler(StateHandler):
+    """Handle security suspension page"""
+    
+    def __init__(self, human_action: HumanAction, logger=None):
+        super().__init__(logger)
+        self.human_action = human_action
+    
+    def handle(self, page: Page) -> HandlerAction:
+        return "abort"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to GMX mobile"""

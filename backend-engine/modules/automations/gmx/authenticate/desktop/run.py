@@ -10,10 +10,12 @@ from core.flow_engine.state_handler import StateHandlerRegistry
 from core.flow_engine.step import StepStatus
 from .handlers import (
     LoginPageHandler,
+    LoginCaptchaHandler,
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
     SmartFeaturesPopupHandler,
+    SecuritySuspensionHandler,
     UnknownPageHandler,
 )
 from core.pages_signatures.gmx.desktop import PAGE_SIGNATURES
@@ -58,11 +60,13 @@ class GMXAuthentication(HumanAction):
         
         # Register handlers for authentication page states
         registry.register("gmx_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
+        registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self, self.logger))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1_core", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
         registry.register("gmx_inbox_smart_features_popup", SmartFeaturesPopupHandler(self, self.logger))
+        registry.register("gmx_security_suspension", SecuritySuspensionHandler(self, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         
         return registry

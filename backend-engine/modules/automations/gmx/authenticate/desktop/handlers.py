@@ -7,6 +7,7 @@ import logging
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.humanization.actions import HumanAction
+from core.utils.element_filder import deep_find_elements
 
 
 class LoginPageHandler(StateHandler):
@@ -37,6 +38,12 @@ class LoginPageHandler(StateHandler):
                 selectors=['button[type="submit"][data-testid="button-continue"]'],
                 deep_search=True
             )
+
+            # Check for captcha after clicking continue
+            if len(deep_find_elements(page, "div[data-testid='captcha']")) > 0:
+                self.logger.warning("LoginPageHandler: Captcha detected, aborting.")
+                return "abort"
+
             
             # Fill password
             self.human_action.human_fill(
@@ -63,6 +70,17 @@ class LoginPageHandler(StateHandler):
             if self.logger:
                 self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
+
+class LoginCaptchaHandler(StateHandler):
+    """Handle login captcha"""
+    
+    def __init__(self, human_action: HumanAction, logger=None):
+        super().__init__(logger)
+        self.human_action = human_action
+    
+    def handle(self, page: Page) -> HandlerAction:
+        self.logger.warning("LoginCaptchaHandler: Captcha detected")
+        return "abort"
 
 
 class LoggedInPageHandler(StateHandler):
@@ -172,6 +190,15 @@ class SmartFeaturesPopupHandler(StateHandler):
                 self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}")
             return "retry"
 
+class SecuritySuspensionHandler(StateHandler):
+    """Handle security suspension popup"""
+    
+    def __init__(self, human_action: HumanAction, logger=None):
+        super().__init__(logger)
+        self.human_action = human_action
+    
+    def handle(self, page: Page) -> HandlerAction:
+        return "abort"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to GMX"""

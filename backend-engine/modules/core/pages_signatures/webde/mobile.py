@@ -175,6 +175,22 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "webde_login_captcha_page": {
+        "description": "WebDE Login captcha page.",
+        "required_sublink": "auth.web.de/login/mobile",
+        "checks": [
+            {
+                "name": "Captcha",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",  
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_inbox_ads_preferences_popup_1": {
         "description": "Webde email ads preferences popup (core).",
         "required_sublink": "web.de",
@@ -328,6 +344,22 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "require_english": False,
                 "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "webde_security_suspension": {
+        "description": "Webde security suspension page.",
+        "required_sublink": "assistent.web.de",
+        "checks": [
+            {
+                "name": "Check security suspension iframe",
+                "css_selector": 'div[type="error"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Security error message.",
                 "weight": 2.0,
                 "should_exist": True
             },

@@ -16,7 +16,6 @@ PAGE_SIGNATURES = {
             {
                 "name": "Email input inside iframe",
                 "css_selector": "form#login input#username",
-                # "iframe_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -33,6 +32,23 @@ PAGE_SIGNATURES = {
                 "require_english": False,
                 "description": "",
                 "weight": 1.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_login_captcha_page": {
+        "description": "GMX Login captcha page.",
+        "required_sublink": "www.gmx.net",
+        "checks": [
+            {
+                "name": "Captcha",
+                "css_selector": "div[data-testid='captcha']",
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Captcha exists",
+                "weight": 4.0,
                 "should_exist": True
             },
         ]
@@ -315,6 +331,22 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "require_english": False,
                 "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_security_suspension": {
+        "description": "GMX security suspension page.",
+        "required_sublink": "assistent.gmx.net",
+        "checks": [
+            {
+                "name": "Check security suspension iframe",
+                "css_selector": 'div[type="error"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Security error message.",
                 "weight": 2.0,
                 "should_exist": True
             },

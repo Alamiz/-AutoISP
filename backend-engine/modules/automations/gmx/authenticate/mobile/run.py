@@ -10,9 +10,11 @@ from core.flow_engine.step import StepStatus
 from .handlers import (
     RegisterPageHandler,
     LoginPageHandler,
+    LoginCaptchaPageHandler,
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
+    SecuritySuspensionHandler,
     UnknownPageHandler,
 )
 from core.pages_signatures.gmx.mobile import PAGE_SIGNATURES
@@ -52,9 +54,11 @@ class GMXAuthentication(HumanAction):
         
         registry.register("gmx_register_page", RegisterPageHandler(self, self.logger))
         registry.register("gmx_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
+        registry.register("gmx_login_captcha_page", LoginCaptchaPageHandler(self, self.logger))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
+        registry.register("gmx_security_suspension", SecuritySuspensionHandler(self, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         
         return registry

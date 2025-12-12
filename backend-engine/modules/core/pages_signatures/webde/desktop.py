@@ -36,6 +36,23 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "webde_login_captcha_page": {
+        "description": "Webde Login captcha page.",
+        "required_sublink": "web.de",
+        "checks": [
+            {
+                "name": "Captcha",
+                "css_selector": "div[data-testid='captcha']",
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Captcha exists",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_logged_in_page": {
         "description": "Webde Confirm user page.",
         "required_sublink": "web.de",
@@ -279,6 +296,22 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "require_english": False,
                 "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "webde_security_suspension": {
+        "description": "Webde security suspension page.",
+        "required_sublink": "assistent.web.de",
+        "checks": [
+            {
+                "name": "Check security suspension iframe",
+                "css_selector": 'div[type="error"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Security error message.",
                 "weight": 2.0,
                 "should_exist": True
             },

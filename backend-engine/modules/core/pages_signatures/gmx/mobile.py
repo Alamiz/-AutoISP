@@ -175,6 +175,22 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "gmx_login_captcha_page": {
+        "description": "GMX Login captcha page.",
+        "required_sublink": "auth.gmx.net/login/mobile",
+        "checks": [
+            {
+                "name": "Captcha",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_inbox_ads_preferences_popup_1": {
         "description": "GMX email ads preferences popup (core).",
         "required_sublink": "gmx.net",
@@ -328,6 +344,22 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "require_english": False,
                 "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_security_suspension": {
+        "description": "GMX security suspension page.",
+        "required_sublink": "assistent.gmx.net",
+        "checks": [
+            {
+                "name": "Check security suspension iframe",
+                "css_selector": 'div[type="error"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Security error message.",
                 "weight": 2.0,
                 "should_exist": True
             },
