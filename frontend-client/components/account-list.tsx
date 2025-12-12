@@ -47,7 +47,8 @@ export function AccountList() {
     deselectAccount,
     isAccountSelected,
     getSelectedCount,
-    setTotalCount
+    setTotalCount,
+    excludedIds
   } = useAccounts();
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
@@ -160,38 +161,67 @@ export function AccountList() {
   }
 
   const bulkDeleteAccounts = useMutation({
-    mutationFn: async (accountIds: string[]) => {
-      await apiDelete('/api/accounts/bulk-delete/', accountIds)
-      return accountIds
+    mutationFn: async (payload: { account_ids?: string[], select_all?: boolean, provider?: string, excluded_ids?: string[] }) => {
+      await apiDelete('/api/accounts/bulk-delete/', payload)
+      return payload
     },
-    onMutate: async (accountIds: string[]) => {
+    onMutate: async (payload) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
       const previousData = queryClient.getQueryData(["accounts", page, selectedProvider?.slug])
 
       queryClient.setQueryData(["accounts", page, selectedProvider?.slug], (old: PaginatedResponse<Account> | undefined) => {
         if (!old) return old;
+
+        // Optimistic update logic
+        let newResults = old.results;
+
+        if (payload.select_all) {
+          // If select all is used, we can't easily know which accounts to keep without refetching, 
+          // but we can remove the ones we know are NOT excluded if they are in the current page.
+          // However, for simplicity and correctness with select_all, it's safer to rely on invalidation.
+          // We'll just try to remove non-excluded ones from current view if possible, 
+          // but mostly we rely on the refetch.
+          if (payload.excluded_ids && payload.excluded_ids.length > 0) {
+            // If we have exclusions, we keep them.
+            newResults = old.results.filter(acc => payload.excluded_ids?.includes(acc.id));
+          } else {
+            // If select all and no exclusions, everything goes.
+            newResults = [];
+          }
+        } else if (payload.account_ids) {
+          newResults = old.results.filter(acc => !payload.account_ids?.includes(acc.id))
+        }
+
         return {
           ...old,
-          results: old.results.filter(acc => !accountIds.includes(acc.id))
+          results: newResults
         }
       })
       return { previousData }
     },
-    onError: (err, accountIds, context) => {
+    onError: (err, payload, context) => {
       queryClient.setQueryData(["accounts", page, selectedProvider?.slug], context?.previousData)
       toast.error("Failed to delete accounts")
     },
     onSuccess: () => {
       setSelectedAccounts([])
       toast.success("Accounts deleted successfully")
+      // Force a refetch to ensure everything is in sync, especially for select_all
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
     }
   })
 
 
   const handleBulkDelete = () => {
-    if (selectedAccounts.length > 0) {
+    if (isAllSelected) {
+      bulkDeleteAccounts.mutate({
+        select_all: true,
+        provider: selectedProvider?.slug,
+        excluded_ids: Array.from(excludedIds)
+      });
+    } else if (selectedAccounts.length > 0) {
       const selectedAccountIds = selectedAccounts.map(acc => acc.id);
-      bulkDeleteAccounts.mutate(selectedAccountIds);
+      bulkDeleteAccounts.mutate({ account_ids: selectedAccountIds });
     }
   }
 
