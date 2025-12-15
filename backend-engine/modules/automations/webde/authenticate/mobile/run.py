@@ -27,13 +27,14 @@ class WebDEAuthentication(HumanAction):
     GOAL_STATES = {"webde_folder_list_page"}
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile"):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile", job_id=None):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
         self.signatures = PAGE_SIGNATURES
+        self.job_id = job_id
         
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
@@ -85,6 +86,9 @@ class WebDEAuthentication(HumanAction):
 
         try:
             self.browser.start()
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             self.authenticate(page)
             self.logger.info(f"Authentication successful for {self.email}")
@@ -97,6 +101,9 @@ class WebDEAuthentication(HumanAction):
             self.logger.error(f"Unexpected error for {self.email}: {e}")
             return {"status": "failed", "message": str(e)}
         finally:
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.unregister_browser(self.job_id)
             self.browser.close()
 
     def authenticate(self, page: Page):

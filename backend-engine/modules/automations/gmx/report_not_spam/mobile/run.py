@@ -23,7 +23,8 @@ class ReportNotSpam(HumanAction):
         proxy_config=None,
         user_agent_type="mobile",
         search_text=None,
-        max_flow_retries=3
+        max_flow_retries=3,
+        job_id=None
     ):
         super().__init__()
         self.email = email
@@ -32,6 +33,7 @@ class ReportNotSpam(HumanAction):
         self.user_agent_type = user_agent_type
         self.search_text = search_text
         self.max_flow_retries = max_flow_retries
+        self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
@@ -85,7 +87,7 @@ class ReportNotSpam(HumanAction):
         except Exception as e:
             self.logger.error(f"Exception in flow execution: {e}", exc_info=True)
             return {
-                "status": "failed",
+                "status": "failed", 
                 "message": str(e),
                 "retry_recommended": True
             }
@@ -99,6 +101,9 @@ class ReportNotSpam(HumanAction):
         
         try:
             self.browser.start()
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
 
             # Authenticate first
@@ -157,4 +162,7 @@ class ReportNotSpam(HumanAction):
             self.logger.error(f"Critical error in automation: {e}", exc_info=True)
             return {"status": "failed", "message": f"Critical error: {str(e)}"}
         finally:
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.unregister_browser(self.job_id)
             self.browser.close()
