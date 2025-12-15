@@ -39,6 +39,7 @@ def execute_job(job: Job):
             automation_name=params["automation_name"],
             proxy_config=params.get("proxy_config"),
             device_type=params.get("device_type", "desktop"),
+            job_id=job.id,  # Pass job_id for browser registration
             **params.get("extra_params", {})
         )
         

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw, Smartphone, Monitor, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, Check } from "lucide-react"
+import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw, Smartphone, Monitor, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, Check, Square } from "lucide-react"
 import { AccountDrawer } from "./account-drawer"
 import { BulkUploader } from "./bulk-uploader"
 import { AccountHistoryModal } from "./account-history-modal"
@@ -53,7 +53,10 @@ export function AccountList() {
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
   const { selectedProvider } = useProvider()
-  const { getAccountJob, isAccountBusy, onJobComplete } = useJobs()
+  const { getAccountJob, isAccountBusy, onJobComplete, stopJob, stopAllJobs, jobs } = useJobs()
+
+  // Check if any jobs are running or queued
+  const hasActiveJobs = jobs.running.length > 0 || jobs.queued.length > 0
 
   // Pagination State
   const [page, setPage] = useState(1)
@@ -63,10 +66,17 @@ export function AccountList() {
 
   // Refetch accounts when a job completes (to get updated activities)
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout
     const unsubscribe = onJobComplete(() => {
-      queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      }, 2000) // Debounce for 2 seconds to batch rapid updates
     })
-    return unsubscribe
+    return () => {
+      unsubscribe()
+      clearTimeout(timeoutId)
+    }
   }, [onJobComplete, queryClient])
 
   useEffect(() => {
@@ -400,6 +410,25 @@ export function AccountList() {
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
+              {/* Stop All Button */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={!hasActiveJobs}
+                      onClick={() => stopAllJobs()}
+                      className="border-border hover:bg-red-500/10 text-red-400 hover:text-red-300 h-8 w-8"
+                    >
+                      <Square className="h-4 w-4 fill-current" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Stop all jobs ({jobs.running.length + jobs.queued.length})</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button
                 variant="outline"
                 size="icon"
@@ -498,18 +527,56 @@ export function AccountList() {
                           const job = getAccountJob(account.id);
                           if (job?.status === "running") {
                             return (
-                              <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 flex items-center gap-1">
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Running
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 flex items-center gap-1">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Running
+                                </Badge>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                        onClick={() => stopJob(job.id)}
+                                      >
+                                        <Square className="h-3 w-3 fill-current" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Stop job</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
                             );
                           }
                           if (job?.status === "queued") {
                             return (
-                              <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                Queued
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  Queued
+                                </Badge>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                        onClick={() => stopJob(job.id)}
+                                      >
+                                        <Square className="h-3 w-3 fill-current" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Cancel job</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
                             );
                           }
                           return (

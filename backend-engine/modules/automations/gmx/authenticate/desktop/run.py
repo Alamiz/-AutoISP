@@ -31,13 +31,14 @@ class GMXAuthentication(HumanAction):
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop"):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", job_id=None):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
         self.signatures = PAGE_SIGNATURES
+        self.job_id = job_id  # For browser registration with job_manager
         
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
@@ -87,6 +88,8 @@ class GMXAuthentication(HumanAction):
         """
         Runs authentication flow for GMX
         """
+        from modules.core.job_manager import job_manager  # Import here to avoid circular deps
+        
         self.logger.info(f"Starting authentication flow for {self.email}")
         
         # Log proxy usage if configured
@@ -99,6 +102,10 @@ class GMXAuthentication(HumanAction):
         try:
             # Start browser with proxy configuration
             self.browser.start()
+            
+            # Register browser with job_manager for force-close on stop
+            if self.job_id:
+                job_manager.register_browser(self.job_id, self.browser)
             
             # Create new page
             page = self.browser.new_page()
@@ -116,6 +123,9 @@ class GMXAuthentication(HumanAction):
             self.logger.error(f"Unexpected error for {self.email}: {e}")
             return {"status": "failed", "message": str(e)}
         finally:
+            # Unregister browser from job_manager
+            if self.job_id:
+                job_manager.unregister_browser(self.job_id)
             # Close browser
             self.browser.close()
 

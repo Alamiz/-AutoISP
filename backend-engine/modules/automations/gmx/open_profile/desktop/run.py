@@ -9,13 +9,14 @@ class OpenProfile(HumanAction):
     Simple automation to open the browser with the user's profile.
     """
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", duration=10):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", duration=10, job_id=None):
         super().__init__()
         self.duration = duration
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
+        self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         
@@ -28,21 +29,15 @@ class OpenProfile(HumanAction):
     def execute(self):
         """
         Opens the browser and navigates to the homepage.
-        Keeps running for a bit or until closed? 
-        Actually, run_automation is usually a background task.
-        If we want to keep it open for the user, we might need a different approach or just wait long enough.
-        But usually 'Open Profile' implies the user wants to interact.
-        
-        If we return, the browser might close if we use context managers or if the object is garbage collected.
-        PlaywrightBrowserFactory.start() starts it.
-        
-        If we want to keep it open, we should probably just wait in a loop or sleep.
-        Let's sleep for a long time or until closed manually.
         """
+        from modules.core.job_manager import job_manager
+        
         self.logger.info(f"Opening profile for {self.email}")
         
         try:
             self.browser.start()
+            if self.job_id:
+                job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             
             page.goto("https://www.gmx.net/")
@@ -58,4 +53,7 @@ class OpenProfile(HumanAction):
             self.logger.error(f"Error opening profile: {e}")
             return {"status": "failed", "message": str(e)}
         finally:
+            if self.job_id:
+                job_manager.unregister_browser(self.job_id)
             self.browser.close()
+

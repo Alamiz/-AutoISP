@@ -4,10 +4,13 @@ import sys
 import os
 
 
-def run_automation(email, password, isp, automation_name, proxy_config=None, device_type="desktop", **kwargs):
+def run_automation(email, password, isp, automation_name, proxy_config=None, device_type="desktop", job_id=None, **kwargs):
     """
     Global runner for any automation.
     Delegates platform logic to the automation's loader.py.
+    
+    Args:
+        job_id: Optional job ID for browser registration with job manager
     """
 
     logger = logging.getLogger("autoisp")
@@ -31,7 +34,7 @@ def run_automation(email, password, isp, automation_name, proxy_config=None, dev
             raise AttributeError(f"{loader_module_path} missing 'run(email, password, device_type, proxy_config)' function")
 
         logger.info(f"Running {automation_name} on {isp} for profile {profile}")
-        return loader.run(email=email, password=password, device_type=device_type, proxy_config=proxy_config, **kwargs)
+        return loader.run(email=email, password=password, device_type=device_type, proxy_config=proxy_config, job_id=job_id, **kwargs)
 
     except Exception as e:
         logger.error(f"Failed to run automation {automation_name}: {e}")

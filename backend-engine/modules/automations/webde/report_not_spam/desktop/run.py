@@ -18,13 +18,14 @@ class ReportNotSpam(HumanAction):
     web.de Desktop Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", search_text=None):
+    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", search_text=None, job_id=None):
         super().__init__()
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
         self.search_text = search_text
+        self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
@@ -52,6 +53,9 @@ class ReportNotSpam(HumanAction):
         
         try:
             self.browser.start()
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             
             # Authenticate first
@@ -76,6 +80,9 @@ class ReportNotSpam(HumanAction):
             self.logger.error(f"Unexpected error for {self.email}: {e}")
             return {"status": "failed", "message": str(e)}
         finally:
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.unregister_browser(self.job_id)
             self.browser.close()
 
     def report_not_spam(self, page: Page):

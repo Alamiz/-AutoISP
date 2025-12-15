@@ -10,13 +10,15 @@ def run(email, password, device_type="desktop", proxy_config=None, **kwargs):
     
     # Extract specific parameters
     search_text = kwargs.get("keyword")
+    job_id = kwargs.get("job_id")
     
     automation = automation_class(
         email=email, 
         password=password, 
         proxy_config=proxy_config, 
         user_agent_type=device_type,
-        search_text=search_text
+        search_text=search_text,
+        job_id=job_id
     )
 
     return automation.execute()

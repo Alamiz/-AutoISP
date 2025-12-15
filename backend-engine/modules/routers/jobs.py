@@ -21,6 +21,21 @@ def cancel_job(job_id: str):
     raise HTTPException(status_code=404, detail="Job not found or already running")
 
 
+@router.post("/{job_id}/stop")
+def stop_job(job_id: str):
+    """Stop a specific job (running or queued)."""
+    if job_manager.stop_job(job_id):
+        return {"status": "stopped", "job_id": job_id}
+    raise HTTPException(status_code=404, detail="Job not found")
+
+
+@router.post("/stop-all")
+def stop_all_jobs():
+    """Stop all running and queued jobs."""
+    result = job_manager.stop_all_jobs()
+    return {"status": "stopped", **result}
+
+
 @router.websocket("/ws")
 async def jobs_websocket(websocket: WebSocket):
     """

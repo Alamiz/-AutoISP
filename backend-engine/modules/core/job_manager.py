@@ -7,8 +7,9 @@ Jobs run one at a time - when one completes, the next in queue starts automatica
 import asyncio
 import uuid
 import threading
+import logging
 from datetime import datetime
-from typing import Optional, Literal, List, Set, Callable, Any
+from typing import Optional, Literal, List, Set, Callable, Any, Dict
 from pydantic import BaseModel
 from fastapi import WebSocket
 
@@ -57,8 +58,12 @@ class JobManager:
             return
         self._initialized = True
         
+        self.logger = logging.getLogger("autoisp")
+        
         # In-memory storage
-        self.running_job: Optional[Job] = None  # Only ONE job runs at a time
+        self.running_jobs: Dict[str, Job] = {}  # Map job_id -> Job
+        self.max_concurrent_jobs = 5
+        
         self.queued_jobs: List[Job] = []
         self.completed_jobs: List[Job] = []  # Keep last N completed
         self.max_completed_history = 50
@@ -68,6 +73,12 @@ class JobManager:
         
         # Callback for starting jobs (set by automations router)
         self._job_runner: Optional[Callable[[Job], Any]] = None
+        
+        # Stop signals for running jobs (job_id -> Event)
+        self._stop_signals: Dict[str, threading.Event] = {}
+        
+        # Active browser references for force-close (job_id -> browser)
+        self._active_browsers: Dict[str, Any] = {}
         
         # Lock for thread safety
         self._lock = threading.Lock()
@@ -79,9 +90,11 @@ class JobManager:
     def is_account_busy(self, account_id: str) -> bool:
         """Check if account is already running or queued."""
         with self._lock:
-            # Check running job
-            if self.running_job and self.running_job.account_id == account_id:
-                return True
+            # Check running jobs
+            for job in self.running_jobs.values():
+                if job.account_id == account_id:
+                    return True
+            
             # Check queued jobs
             for job in self.queued_jobs:
                 if job.account_id == account_id:
@@ -125,27 +138,26 @@ class JobManager:
         return job
     
     def _try_start_next(self):
-        """Start the next queued job if nothing is running."""
+        """Start queued jobs if below concurrency limit."""
         with self._lock:
-            if self.running_job is not None:
-                return  # Already running
+            # Loop while we have capacity and jobs
+            while len(self.running_jobs) < self.max_concurrent_jobs and self.queued_jobs:
+                # Pop the next job
+                job = self.queued_jobs.pop(0)
+                job.status = "running"
+                job.started_at = datetime.now()
+                self.running_jobs[job.id] = job
+                
+                # Create stop signal for this job
+                self._stop_signals[job.id] = threading.Event()
             
-            if not self.queued_jobs:
-                return  # Nothing queued
-            
-            # Pop the next job
-            job = self.queued_jobs.pop(0)
-            job.status = "running"
-            job.started_at = datetime.now()
-            self.running_job = job
-        
-        self._broadcast_sync("job_started", job)
-        
-        # Run the job via callback
-        if self._job_runner:
-            # Run in background thread to not block
-            thread = threading.Thread(target=self._execute_job, args=(job,))
-            thread.start()
+                self._broadcast_sync("job_started", job)
+                
+                # Run the job via callback
+                if self._job_runner:
+                    # Run in background thread to not block
+                    thread = threading.Thread(target=self._execute_job, args=(job,))
+                    thread.start()
     
     def _execute_job(self, job: Job):
         """Execute job in background thread."""
@@ -158,17 +170,18 @@ class JobManager:
     def update_progress(self, job_id: str, progress: int):
         """Update job progress (0-100)."""
         with self._lock:
-            if self.running_job and self.running_job.id == job_id:
-                self.running_job.progress = progress
-                self._broadcast_sync("job_progress", self.running_job)
+            job = self.running_jobs.get(job_id)
+            if job:
+                job.progress = progress
+                self._broadcast_sync("job_progress", job)
     
     def complete_job(self, job_id: str, success: bool = True, error: str = None):
         """Mark job as completed or failed, then start next queued job."""
         with self._lock:
-            if not self.running_job or self.running_job.id != job_id:
+            job = self.running_jobs.get(job_id)
+            if not job:
                 return
             
-            job = self.running_job
             job.status = "completed" if success else "failed"
             job.completed_at = datetime.now()
             job.progress = 100 if success else job.progress
@@ -180,7 +193,7 @@ class JobManager:
                 self.completed_jobs.pop()
             
             # Clear running job
-            self.running_job = None
+            self.running_jobs.pop(job_id, None)
         
         event_type = "job_completed" if success else "job_failed"
         self._broadcast_sync(event_type, job)
@@ -198,12 +211,143 @@ class JobManager:
                     return True
         return False
     
+    # ==================== STOP FUNCTIONALITY ====================
+    
+    def register_browser(self, job_id: str, browser: Any):
+        """Register a browser instance for a running job (for force-close)."""
+        with self._lock:
+            self._active_browsers[job_id] = browser
+    
+    def unregister_browser(self, job_id: str):
+        """Unregister browser when job completes normally."""
+        with self._lock:
+            self._active_browsers.pop(job_id, None)
+    
+    def is_stopping(self, job_id: str) -> bool:
+        """Check if a job has been signaled to stop."""
+        with self._lock:
+            event = self._stop_signals.get(job_id)
+            return event.is_set() if event else False
+    
+    def _create_stop_signal(self, job_id: str) -> threading.Event:
+        """Create a stop signal for a new job."""
+        event = threading.Event()
+        with self._lock:
+            self._stop_signals[job_id] = event
+        return event
+    
+    def _clear_stop_signal(self, job_id: str):
+        """Clear stop signal when job completes."""
+        with self._lock:
+            self._stop_signals.pop(job_id, None)
+    
+    def stop_job(self, job_id: str) -> bool:
+        """
+        Stop a specific job (running or queued).
+        Returns True if job was found and stopped/cancelled.
+        """
+        # First try to cancel if queued
+        if self.cancel_job(job_id):
+            return True
+        
+        # Check if it's a running job
+        with self._lock:
+            job = self.running_jobs.get(job_id)
+            if not job:
+                return False
+            
+            # Set stop signal
+            stop_event = self._stop_signals.get(job_id)
+            if stop_event:
+                stop_event.set()
+            
+            # Force-close browser if registered
+            browser = self._active_browsers.pop(job_id, None)
+            if browser:
+                self.logger.info(f"Found active browser for job {job_id}, attempting to close...")
+            else:
+                self.logger.warning(f"No active browser found for job {job_id} during stop")
+        
+        # Close browser outside of lock to avoid deadlock
+        if browser:
+            try:
+                # Use force_close to interrupt running operations
+                if hasattr(browser, 'force_close'):
+                    self.logger.info(f"Calling force_close() on browser for job {job_id}")
+                    browser.force_close()
+                else:
+                    self.logger.info(f"Calling close() on browser for job {job_id}")
+                    browser.close()
+                self.logger.info(f"Browser closed successfully for job {job_id}")
+            except Exception as e:
+                self.logger.error(f"Error closing browser for job {job_id}: {e}")
+        
+        # Mark job as cancelled
+        with self._lock:
+            job = self.running_jobs.get(job_id)
+            if job:
+                job.status = "failed"
+                job.completed_at = datetime.now()
+                job.error = "Job stopped by user"
+                
+                # Add to history
+                self.completed_jobs.insert(0, job)
+                if len(self.completed_jobs) > self.max_completed_history:
+                    self.completed_jobs.pop()
+                
+                # Clear running job
+                self.running_jobs.pop(job_id, None)
+                
+                # Cleanup
+                self._stop_signals.pop(job_id, None)
+        
+        if job:
+            self._broadcast_sync("job_stopped", job)
+            
+            # Start next job in queue
+            self._try_start_next()
+        else:
+            self.logger.info(f"Job {job_id} completed while stopping")
+        
+        return True
+    
+    def stop_all_jobs(self) -> dict:
+        """
+        Stop all running jobs and clear all queued jobs.
+        Returns summary of what was stopped.
+        """
+        stopped_running = []
+        cancelled_queued = []
+        
+        with self._lock:
+            # Get queued jobs to cancel
+            cancelled_queued = [job.id for job in self.queued_jobs]
+            
+            # Clear queue
+            for job in self.queued_jobs:
+                self._broadcast_sync("job_cancelled", job)
+            self.queued_jobs.clear()
+            
+            # Get running job info
+            stopped_running = list(self.running_jobs.keys())
+        
+        # Stop running jobs (outside lock)
+        for job_id in stopped_running:
+            self.stop_job(job_id)
+        
+        return {
+            "stopped_running": stopped_running,
+            "cancelled_queued": cancelled_queued,
+            "total_stopped": len(stopped_running) + len(cancelled_queued)
+        }
+
+    
     def get_snapshot(self) -> dict:
         """Get current state of all jobs for WS connection."""
         with self._lock:
             return {
                 "type": "snapshot",
-                "running": [self.running_job.model_dump(mode="json")] if self.running_job else [],
+                "running": [job.model_dump(mode="json") for job in self.running_jobs.values()],
                 "queued": [job.model_dump(mode="json") for job in self.queued_jobs],
                 "completed": [job.model_dump(mode="json") for job in self.completed_jobs[:10]],  # Last 10
             }

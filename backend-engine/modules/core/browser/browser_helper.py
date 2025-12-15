@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright, BrowserContext, Page
 from core.browser.chrome_profiles_manager import ChromeProfileManager
 import os
+import logging
 from typing import Optional, List, Dict
 
 STEALTH_INIT_SCRIPT = """
@@ -162,6 +163,7 @@ class PlaywrightBrowserFactory:
 
     def close(self):
         """Close context and stop Playwright."""
+        self._opened = False
         if self._context:
             try:
                 self._context.close()
@@ -174,4 +176,41 @@ class PlaywrightBrowserFactory:
             except Exception:
                 pass
             self._pw = None
+
+    def force_close(self):
+        """Forcefully close browser - kills all pages and browser."""
         self._opened = False
+        logger = logging.getLogger("autoisp")
+        logger.info("Force closing browser...")
+        
+        # Close all pages first to interrupt any running operations
+        if self._context:
+            try:
+                pages = self._context.pages
+                logger.info(f"Closing {len(pages)} pages...")
+                for page in pages:
+                    try:
+                        page.close()
+                    except Exception as e:
+                        pass
+                        # logger.warning(f"Error closing page: {e}")
+            except Exception as e:
+                logger.warning(f"Error accessing pages: {e}")
+            
+            try:
+                self._context.close()
+                logger.info("Browser context closed")
+            except Exception as e:
+                pass
+                # logger.warning(f"Error closing context: {e}")
+            self._context = None
+        
+        # Force stop Playwright
+        if self._pw:
+            try:
+                self._pw.stop()
+                logger.info("Playwright stopped")
+            except Exception as e:
+                pass
+                # logger.warning(f"Error stopping Playwright: {e}")
+            self._pw = None
