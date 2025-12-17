@@ -40,6 +40,7 @@ a = Analysis(
         # Other dependencies
         'bs4',
         'requests',
+        'psutil',
         'httpx',
         'PySide6',
     ],

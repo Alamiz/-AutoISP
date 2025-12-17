@@ -3,6 +3,7 @@ from core.browser.chrome_profiles_manager import ChromeProfileManager
 import os
 import logging
 from typing import Optional, List, Dict
+import psutil
 
 STEALTH_INIT_SCRIPT = """
 // Minimal evasions for navigator properties commonly checked
@@ -79,6 +80,30 @@ class PlaywrightBrowserFactory:
             "--disable-infobars",
             "--no-default-browser-check",
             "--disable-dev-shm-usage",
+
+            # Memory critical
+            "--disable-background-networking",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-extensions",
+            "--disable-sync",
+            "--disable-default-apps",
+            "--disable-component-update",
+            "--disable-client-side-phishing-detection",
+            "--disable-hang-monitor",
+            "--disable-popup-blocking",
+
+            # Reduce process count
+            "--process-per-site",
+            "--renderer-process-limit=4",
+
+            # GPU on RDP = useless
+            "--disable-gpu",
+            "--disable-software-rasterizer",
+
+            # Kill Chrome background mode
+            "--disable-features=Translate,BackForwardCache,AcceptCHFrame,MediaRouter"
         ]
 
         # Only start maximized for desktop
@@ -161,6 +186,21 @@ class PlaywrightBrowserFactory:
         
         return page
 
+    def kill_chrome_for_profile(profile_path: str):
+        profile_path = os.path.abspath(profile_path).lower()
+
+        for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+            try:
+                if proc.info["name"] != "chrome.exe":
+                    continue
+
+                cmdline = " ".join(proc.info.get("cmdline") or []).lower()
+                if profile_path in cmdline:
+                    proc.kill()
+
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+
     def close(self):
         """Close context and stop Playwright."""
         self._opened = False
@@ -176,6 +216,9 @@ class PlaywrightBrowserFactory:
             except Exception:
                 pass
             self._pw = None
+        
+        kill_chrome_for_profile(self.profile_path)
+        logger.info("Chrome processes killed for profile")
 
     def force_close(self):
         """Forcefully close browser - kills all pages and browser."""
@@ -214,3 +257,6 @@ class PlaywrightBrowserFactory:
                 pass
                 # logger.warning(f"Error stopping Playwright: {e}")
             self._pw = None
+        
+        kill_chrome_for_profile(self.profile_path)
+        logger.info("Chrome processes killed for profile")
