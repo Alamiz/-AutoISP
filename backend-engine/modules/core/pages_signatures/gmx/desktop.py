@@ -53,6 +53,70 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "gmx_login_wrong_username": {
+        "description": "GMX Login wrong username page.",
+        "required_sublink": "www.gmx.net",
+        "checks": [
+            {
+                "name": "Check login iframe",
+                "css_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Login iframe exists",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Email input inside iframe",
+                "css_selector": "form#login input#username",
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Email input field inside login iframe",
+                "weight": 4.0,
+                "should_exist": True
+            },
+            {
+                "name": "Create account button",
+                "css_selector": 'a[data-component="button"][href^="https://www.gmx.net/mail/tarifvergleich"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "Error message",
+                "css_selector": 'p[data-testid="error-email"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Wrong username error message",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_login_wrong_password": {
+        "description": "GMX Login wrong password page.",
+        "required_sublink": "www.gmx.net/logoutlounge/?status=login-failed",
+        "checks": [
+            {
+                "name": "Error message",
+                "css_selector": 'div[data-component="notification"][data-notification-type="error-light"][position="beforeLogin"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Wrong password error message",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_logged_in_page": {
         "description": "GMX Confirm user page.",
         "required_sublink": "www.gmx.net",

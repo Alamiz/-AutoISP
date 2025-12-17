@@ -65,6 +65,8 @@ class PlaywrightBrowserFactory:
         self._context: Optional[BrowserContext] = None
         self._opened = False
 
+        self.logger = logging.getLogger("autoisp")
+
     def start(self):
         """Start browser with extension"""
         if self._opened:
@@ -186,6 +188,7 @@ class PlaywrightBrowserFactory:
         
         return page
 
+    @staticmethod
     def kill_chrome_for_profile(profile_path: str):
         profile_path = os.path.abspath(profile_path).lower()
 
@@ -217,20 +220,19 @@ class PlaywrightBrowserFactory:
                 pass
             self._pw = None
         
-        kill_chrome_for_profile(self.profile_path)
-        logger.info("Chrome processes killed for profile")
+        self.kill_chrome_for_profile(self.profile_path)
+        self.logger.info("Chrome processes killed for profile")
 
     def force_close(self):
         """Forcefully close browser - kills all pages and browser."""
         self._opened = False
-        logger = logging.getLogger("autoisp")
-        logger.info("Force closing browser...")
+        self.logger.info("Force closing browser...")
         
         # Close all pages first to interrupt any running operations
         if self._context:
             try:
                 pages = self._context.pages
-                logger.info(f"Closing {len(pages)} pages...")
+                self.logger.info(f"Closing {len(pages)} pages...")
                 for page in pages:
                     try:
                         page.close()
@@ -238,11 +240,11 @@ class PlaywrightBrowserFactory:
                         pass
                         # logger.warning(f"Error closing page: {e}")
             except Exception as e:
-                logger.warning(f"Error accessing pages: {e}")
+                self.logger.warning(f"Error accessing pages: {e}")
             
             try:
                 self._context.close()
-                logger.info("Browser context closed")
+                self.logger.info("Browser context closed")
             except Exception as e:
                 pass
                 # logger.warning(f"Error closing context: {e}")
@@ -252,11 +254,11 @@ class PlaywrightBrowserFactory:
         if self._pw:
             try:
                 self._pw.stop()
-                logger.info("Playwright stopped")
+                self.logger.info("Playwright stopped")
             except Exception as e:
                 pass
                 # logger.warning(f"Error stopping Playwright: {e}")
             self._pw = None
         
-        kill_chrome_for_profile(self.profile_path)
-        logger.info("Chrome processes killed for profile")
+        self.kill_chrome_for_profile(self.profile_path)
+        self.logger.info("Chrome processes killed for profile")
