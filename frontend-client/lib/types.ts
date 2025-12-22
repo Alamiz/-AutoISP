@@ -33,7 +33,7 @@ export interface Account {
   };
   label: string;
   last_sync: string;
-  status: "active" | "inactive" | "error" | "disabled";
+  status: "active" | "inactive" | "error" | "disabled" | "suspended" | "phone_verification" | "captcha" | "wrong_password" | "wrong_username";
   latest_automation: string;
   provider: "gmx" | "webde";
   type: "desktop" | "mobile";

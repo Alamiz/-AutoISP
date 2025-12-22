@@ -112,6 +112,16 @@ export function AccountList() {
         return "bg-gray-600/10 text-gray-400 border-gray-500/20"
       case "error":
         return "bg-red-500/10 text-red-400 border-red-500/20"
+      case "suspended":
+        return "bg-red-600/10 text-red-500 border-red-600/20"
+      case "phone_verification":
+        return "bg-orange-500/10 text-orange-400 border-orange-500/20"
+      case "captcha":
+        return "bg-purple-500/10 text-purple-400 border-purple-500/20"
+      case "wrong_password":
+        return "bg-pink-500/10 text-pink-400 border-pink-500/20"
+      case "wrong_username":
+        return "bg-pink-600/10 text-pink-500 border-pink-600/20"
       default:
         return "bg-slate-500/10 text-slate-400 border-slate-500/20"
     }
@@ -521,7 +531,7 @@ export function AccountList() {
                         </Badge>}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        {/* <Badge className={getStatusColor(account.status)}>{account.status}</Badge> */}
+                        <Badge className={getStatusColor(account.status)}>{account.status.replace('_', ' ')}</Badge>
                         {/* Job Status Indicator */}
                         {(() => {
                           const job = getAccountJob(account.id);
