@@ -1,7 +1,7 @@
 from .desktop.run import ReportNotSpam as DesktopReportNotSpam
 from .mobile.run import ReportNotSpam as MobileReportNotSpam # Not implemented yet
 
-def run(email, password, device_type="desktop", proxy_config=None, **kwargs):
+def run(account_id, email, password, device_type="desktop", proxy_config=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     """
@@ -13,6 +13,7 @@ def run(email, password, device_type="desktop", proxy_config=None, **kwargs):
     job_id = kwargs.get("job_id")
     
     automation = automation_class(
+        account_id=account_id,
         email=email, 
         password=password, 
         proxy_config=proxy_config, 

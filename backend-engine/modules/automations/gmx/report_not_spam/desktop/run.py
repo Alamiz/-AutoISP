@@ -21,6 +21,7 @@ class ReportNotSpam(HumanAction):
     """
     def __init__(
         self, 
+        account_id,
         email, 
         password, 
         proxy_config=None, 
@@ -30,6 +31,7 @@ class ReportNotSpam(HumanAction):
         job_id=None
     ):
         super().__init__()
+        self.account_id = account_id
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
@@ -135,10 +137,12 @@ class ReportNotSpam(HumanAction):
             # Authenticate first (outside retry loop - auth failures are terminal)
             self.logger.info("Authenticating...")
             gmx_auth = GMXAuthentication(
+                self.account_id,
                 self.email, 
                 self.password, 
                 self.proxy_config, 
-                self.user_agent_type
+                self.user_agent_type,
+                self.job_id
             )
             try:
                 gmx_auth.authenticate(page)

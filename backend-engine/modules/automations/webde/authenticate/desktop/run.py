@@ -9,15 +9,21 @@ from core.flow_engine.state_handler import StateHandlerRegistry
 from core.flow_engine.step import StepStatus
 from .handlers import (
     LoginPageHandler,
-    LoginCaptchaHandler,
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
     SmartFeaturesPopupHandler,
-    SecuritySuspensionHandler,
     UnknownPageHandler,
 )
+from automations.common_handlers import (
+    WrongPasswordPageHandler,
+    WrongEmailPageHandler,
+    LoginCaptchaHandler,
+    SecuritySuspensionHandler,
+    PhoneVerificationHandler
+)
 from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
+from crud.account import update_account_state
 
 class WebDEAuthentication(HumanAction):
     """
@@ -27,8 +33,9 @@ class WebDEAuthentication(HumanAction):
     GOAL_STATES = {"webde_inbox"}
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", job_id=None):
+    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="desktop", job_id=None):
         super().__init__()
+        self.account_id = account_id
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
@@ -54,13 +61,16 @@ class WebDEAuthentication(HumanAction):
         )
         
         registry.register("webde_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
-        registry.register("webde_login_captcha_page", LoginCaptchaHandler(self, self.logger))
+        registry.register("webde_wrong_password_page", WrongPasswordPageHandler(self.account_id, self.logger))
+        registry.register("webde_wrong_email_page", WrongEmailPageHandler(self.account_id, self.logger))
+        registry.register("webde_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger))
         registry.register("webde_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("webde_inbox_ads_preferences_popup_1_core", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("webde_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("webde_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
         registry.register("webde_inbox_smart_features_popup", SmartFeaturesPopupHandler(self, self.logger))
-        registry.register("webde_security_suspension", SecuritySuspensionHandler(self, self.logger))
+        registry.register("webde_security_suspension", SecuritySuspensionHandler(self.account_id, self.logger))
+        registry.register("webde_phone_verification", PhoneVerificationHandler(self.account_id, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         
         return registry
@@ -92,6 +102,10 @@ class WebDEAuthentication(HumanAction):
                 job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             self.authenticate(page)
+            
+            # Update account state to active on success
+            update_account_state(self.account_id, "active")
+            
             self.logger.info(f"Authentication successful for {self.email}")
             return {"status": "success", "message": "Authentication completed successfully"}
         

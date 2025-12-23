@@ -33,6 +33,7 @@ def execute_job(job: Job):
     
     try:
         result = run_automation(
+            account_id=params["account_id"],
             email=params["email"],
             password=params["password"],
             isp=params["isp"],
@@ -144,6 +145,7 @@ def trigger_automation(request: AutomationRequest):
                 automation_id=request.automation_id,
                 automation_name=request.automation_id,
                 execution_params={
+                    "account_id": account_id,
                     "email": account.get("email"),
                     "password": password,
                     "isp": account.get("provider"),

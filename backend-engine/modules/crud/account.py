@@ -119,3 +119,21 @@ def get_account_ids(provider: str = None):
     except httpx.HTTPStatusError as exc:
         logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
+
+def update_account_state(account_id: str, state: str):
+    """
+    Updates the status of an account in the Master API.
+    """
+    try:
+        with httpx.Client() as client:
+            url = f"{EXTERNAL_ACCOUNT_API_BASE_URL}/{account_id}/"
+            payload = {"status": state}
+            response = client.patch(url, json=payload, headers=_get_headers())
+            response.raise_for_status()
+            return response.json()
+    except httpx.RequestError as exc:
+        logger.error(f"An error occurred while updating account state: {exc}")
+        raise HTTPException(status_code=500, detail="Could not connect to external account service")
+    except httpx.HTTPStatusError as exc:
+        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
+        raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")

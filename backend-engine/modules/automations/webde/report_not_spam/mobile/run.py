@@ -17,8 +17,9 @@ class ReportNotSpam(HumanAction):
     web.de Mobile Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile", search_text=None, max_flow_retries=3, job_id=None):
+    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="mobile", search_text=None, max_flow_retries=3, job_id=None):
         super().__init__()
+        self.account_id = account_id
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
@@ -89,10 +90,12 @@ class ReportNotSpam(HumanAction):
 
             # Authenticate first
             webde_auth = WebDEAuthentication(
+                self.account_id,
                 self.email, 
                 self.password, 
                 self.proxy_config,
-                self.user_agent_type
+                self.user_agent_type,
+                self.job_id
             )
 
             try:

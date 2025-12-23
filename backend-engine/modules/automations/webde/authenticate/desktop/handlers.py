@@ -19,6 +19,27 @@ class LoginPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
+            # Check if we are already at the password step (e.g. after captcha retry)
+            # Use deep_find_elements because it's in an iframe
+            password_elements = deep_find_elements(page, "input#password")
+            password_field_visible = any(el.is_visible() for el in password_elements)
+
+            if password_field_visible:
+                if self.logger:
+                    self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
+                
+                self.human_action.human_fill(
+                    page, selectors=['input#password'], text=self.password, deep_search=True
+                )
+                self.human_action.human_click(
+                    page, selectors=['button[type="submit"][data-testid="button-submit"]'], deep_search=True
+                )
+                
+                page.wait_for_timeout(15_000)
+                if self.logger:
+                    self.logger.info("LoginPageHandler: Credentials submitted (password only)")
+                return "continue"
+
             if self.logger:
                 self.logger.info("LoginPageHandler: Entering credentials")
             
@@ -31,8 +52,7 @@ class LoginPageHandler(StateHandler):
             
             # Check for captcha after clicking continue
             if len(deep_find_elements(page, "div[data-testid='captcha']")) > 0:
-                self.logger.warning("LoginPageHandler: Captcha detected, aborting.")
-                return "abort"
+                return "continue"
 
             self.human_action.human_fill(
                 page, selectors=['input#password'], text=self.password, deep_search=True
@@ -48,17 +68,6 @@ class LoginPageHandler(StateHandler):
             if self.logger:
                 self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
-
-class LoginCaptchaHandler(StateHandler):
-    """Handle login captcha"""
-    
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
-    def handle(self, page: Page) -> HandlerAction:
-        self.logger.warning("LoginCaptchaHandler: Captcha detected")
-        return "abort"
 
 class LoggedInPageHandler(StateHandler):
     """Handle already authenticated page - click continue"""
@@ -151,16 +160,6 @@ class SmartFeaturesPopupHandler(StateHandler):
             if self.logger:
                 self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}")
             return "retry"
-
-class SecuritySuspensionHandler(StateHandler):
-    """Handle security suspension popup"""
-    
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
-    def handle(self, page: Page) -> HandlerAction:
-        return "abort"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to web.de"""

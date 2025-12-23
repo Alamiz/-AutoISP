@@ -43,6 +43,27 @@ class LoginPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
+            # Check if we are already at the password step (e.g. after captcha retry)
+            if page.is_visible('form input#password'):
+                if self.logger:
+                    self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
+                
+                self.human_action.human_fill(
+                    page,
+                    selectors=['form input#password'],
+                    text=self.password,
+                )
+                
+                self.human_action.human_click(
+                    page,
+                    selectors=['button[type="submit"][data-testid="button-next"]'],
+                )
+                
+                page.wait_for_timeout(10_000)
+                if self.logger:
+                    self.logger.info("LoginPageHandler: Credentials submitted (password only)")
+                return "continue"
+
             if self.logger:
                 self.logger.info("LoginPageHandler: Entering credentials")
             
@@ -62,9 +83,7 @@ class LoginPageHandler(StateHandler):
             # Check if captcha is present
             captcha_elements = deep_find_elements(page, 'div[data-testid="captcha-container"]')
             if captcha_elements:
-                if self.logger:
-                    self.logger.error("LoginPageHandler: Captcha detected")
-                return "abort"
+                return "continue"
             
             # Fill password
             self.human_action.human_fill(
@@ -89,18 +108,6 @@ class LoginPageHandler(StateHandler):
             if self.logger:
                 self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
-
-
-class LoginCaptchaPageHandler(StateHandler):
-    """Handle web.de mobile login captcha page"""
-    
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
-    def handle(self, page: Page) -> HandlerAction:
-        self.logger.error("LoginCaptchaPageHandler: Captcha detected")
-        return "abort"
 
 class LoggedInPageHandler(StateHandler):
     """Handle GMX mobile logged in page - click continue to inbox"""
@@ -186,16 +193,6 @@ class AdsPreferencesPopup2Handler(StateHandler):
             if self.logger:
                 self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
             return "retry"
-
-class SecuritySuspensionHandler(StateHandler):
-    """Handle security suspension page"""
-    
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
-    def handle(self, page: Page) -> HandlerAction:
-        return "abort"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to GMX mobile"""
