@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from playwright.sync_api import Page
 from automations.webde.authenticate.desktop.run import WebDEAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
@@ -18,7 +19,7 @@ class ReportNotSpam(HumanAction):
     web.de Desktop Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="desktop", search_text=None, job_id=None):
+    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="desktop", search_text=None, start_date=None, end_date=None, job_id=None):
         super().__init__()
         self.account_id = account_id
         self.email = email
@@ -31,6 +32,25 @@ class ReportNotSpam(HumanAction):
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
         self.reported_email_ids = []
+
+        # Parse dates
+        if start_date:
+            try:
+                self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid start_date format: {start_date}")
+                self.start_date = datetime(1970, 1, 1).date()
+        else:
+            self.start_date = datetime(1970, 1, 1).date()
+
+        if end_date:
+            try:
+                self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid end_date format: {end_date}")
+                self.end_date = datetime.now().date()
+        else:
+            self.end_date = datetime.now().date()
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",

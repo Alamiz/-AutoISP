@@ -1,6 +1,7 @@
 # core/flow_engine/state_handler.py
 from typing import Callable, Dict, Optional, Literal
 from playwright.sync_api import Page
+from core.utils.browser_utils import navigate_to
 
 # Define the type for handler return values
 HandlerAction = Literal["continue", "abort", "retry"]
@@ -103,7 +104,7 @@ class RedirectStateHandler(StateHandler):
         try:
             if self.logger:
                 self.logger.info(f"Redirecting to: {self.redirect_url}")
-            page.goto(self.redirect_url)
+            navigate_to(page, self.redirect_url)
             page.wait_for_load_state("domcontentloaded")
             return self.action
         except Exception as e:

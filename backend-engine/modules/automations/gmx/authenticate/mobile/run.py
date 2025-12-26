@@ -24,6 +24,7 @@ from automations.common_handlers import (
 )
 from core.pages_signatures.gmx.mobile import PAGE_SIGNATURES
 from crud.account import update_account_state
+from core.utils.browser_utils import navigate_to
 
 class GMXAuthentication(HumanAction):
     """
@@ -62,8 +63,8 @@ class GMXAuthentication(HumanAction):
         
         registry.register("gmx_register_page", RegisterPageHandler(self, self.logger))
         registry.register("gmx_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
-        registry.register("gmx_wrong_password_page", WrongPasswordPageHandler(self.account_id, self.logger))
-        registry.register("gmx_wrong_email_page", WrongEmailPageHandler(self.account_id, self.logger))
+        registry.register("gmx_login_wrong_password", WrongPasswordPageHandler(self.account_id, self.logger))
+        registry.register("gmx_login_wrong_username", WrongEmailPageHandler(self.account_id, self.logger))
         registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
@@ -123,7 +124,7 @@ class GMXAuthentication(HumanAction):
 
     def authenticate(self, page: Page):
         """State-based authentication using StatefulFlow."""
-        page.goto("https://lightmailer-bs.gmx.net/")
+        navigate_to(page, "https://lightmailer-bs.gmx.net/")
         self.human_behavior.read_delay()
         
         state_registry = self._setup_state_handlers()

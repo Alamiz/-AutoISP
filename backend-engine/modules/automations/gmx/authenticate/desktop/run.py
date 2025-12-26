@@ -68,8 +68,8 @@ class GMXAuthentication(HumanAction):
         
         # Register handlers for authentication page states
         registry.register("gmx_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
-        registry.register("gmx_wrong_password_page", WrongPasswordPageHandler(self.account_id, self.logger))
-        registry.register("gmx_wrong_email_page", WrongEmailPageHandler(self.account_id, self.logger))
+        registry.register("gmx_login_wrong_password", WrongPasswordPageHandler(self.account_id, self.logger))
+        registry.register("gmx_login_wrong_username", WrongEmailPageHandler(self.account_id, self.logger))
         registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1_core", AdsPreferencesPopup1Handler(self, self.logger))

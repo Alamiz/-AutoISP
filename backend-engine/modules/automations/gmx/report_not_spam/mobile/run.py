@@ -10,6 +10,7 @@ from core.utils.identifier import identify_page
 from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
 from .handlers import UnknownPageHandler
 from core.pages_signatures.gmx.mobile import PAGE_SIGNATURES
+from core.utils.browser_utils import navigate_to
 
 class ReportNotSpam(HumanAction):
     """
@@ -146,7 +147,7 @@ class ReportNotSpam(HumanAction):
                     page.wait_for_timeout(wait_time)
                     
                     try:
-                        page.goto("https://lightmailer-bs.gmx.net/")
+                        navigate_to(page, "https://lightmailer-bs.gmx.net/")
                         page.wait_for_load_state("domcontentloaded")
                     except Exception as e:
                         self.logger.warning(f"Failed to reset to main page: {e}")

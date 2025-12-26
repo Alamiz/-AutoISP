@@ -6,6 +6,7 @@ from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.humanization.actions import HumanAction
 from core.utils.element_finder import deep_find_elements
+from core.utils.browser_utils import navigate_to
 
 class RegisterPageHandler(StateHandler):
     """Handle GMX mobile register page - click login button"""
@@ -16,8 +17,7 @@ class RegisterPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("RegisterPageHandler: Clicking login button")
+            self.logger.info("RegisterPageHandler: Clicking login button")
             
             self.human_action.human_click(
                 page,
@@ -27,8 +27,7 @@ class RegisterPageHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"RegisterPageHandler: Failed - {e}")
+            self.logger.error(f"RegisterPageHandler: Failed - {e}")
             return "retry"
 
 
@@ -45,8 +44,7 @@ class LoginPageHandler(StateHandler):
         try:
             # Check if we are already at the password step (e.g. after captcha retry)
             if page.is_visible('form input#password'):
-                if self.logger:
-                    self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
+                self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
                 
                 self.human_action.human_fill(
                     page,
@@ -60,12 +58,10 @@ class LoginPageHandler(StateHandler):
                 )
                 
                 page.wait_for_timeout(10_000)
-                if self.logger:
-                    self.logger.info("LoginPageHandler: Credentials submitted (password only)")
+                self.logger.info("LoginPageHandler: Credentials submitted (password only)")
                 return "continue"
 
-            if self.logger:
-                self.logger.info("LoginPageHandler: Entering credentials")
+            self.logger.info("LoginPageHandler: Entering credentials")
             
             # Fill email
             self.human_action.human_fill(
@@ -99,14 +95,12 @@ class LoginPageHandler(StateHandler):
             )
             
             page.wait_for_timeout(10_000)
-            if self.logger:
-                self.logger.info("LoginPageHandler: Credentials submitted")
+            self.logger.info("LoginPageHandler: Credentials submitted")
             
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"LoginPageHandler: Failed - {e}")
+            self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
 
 class LoggedInPageHandler(StateHandler):
@@ -118,8 +112,7 @@ class LoggedInPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("LoggedInPageHandler: Clicking profile and continue")
+            self.logger.info("LoggedInPageHandler: Clicking profile and continue")
             
             # Click profile avatar
             self.human_action.human_click(
@@ -138,8 +131,7 @@ class LoggedInPageHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"LoggedInPageHandler: Failed - {e}")
+            self.logger.error(f"LoggedInPageHandler: Failed - {e}")
             return "retry"
 
 
@@ -152,8 +144,7 @@ class AdsPreferencesPopup1Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("AdsPreferencesPopup1Handler: Accepting")
+            self.logger.info("AdsPreferencesPopup1Handler: Accepting")
             
             self.human_action.human_click(
                 page,
@@ -164,8 +155,7 @@ class AdsPreferencesPopup1Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}")
             return "retry"
 
 
@@ -178,8 +168,7 @@ class AdsPreferencesPopup2Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("AdsPreferencesPopup2Handler: Denying")
+            self.logger.info("AdsPreferencesPopup2Handler: Denying")
             
             self.human_action.human_click(
                 page,
@@ -190,8 +179,7 @@ class AdsPreferencesPopup2Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
             return "retry"
 
 class UnknownPageHandler(StateHandler):
@@ -203,14 +191,12 @@ class UnknownPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.warning("UnknownPageHandler: Redirecting to GMX mobile")
+            self.logger.warning("UnknownPageHandler: Redirecting to GMX mobile")
             
-            page.goto("https://lightmailer-bs.gmx.net/")
+            navigate_to(page, "https://lightmailer-bs.gmx.net/")
             self.human_action.human_behavior.read_delay()
             return "retry"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"UnknownPageHandler: Failed - {e}")
+            self.logger.error(f"UnknownPageHandler: Failed - {e}")
             return "retry"

@@ -1,5 +1,5 @@
 PySide6
-playwright
+playwright==1.39.0
 logging
 beautifulsoup4
 fastapi

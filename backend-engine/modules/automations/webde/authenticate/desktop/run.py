@@ -24,6 +24,7 @@ from automations.common_handlers import (
 )
 from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
 from crud.account import update_account_state
+from core.utils.browser_utils import navigate_to
 
 class WebDEAuthentication(HumanAction):
     """
@@ -61,8 +62,8 @@ class WebDEAuthentication(HumanAction):
         )
         
         registry.register("webde_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
-        registry.register("webde_wrong_password_page", WrongPasswordPageHandler(self.account_id, self.logger))
-        registry.register("webde_wrong_email_page", WrongEmailPageHandler(self.account_id, self.logger))
+        registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self.account_id, self.logger))
+        registry.register("webde_login_wrong_username", WrongEmailPageHandler(self.account_id, self.logger))
         registry.register("webde_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger))
         registry.register("webde_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("webde_inbox_ads_preferences_popup_1_core", AdsPreferencesPopup1Handler(self, self.logger))
@@ -123,7 +124,7 @@ class WebDEAuthentication(HumanAction):
 
     def authenticate(self, page: Page):
         """State-based authentication using StatefulFlow."""
-        page.goto("https://web.de/")
+        navigate_to(page, "https://web.de/")
         self.human_behavior.read_delay()
         
         state_registry = self._setup_state_handlers()

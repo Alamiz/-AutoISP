@@ -3,6 +3,7 @@ import time
 from playwright.sync_api import Page
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.humanization.actions import HumanAction
+from core.utils.browser_utils import navigate_to
 
 class OpenProfile(HumanAction):
     """
@@ -37,7 +38,7 @@ class OpenProfile(HumanAction):
                 job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             
-            page.goto("https://web.de/")
+            navigate_to(page, "https://web.de/")
             
             self.logger.info("Profile opened. Waiting for manual interaction...")
             

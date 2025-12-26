@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Play, Settings, Clock, Zap, Mail, Archive, Paperclip, Shield, Search, FlaskConical, Loader2 } from "lucide-react"
+import { Play, Settings, Clock, Zap, Mail, Archive, Paperclip, Shield, Search, FlaskConical, Loader2, Calendar as CalendarIcon } from "lucide-react"
 import { AutomationScheduler } from "./automation-scheduler"
 import { apiPost } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -20,6 +20,10 @@ import { useProvider } from "@/contexts/provider-context"
 import { useJobs } from "@/contexts/jobs-context"
 import { automations } from "@/data/automations"
 import { Automation } from "@/lib/types"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export function AutomationControls() {
   const { selectedProvider: globalProvider } = useProvider()
@@ -241,15 +245,36 @@ export function AutomationControls() {
                                 {param.label}
                                 {param.required && <span className="text-red-400 ml-1">*</span>}
                               </Label>
-                              {param.type === "text" ? ( // Simplified for now, can expand types
-                                <Input
-                                  value={automationParams[automation.id]?.[param.name] || ""}
-                                  onChange={(e) => handleParameterChange(automation.id, param.name, e.target.value)}
-                                  placeholder={param.placeholder || `Enter ${param.label.toLowerCase()}`}
-                                  className="bg-input border-border"
-                                />
+                              {param.type === "date" ? (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant={"outline"}
+                                      className={cn(
+                                        "w-full justify-start text-left font-normal bg-input border-border",
+                                        !automationParams[automation.id]?.[param.name] && "text-muted-foreground"
+                                      )}
+                                    >
+                                      <CalendarIcon className="mr-2 h-4 w-4" />
+                                      {automationParams[automation.id]?.[param.name] ? (
+                                        format(new Date(automationParams[automation.id]?.[param.name]), "PPP")
+                                      ) : (
+                                        <span>Pick a date</span>
+                                      )}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={automationParams[automation.id]?.[param.name] ? new Date(automationParams[automation.id]?.[param.name]) : undefined}
+                                      onSelect={(date) => handleParameterChange(automation.id, param.name, date ? format(date, "yyyy-MM-dd") : "")}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
                               ) : (
                                 <Input
+                                  type={param.type}
                                   value={automationParams[automation.id]?.[param.name] || ""}
                                   onChange={(e) => handleParameterChange(automation.id, param.name, e.target.value)}
                                   placeholder={param.placeholder || `Enter ${param.label.toLowerCase()}`}

@@ -7,6 +7,7 @@ from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.humanization.actions import HumanAction
 from core.utils.element_finder import deep_find_elements
+from core.utils.browser_utils import navigate_to
 
 class LoginPageHandler(StateHandler):
     """Handle GMX login page - enter credentials"""
@@ -25,8 +26,7 @@ class LoginPageHandler(StateHandler):
             password_field_visible = any(el.is_visible() for el in password_elements)
 
             if password_field_visible:
-                if self.logger:
-                    self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
+                self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
                 
                 self.human_action.human_fill(
                     page,
@@ -41,13 +41,10 @@ class LoginPageHandler(StateHandler):
                     deep_search=True
                 )
                 
-                page.wait_for_timeout(2000)
-                if self.logger:
-                    self.logger.info("LoginPageHandler: Credentials submitted (password only)")
+                self.logger.info("LoginPageHandler: Credentials submitted (password only)")
                 return "continue"
 
-            if self.logger:
-                self.logger.info("LoginPageHandler: Entering credentials")
+            self.logger.info("LoginPageHandler: Entering credentials")
             
             # Fill email
             self.human_action.human_fill(
@@ -84,15 +81,12 @@ class LoginPageHandler(StateHandler):
                 deep_search=True
             )
             
-            page.wait_for_timeout(2000)
-            if self.logger:
-                self.logger.info("LoginPageHandler: Credentials submitted")
+            self.logger.info("LoginPageHandler: Credentials submitted")
             
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"LoginPageHandler: Failed - {e}")
+            self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
 
 class LoggedInPageHandler(StateHandler):
@@ -104,8 +98,7 @@ class LoggedInPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("LoggedInPageHandler: Clicking continue")
+            self.logger.info("LoggedInPageHandler: Clicking continue")
             
             self.human_action.human_click(
                 page,
@@ -117,8 +110,7 @@ class LoggedInPageHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"LoggedInPageHandler: Failed - {e}")
+            self.logger.error(f"LoggedInPageHandler: Failed - {e}")
             return "retry"
 
 class AdsPreferencesPopup1Handler(StateHandler):
@@ -130,8 +122,7 @@ class AdsPreferencesPopup1Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("AdsPreferencesPopup1Handler: Accepting")
+            self.logger.info("AdsPreferencesPopup1Handler: Accepting")
             
             self.human_action.human_click(
                 page,
@@ -143,8 +134,7 @@ class AdsPreferencesPopup1Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}")
             return "retry"
 
 class AdsPreferencesPopup2Handler(StateHandler):
@@ -156,8 +146,7 @@ class AdsPreferencesPopup2Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("AdsPreferencesPopup2Handler: Denying")
+            self.logger.info("AdsPreferencesPopup2Handler: Denying")
             
             self.human_action.human_click(
                 page,
@@ -169,8 +158,7 @@ class AdsPreferencesPopup2Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
             return "retry"
 
 class SmartFeaturesPopupHandler(StateHandler):
@@ -182,8 +170,7 @@ class SmartFeaturesPopupHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("SmartFeaturesPopupHandler: Accepting")
+            self.logger.info("SmartFeaturesPopupHandler: Accepting")
             
             self.human_action.human_click(
                 page,
@@ -195,8 +182,7 @@ class SmartFeaturesPopupHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}")
+            self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}")
             return "retry"
 
 class UnknownPageHandler(StateHandler):
@@ -208,14 +194,12 @@ class UnknownPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.warning("UnknownPageHandler: Redirecting to GMX")
+            self.logger.warning("UnknownPageHandler: Redirecting to GMX")
             
-            page.goto("https://www.gmx.net/")
+            navigate_to(page, "https://www.gmx.net/")
             self.human_action.human_behavior.read_delay()
             return "retry"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"UnknownPageHandler: Failed - {e}")
+            self.logger.error(f"UnknownPageHandler: Failed - {e}")
             return "retry"

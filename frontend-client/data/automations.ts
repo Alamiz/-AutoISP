@@ -25,6 +25,18 @@ export const automations: Automation[] = [
                 placeholder: "e.g. 'Welcome'",
                 required: true,
             },
+            {
+                name: "start_date",
+                label: "Start Date",
+                type: "date",
+                required: true,
+            },
+            {
+                name: "end_date",
+                label: "End Date",
+                type: "date",
+                required: true,
+            },
         ],
     },
     {
@@ -67,6 +79,18 @@ export const automations: Automation[] = [
                 label: "Search Keyword",
                 type: "text",
                 placeholder: "e.g. 'Welcome'",
+                required: true,
+            },
+            {
+                name: "start_date",
+                label: "Start Date",
+                type: "date",
+                required: true,
+            },
+            {
+                name: "end_date",
+                label: "End Date",
+                type: "date",
                 required: true,
             },
         ],

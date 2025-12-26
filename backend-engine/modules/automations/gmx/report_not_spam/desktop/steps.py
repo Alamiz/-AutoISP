@@ -1,6 +1,7 @@
 from playwright.sync_api import Page
 from core.utils.element_finder import deep_find_elements
 from core.flow_engine.step import Step, StepResult, StepStatus
+from core.utils.date_utils import parse_mail_date
 
 class NavigateToSpamStep(Step):
     def run(self, page: Page) -> StepResult:
@@ -16,100 +17,152 @@ class NavigateToSpamStep(Step):
         except Exception as e:
             return StepResult(status=StepStatus.RETRY, message=f"Failed to navigate to Spam: {e}")
 
-
 class ReportSpamEmailsStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            keyword = getattr(self.automation, "search_text", "")
-            current_page = 1
-            self.logger.info(f"Reporting emails with keyword: {keyword}")
+            keyword = getattr(self.automation, "search_text", "").lower()
+            start_date = getattr(self.automation, "start_date")  # datetime.date
+            end_date = getattr(self.automation, "end_date")      # datetime.date
 
-            # Track reported emails
+            current_page = 1
+            self.logger.info(
+                f"Processing emails with keyword='{keyword}' "
+                f"between {start_date} and {end_date}"
+            )
+
             if not hasattr(self.automation, "reported_email_ids"):
                 self.automation.reported_email_ids = []
 
             while True:
                 self.logger.info(f"Processing page {current_page}")
-                try:
-                    self.automation._find_element_with_humanization(page, ["div.list-mail-list"], deep_search=True)
-                except:
-                    self.logger.warning("Mail list not found, might be empty")
 
-                email_items = deep_find_elements(page, "list-mail-item.list-mail-item--root")
-                if email_items:
-                    found_match = False
-                    for item in email_items:
-                        try:
-                            subject = self.automation._find_element_with_humanization(item, ["div.list-mail-item__subject"])
-                            if keyword.lower() in subject.inner_text().lower():
-                                found_match = True
-                                email_id_attr = item.get_attribute("id")
-                                if email_id_attr and email_id_attr.startswith("id"):
-                                    email_id_number = email_id_attr[2:]
-                                    self.automation.reported_email_ids.append(email_id_number)
-                                    self.logger.info(f"Stored email ID: {email_id_number}")
+                email_items = deep_find_elements(
+                    page, "list-mail-item.list-mail-item--root"
+                )
 
-                                # Click to open and report as not spam
-                                self.automation.human_behavior.click(item)
-
-                                # Mark as unread
-                                self.automation.human_behavior.hover(item)
-                                self.automation.human_click(
-                                    page,
-                                    selectors=['button.list-mail-item__read'],
-                                    deep_search=True
-                                )
-
-                                # Scroll email content
-                                email_content_body_iframe = self.automation._find_element_with_humanization(
-                                    page,
-                                    selectors=['iframe[name="detail-body-iframe"]'],
-                                    deep_search=True
-                                )
-                                email_content_body_frame = email_content_body_iframe.content_frame()
-                                email_content_body = self.automation._find_element_with_humanization(email_content_body_frame, ["body"])
-                                self.automation.human_behavior.scroll_into_view(email_content_body)
-
-                                # Click "Report as not spam"
-                                self.automation.human_click(
-                                    page,
-                                    selectors=['div.list-toolbar__scroll-item section[data-overflow-id="no_spam"] button'],
-                                    deep_search=True
-                                )
-                                break
-                        except Exception as e:
-                            self.logger.warning(f"Error processing item: {e}")
-                            continue
-                    if not found_match:
-                        self.logger.info("No matching emails found on this page")
-                    else:
-                        continue
-                else:
+                if not email_items:
                     self.logger.info("No emails found on this page")
+                    break
 
-                # Check if next page button exists and is enabled
+                stop_processing = False
+
+                for index, item in enumerate(email_items):
+                    try:
+                        # --- Extract date ---
+                        date_el = self.automation._find_element_with_humanization(
+                            item,
+                            ["span.list-date-label.list-mail-item__date"],
+                            deep_search=True
+                        )
+                        mail_date = parse_mail_date(date_el.get_attribute("title"))
+
+                        # --- Early exit optimization ---
+                        if index == 0 and mail_date < start_date:
+                            self.logger.info(
+                                "First email is older than start_date. "
+                                "No emails left in date range."
+                            )
+                            stop_processing = True
+                            break
+
+                        # --- Skip out-of-range ---
+                        if mail_date > end_date:
+                            continue
+
+                        if mail_date < start_date:
+                            stop_processing = True
+                            break
+
+                        # --- Keyword check ---
+                        subject_el = self.automation._find_element_with_humanization(
+                            item, ["div.list-mail-item__subject"]
+                        )
+                        subject_text = subject_el.inner_text().lower()
+
+                        if keyword not in subject_text:
+                            continue
+
+                        # --- Store email ID ---
+                        email_id_attr = item.get_attribute("id")
+                        if email_id_attr and email_id_attr.startswith("id"):
+                            email_id_number = email_id_attr[2:]
+                            self.automation.reported_email_ids.append(email_id_number)
+                            self.logger.info(
+                                f"Processing email ID={email_id_number}, date={mail_date}"
+                            )
+
+                        # --- Open email ---
+                        self.automation.human_behavior.click(item)
+
+                        # --- Mark unread ---
+                        self.automation.human_behavior.hover(item)
+                        self.automation.human_click(
+                            page,
+                            selectors=['button.list-mail-item__read'],
+                            deep_search=True
+                        )
+
+                        # --- Scroll content ---
+                        iframe = self.automation._find_element_with_humanization(
+                            page,
+                            selectors=['iframe[name="detail-body-iframe"]'],
+                            deep_search=True
+                        )
+                        frame = iframe.content_frame()
+                        body = self.automation._find_element_with_humanization(
+                            frame, ["body"]
+                        )
+                        self.automation.human_behavior.scroll_into_view(body)
+
+                        # --- Report not spam ---
+                        self.automation.human_click(
+                            page,
+                            selectors=[
+                                'div.list-toolbar__scroll-item '
+                                'section[data-overflow-id="no_spam"] button'
+                            ],
+                            deep_search=True
+                        )
+
+                    except Exception as e:
+                        self.logger.warning(f"Failed processing email: {e}")
+                        continue
+
+                if stop_processing:
+                    break
+
+                # --- Pagination ---
                 try:
-                    next_button = self.automation._find_element_with_humanization(page, ["button.list-paging-footer__page-next"], deep_search=True)
+                    next_button = self.automation._find_element_with_humanization(
+                        page,
+                        ["button.list-paging-footer__page-next"],
+                        deep_search=True
+                    )
                     if next_button and not next_button.is_disabled():
-                        self.logger.info("Going to next page")
                         self.automation.human_behavior.click(next_button)
                         current_page += 1
                         continue
-                    else:
-                        self.logger.info("No more pages or next button disabled")
-                        break
+                    break
                 except Exception as e:
-                    self.logger.warning(f"Failed to navigate to next page: {e}")
+                    self.logger.warning(f"Pagination failed: {e}")
                     break
 
-            if getattr(self.automation, "reported_email_ids", []):
-                return StepResult(status=StepStatus.SUCCESS, message="Emails reported")
+            if self.automation.reported_email_ids:
+                return StepResult(
+                    status=StepStatus.SUCCESS,
+                    message="Emails reported within date range"
+                )
 
-            return StepResult(status=StepStatus.SKIP, message="No emails reported")
+            return StepResult(
+                status=StepStatus.SKIP,
+                message="No emails found within date range"
+            )
 
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to report emails: {e}")
-
+            return StepResult(
+                status=StepStatus.RETRY,
+                message=f"Failed to report emails: {e}"
+            )
 
 class OpenReportedEmailsStep(Step):
     def run(self, page: Page) -> StepResult:

@@ -24,6 +24,14 @@ class WrongEmailPageHandler(CommonHandler):
         update_account_state(self.account_id, "wrong_email")
         return "abort"
 
+class LoginNotPossiblePageHandler(CommonHandler):
+    """Handle login not possible page"""
+    def handle(self, page: Page = None) -> HandlerAction:
+        if self.logger:
+            self.logger.warning("LoginNotPossiblePageHandler: Login not possible detected")
+        update_account_state(self.account_id, "error")
+        return "abort"
+
 class LoginCaptchaHandler(CommonHandler):
     """Handle login captcha"""
     def handle(self, page: Page = None) -> HandlerAction:
@@ -36,9 +44,9 @@ class LoginCaptchaHandler(CommonHandler):
         update_account_state(self.account_id, "captcha")
         
         try:
-            # Wait for up to 240 seconds for the password input to appear
+            # Wait for up to 1440 seconds for the password input to appear
             start_time = time.time()
-            timeout = 240
+            timeout = 1440
             
             while time.time() - start_time < timeout:
                 # Use deep_find_elements to search across all frames

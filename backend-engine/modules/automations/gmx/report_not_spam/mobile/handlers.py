@@ -5,6 +5,7 @@ Each handler manages a specific unexpected page state.
 """
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
+from core.utils.browser_utils import navigate_to
 
 
 class UnknownPageHandler(StateHandler):
@@ -19,7 +20,7 @@ class UnknownPageHandler(StateHandler):
                 self.logger.warning(f"Unknown page detected at: {page.url}")
                 self.logger.info("Redirecting to folder list...")
             
-            page.goto("https://lightmailer-bap.gmx.net")
+            navigate_to(page, "https://lightmailer-bap.gmx.net")
             page.wait_for_load_state("domcontentloaded")
             page.wait_for_timeout(2000)
             

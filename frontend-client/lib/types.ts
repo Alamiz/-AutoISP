@@ -54,7 +54,7 @@ export interface Account {
 export interface AutomationParam {
   name: string;
   label: string;
-  type: "text" | "number" | "boolean" | "textarea";
+  type: "text" | "number" | "boolean" | "textarea" | "date";
   placeholder?: string;
   required?: boolean;
   defaultValue?: string | number | boolean;

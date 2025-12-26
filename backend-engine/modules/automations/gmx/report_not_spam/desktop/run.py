@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from playwright.sync_api import Page
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.humanization.actions import HumanAction
@@ -10,6 +11,7 @@ from .handlers import (
     UnknownPageHandler,
 )
 from core.pages_signatures.gmx.desktop import PAGE_SIGNATURES
+from core.utils.browser_utils import navigate_to
 
 class ReportNotSpam(HumanAction):
     """
@@ -27,6 +29,8 @@ class ReportNotSpam(HumanAction):
         proxy_config=None, 
         user_agent_type="desktop", 
         search_text=None,
+        start_date=None,
+        end_date=None,
         max_flow_retries=3,
         job_id=None
     ):
@@ -43,6 +47,25 @@ class ReportNotSpam(HumanAction):
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
         self.reported_email_ids = []
+
+        # Parse dates
+        if start_date:
+            try:
+                self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid start_date format: {start_date}")
+                self.start_date = datetime(1970, 1, 1).date()
+        else:
+            self.start_date = datetime(1970, 1, 1).date()
+
+        if end_date:
+            try:
+                self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid end_date format: {end_date}")
+                self.end_date = datetime.now().date()
+        else:
+            self.end_date = datetime.now().date()
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
@@ -191,7 +214,7 @@ class ReportNotSpam(HumanAction):
                     
                     # Navigate back to inbox for clean retry
                     try:
-                        page.goto("https://www.gmx.net/")
+                        navigate_to(page, "https://www.gmx.net/")
                         page.wait_for_load_state("domcontentloaded")
                         page.wait_for_timeout(2000)
                     except Exception as e:
@@ -218,4 +241,3 @@ class ReportNotSpam(HumanAction):
                 from modules.core.job_manager import job_manager
                 job_manager.unregister_browser(self.job_id)
             self.browser.close()
-
