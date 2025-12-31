@@ -40,6 +40,23 @@ export const automations: Automation[] = [
         ],
     },
     {
+        id: "import_contacts",
+        name: "Import Contacts",
+        description: "Import contacts from a .vcf file into the address book.",
+        category: "Maintenance",
+        provider: "gmx",
+        estimatedDuration: "1m",
+        params: [
+            {
+                name: "vcf_file",
+                label: "Contacts File (.vcf)",
+                type: "file",
+                accept: ".vcf",
+                required: true,
+            },
+        ],
+    },
+    {
         id: "open_profile",
         name: "Open Profile",
         description: "Open the browser with the user profile for manual interaction.",
@@ -108,6 +125,23 @@ export const automations: Automation[] = [
                 label: "Duration (in minutes)",
                 type: "number",
                 placeholder: "e.g. '10'",
+                required: true,
+            },
+        ],
+    },
+    {
+        id: "import_contacts",
+        name: "Import Contacts",
+        description: "Import contacts from a .vcf file into the address book.",
+        category: "Maintenance",
+        provider: "webde",
+        estimatedDuration: "1m",
+        params: [
+            {
+                name: "vcf_file",
+                label: "Contacts File (.vcf)",
+                type: "file",
+                accept: ".vcf",
                 required: true,
             },
         ],

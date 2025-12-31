@@ -54,10 +54,11 @@ export interface Account {
 export interface AutomationParam {
   name: string;
   label: string;
-  type: "text" | "number" | "boolean" | "textarea" | "date";
+  type: "text" | "number" | "boolean" | "textarea" | "date" | "file";
   placeholder?: string;
   required?: boolean;
   defaultValue?: string | number | boolean;
+  accept?: string; // For file inputs, e.g. ".vcf"
 }
 
 export interface Automation {

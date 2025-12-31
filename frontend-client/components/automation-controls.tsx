@@ -316,6 +316,27 @@ export function AutomationControls() {
                                     />
                                   </PopoverContent>
                                 </Popover>
+                              ) : param.type === "file" ? (
+                                <Input
+                                  type="file"
+                                  accept={param.accept || "*"}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const filePath = (file as any).path;
+                                      if (filePath) {
+                                        handleParameterChange(automation.id, param.name, filePath);
+                                      } else {
+                                        const reader = new FileReader();
+                                        reader.onload = () => {
+                                          handleParameterChange(automation.id, param.name, reader.result as string);
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }
+                                  }}
+                                  className="bg-input border-border"
+                                />
                               ) : (
                                 <Input
                                   type={param.type}

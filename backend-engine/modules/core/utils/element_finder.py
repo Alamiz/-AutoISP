@@ -119,7 +119,10 @@ def get_iframe_elements(page: Page, iframe_selector: str, element_selector: str)
         return []
 
 
-def deep_find_elements(root, css_selector: str):
+import time
+from playwright.sync_api import Page, Frame, ElementHandle, TimeoutError
+
+def deep_find_elements(root, css_selector: str, timeout_ms: int = 30000):
     """
     Recursively search for elements across:
     - Page
@@ -128,11 +131,28 @@ def deep_find_elements(root, css_selector: str):
     - Shadow DOM
 
     Supports Page, Frame, or ElementHandle as root.
+    Continues searching until timeout is reached or elements are found.
+    
+    Args:
+        root: Page, Frame, or ElementHandle to search from
+        css_selector: CSS selector to search for
+        timeout_ms: Maximum time to search in milliseconds (default: 30000)
+    
+    Returns:
+        List of found ElementHandles
     """
     results = []
+    start_time = time.time()
+    timeout_seconds = timeout_ms / 1000
+    
+    def is_timed_out():
+        return (time.time() - start_time) > timeout_seconds
 
     def search_context(context):
         nonlocal results
+        
+        if is_timed_out():
+            return
 
         # 1) Normal DOM search
         try:
@@ -141,6 +161,9 @@ def deep_find_elements(root, css_selector: str):
                 results.extend(els)
         except Exception:
             pass
+
+        if is_timed_out():
+            return
 
         # 2) Shadow DOM search (Page / Frame only)
         if isinstance(context, (Page, Frame)):
@@ -166,27 +189,51 @@ def deep_find_elements(root, css_selector: str):
                 length = context.evaluate("x => x.length", handle)
 
                 for i in range(length):
+                    if is_timed_out():
+                        return
                     el = handle.get_property(str(i)).as_element()
                     if el:
                         results.append(el)
             except Exception:
                 pass
 
+        if is_timed_out():
+            return
+
         # 3) Recurse into iframes (Page / Frame only)
         if isinstance(context, (Page, Frame)):
             try:
                 iframe_elements = context.query_selector_all("iframe")
                 for iframe in iframe_elements:
+                    if is_timed_out():
+                        return
                     frame = iframe.content_frame()
                     if frame:
                         search_context(frame)
             except Exception:
                 pass
 
-    # ---- Entry point ----
-    if isinstance(root, Page):
-        search_context(root.main_frame)
-    else:
-        search_context(root)
-
+    # ---- Main search loop ----
+    poll_interval = 0.5  # Check every 500ms
+    
+    while not is_timed_out():
+        results = []  # Reset results for each iteration
+        
+        if isinstance(root, Page):
+            search_context(root.main_frame)
+        else:
+            search_context(root)
+        
+        # If we found elements, return them
+        if results:
+            return results
+        
+        # If timed out, break
+        if is_timed_out():
+            break
+            
+        # Wait before next poll (but don't exceed timeout)
+        remaining_time = timeout_seconds - (time.time() - start_time)
+        time.sleep(min(poll_interval, max(0, remaining_time)))
+    
     return results
