@@ -179,9 +179,9 @@ class MainWindow(QWidget):
         self.write_log(f"Device type: {device_type}")
         
         if proxy_config:
-            proxy_info = f"{proxy_config['type']}://{proxy_config['host']}:{proxy_config['port']}"
+            proxy_info = f"{proxy_config['protocol']}://{proxy_config['host']}:{proxy_config['port']}"
             if 'username' in proxy_config:
-                proxy_info = f"{proxy_config['type']}://{proxy_config['username']}:***@{proxy_config['host']}:{proxy_config['port']}"
+                proxy_info = f"{proxy_config['protocol']}://{proxy_config['username']}:***@{proxy_config['host']}:{proxy_config['port']}"
             self.write_log(f"Using proxy: {proxy_info}")
 
         # Pass device_type to run_automation

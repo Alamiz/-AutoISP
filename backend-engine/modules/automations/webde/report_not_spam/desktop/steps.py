@@ -1,0 +1,488 @@
+from core.utils.retry_decorators import retry_action
+from playwright.sync_api import Page
+from core.utils.element_finder import deep_find_elements
+from core.flow_engine.step import Step, StepResult, StepStatus
+from core.utils.date_utils import parse_mail_date
+from datetime import datetime
+
+class NavigateToSpamStep(Step):
+    def run(self, page: Page) -> StepResult:
+        try:
+            self.logger.info("Navigating to Spam folder")
+            self.automation.human_click(
+                page,
+                selectors=['button.sidebar-folder-icon-spam'],
+                deep_search=True
+            )
+            page.wait_for_timeout(2000)
+            return StepResult(status=StepStatus.SUCCESS, message="Navigated to Spam folder")
+        except Exception as e:
+            return StepResult(status=StepStatus.RETRY, message=f"Failed to navigate to Spam: {e}")
+
+class ReportSpamEmailsStep(Step):
+    def run(self, page: Page) -> StepResult:
+        try:
+            keyword = getattr(self.automation, "search_text", "").lower()
+            start_date = getattr(self.automation, "start_date") 
+            end_date = getattr(self.automation, "end_date")     
+
+            current_page = 1
+            self.logger.info(
+                f"Processing emails with keyword='{keyword}' "
+                f"between {start_date} and {end_date}"
+            )
+
+            if not hasattr(self.automation, "reported_email_ids"):
+                self.automation.reported_email_ids = []
+
+            while True:
+                self.logger.info(f"Processing page {current_page}")
+
+                email_items = deep_find_elements(
+                    page, "list-mail-item.list-mail-item--root"
+                )
+
+                if not email_items:
+                    self.logger.info("No emails found on this page")
+                    break
+
+                index = 0
+
+                while index < len(email_items):
+                    item = email_items[index]
+
+                    try:
+                        # --- Extract date ---
+                        date_el = item.query_selector(
+                            "list-date-label.list-mail-item__date"
+                        )
+                        if not date_el:
+                            raise Exception("Date element not found")
+
+                        ms = date_el.get_attribute("date-in-ms")
+                        if not ms:
+                            raise Exception("date-in-ms missing")
+
+                        mail_date = datetime.fromtimestamp(
+                            int(ms) / 1000
+                        ).date()
+
+                        # --- Early stop: first email already older ---
+                        if index == 0 and mail_date < start_date:
+                            self.logger.info(
+                                "First email older than start_date. Stopping pagination."
+                            )
+                            return self._final_result()
+
+                        # --- Skip out-of-range ---
+                        if mail_date > end_date:
+                            index += 1
+                            continue
+
+                        if mail_date < start_date:
+                            return self._final_result()
+
+                        # --- Keyword check ---
+                        subject_el = item.query_selector(
+                            "div.list-mail-item__subject"
+                        )
+                        if not subject_el:
+                            index += 1
+                            continue
+
+                        subject_text = subject_el.inner_text().lower()
+                        if keyword not in subject_text:
+                            index += 1
+                            continue
+
+                        self.logger.info(
+                            f"Processing email subject='{subject_text}', date={mail_date}"
+                        )
+
+                        # --- Open email ---
+                        self.click_email_item(item)
+
+                        # --- Scroll content ---
+                        self.scroll_content(page)
+
+                        # --- Report as not spam ---
+                        self.click_not_spam(page)
+
+                        # 🔴 DOM CHANGED → re-query + reset index
+                        email_items = deep_find_elements(
+                            page, "list-mail-item.list-mail-item--root"
+                        )
+                        index = 0
+                        continue
+
+                    except Exception as e:
+                        self.logger.warning(f"Failed processing email: {e}")
+                        index += 1
+                        continue
+
+                # --- Next page ---
+                try:
+                    next_button = self.automation._find_element_with_humanization(
+                        page,
+                        ["button.list-paging-footer__page-next"],
+                        deep_search=True
+                    )
+                    if next_button and not next_button.is_disabled():
+                        self.automation.human_behavior.click(next_button)
+                        current_page += 1
+                        continue
+                    break
+                except Exception as e:
+                    self.logger.warning(f"Pagination failed: {e}")
+                    break
+
+            return self._final_result()
+
+        except Exception as e:
+            return StepResult(
+                status=StepStatus.RETRY,
+                message=f"Failed to report emails: {e}"
+            )
+    
+    @retry_action()
+    def click_email_item(self, item):
+        try:
+            self.automation.human_behavior.click(item)
+        except Exception as e:
+            self.logger.warning(f"Failed to click email item: {e}")
+
+    @retry_action()
+    def scroll_content(self, page: Page):
+        try:
+            iframe = self.automation._find_element_with_humanization(
+                page,
+                selectors=['iframe[name="detail-body-iframe"]'],
+                deep_search=True
+            )
+            frame = iframe.content_frame()
+            body = self.automation._find_element_with_humanization(
+                frame, ["body"]
+            )
+            self.automation.human_behavior.scroll_into_view(body)
+        except Exception as e:
+            self.logger.warning(f"Failed to scroll content: {e}")
+    
+    @retry_action()
+    def click_not_spam(self, page: Page):
+        try:
+            self.automation.human_click(
+                page,
+                selectors=[
+                    'div.list-toolbar__scroll-item '
+                    'section[data-overflow-id="no_spam"] button'
+                ],
+                deep_search=True
+            )
+        except Exception as e:
+            self.logger.warning(f"Failed to click not spam: {e}")
+    
+    def _final_result(self) -> StepResult:
+        if getattr(self.automation, "reported_email_ids", []):
+            return StepResult(
+                status=StepStatus.SUCCESS,
+                message="Emails reported within date range"
+            )
+
+        return StepResult(
+            status=StepStatus.SKIP,
+            message="No emails found within date range"
+        )
+
+class OpenReportedEmailsStep(Step):
+    def run(self, page: Page) -> StepResult:
+        try:
+            keyword = getattr(self.automation, "search_text", "").lower()
+            start_dt = getattr(self.automation, "start_date")
+            end_dt = getattr(self.automation, "end_date")
+
+            self.logger.info(
+                f"Opening emails with keyword='{keyword}' "
+                f"between {start_dt} and {end_dt}"
+            )
+
+            # Navigate to inbox
+            self._navigate_to_inbox(page)
+
+            # Fill search input
+            self._fill_search_input(page, keyword)
+
+            # Open search options
+            self.open_search_options(page)
+ 
+            # Select inbox and submit search
+            self.select_inbox_and_submit(page)
+
+            found_any = False
+            current_page = 1
+
+            while True:
+                self.logger.info(f"Processing page {current_page}")
+
+                email_items = deep_find_elements(
+                    page, "list-mail-item.list-mail-item--root"
+                )
+
+                if not email_items:
+                    self.logger.warning("No emails found on this page")
+                    break
+
+                index = 0
+                while index < len(email_items):
+                    item = email_items[index]
+
+                    try:
+                        email_id = item.get_attribute("id")
+                        self.logger.info(f"Processing email {email_id}")
+
+                        # --- Extract datetime from date-in-ms ---
+                        date_el = item.query_selector(
+                            "list-date-label.list-mail-item__date"
+                        )
+                        if not date_el:
+                            self.logger.warning("No date found on this email")
+                            index += 1
+                            continue
+
+                        ms = date_el.get_attribute("date-in-ms")
+                        if not ms:
+                            self.logger.warning("No date-in-ms found on this email")
+                            index += 1
+                            continue
+
+                        mail_dt = datetime.fromtimestamp(
+                            int(ms) / 1000
+                        ).date()
+
+                        # --- Early stop: everything else is older ---
+                        if index == 0 and mail_dt < start_dt:
+                            self.logger.info(
+                                "First email older than start_datetime. Stopping."
+                            )
+                            return self._final(found_any)
+
+                        # --- Range filter ---
+                        if mail_dt > end_dt:
+                            self.logger.warning(
+                                f"mail date: {mail_dt} is newer than end_datetime: {end_dt}, skipping"
+                            )
+                            index += 1
+                            continue
+
+                        if mail_dt < start_dt:
+                            self.logger.warning(
+                                f"mail date: {mail_dt} is older than start_datetime: {start_dt}, stopping"
+                            )
+                            return self._final(found_any)
+
+                        # --- Subject ---
+                        subject_el = item.query_selector(
+                            "div.list-mail-item__subject"
+                        )
+                        if not subject_el:
+                            self.logger.warning("No subject found on this email")
+                            index += 1
+                            continue
+
+                        subject_text = subject_el.get_attribute("title").lower()
+
+                        if keyword not in subject_text:
+                            index += 1
+                            continue
+
+                        found_any = True
+                        self.logger.info(
+                            f"Opening email '{subject_text}' @ {mail_dt}"
+                        )
+
+                        # --- Actions ---
+                        self._click_email_item(item, page)
+
+                        frame = self._scroll_content(page)
+
+                        self._add_to_favorites(page)
+
+                        self._click_link_or_image(frame, page)
+
+                        # Re-query for safety (DOM not reordered)
+                        email_items = deep_find_elements(
+                            page, "list-mail-item.list-mail-item--root"
+                        )
+
+                        index += 1
+                        continue
+
+                    except Exception as e:
+                        self.logger.warning(
+                            f"Failed processing email: {e}"
+                        )
+                        index += 1
+                        continue
+
+                # --- Pagination ---
+                try:
+                    next_button = self.automation._find_element_with_humanization(
+                        page,
+                        ["button.list-paging-footer__page-next"],
+                        deep_search=True
+                    )
+                    if next_button and not next_button.is_disabled():
+                        self.automation.human_behavior.click(next_button)
+                        page.wait_for_timeout(2000)
+                        current_page += 1
+                        continue
+                    break
+                except Exception:
+                    break
+
+            return self._final(found_any)
+
+        except Exception as e:
+            return StepResult(
+                status=StepStatus.RETRY,
+                message=f"Failed to open reported emails: {e}"
+            )
+
+    @retry_action()
+    def _navigate_to_inbox(self, page):
+        try:
+            self.automation.human_click(
+                page,
+                selectors=["button.sidebar-folder-icon-inbox"],
+                deep_search=True
+            )
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to navigate to inbox: {e}"
+            )
+
+    @retry_action()
+    def _fill_search_input(self, page, keyword):
+        try:
+            search_input = deep_find_elements(
+                page,
+                css_selector="input.webmailer-mail-list-search-input__input",
+            )
+            if search_input:
+                search_input[0].fill(keyword)
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to fill search input: {e}"
+            )
+    
+    @retry_action()
+    def open_search_options(self, page):
+        try:
+            self.automation.human_click(
+                page,
+                selectors=["button.webmailer-mail-list-search-options__button"],
+                deep_search=True
+            )
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to open search options: {e}"
+            )
+    
+    @retry_action()
+    def select_inbox_and_submit(self, page):
+        try:
+            # Select inbox
+            self.automation.human_select(
+                page,
+                selectors=[
+                    "div.webmailer-mail-list-search-options__container select#folderSelect"
+                ],
+                label="Posteingang",
+                deep_search=True
+            )
+
+            # Submit search
+            self.automation.human_click(
+                page,
+                selectors=[
+                    "div.webmailer-mail-list-search-options__container button[type='submit']"
+                ],
+                deep_search=True
+            )
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to select inbox and submit search: {e}"
+            )
+
+    @retry_action()
+    def _click_email_item(self, item, page):
+        try:
+            self.automation.human_behavior.click(item)
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            self.logger.warning(
+                f"Click inside email failed: {e}"
+            )
+
+    @retry_action()
+    def _scroll_content(self, page):
+        try:
+            iframe = self.automation._find_element_with_humanization(
+                page,
+                selectors=["iframe[name='detail-body-iframe']"],
+                deep_search=True
+            )
+            frame = iframe.content_frame()
+            body = self.automation._find_element_with_humanization(
+                frame, ["body"]
+            )
+            self.automation.human_behavior.scroll_into_view(body)
+
+            return frame
+        except Exception as e:
+            self.logger.warning(
+                f"Scroll content failed: {e}"
+            )
+    
+    @retry_action()
+    def _add_to_favorites(self, page):
+        try:
+            self.automation.human_click(
+                page,
+                selectors=[
+                    "button.detail-favorite-marker__unselected"
+                ],
+                deep_search=True,
+                timeout=5000
+            )
+        except Exception:
+            pass
+    
+    @retry_action()
+    def _click_link_or_image(self, frame, page):
+        try:
+            if frame:
+                links = frame.query_selector_all("a")
+                if links:
+                    self.automation.human_behavior.click(links[0])
+                    page.wait_for_timeout(3000)
+                else:
+                    imgs = frame.query_selector_all("img")
+                    if imgs:
+                        self.automation.human_behavior.click(imgs[0])
+                        page.wait_for_timeout(3000)
+        except Exception as e:
+            self.logger.warning(
+                f"Click inside email failed: {e}"
+            )
+
+    def _final(self, found: bool) -> StepResult:
+        if found:
+            return StepResult(
+                status=StepStatus.SUCCESS,
+                message="All matching emails in datetime range processed."
+            )
+        return StepResult(
+            status=StepStatus.SKIP,
+            message="No matching emails found in datetime range."
+        )

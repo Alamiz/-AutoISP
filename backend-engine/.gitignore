@@ -61,5 +61,5 @@ env/
 # PyInstaller
 dist/
 build/
-*.spec
+
 
