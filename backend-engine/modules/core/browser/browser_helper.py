@@ -1,7 +1,10 @@
 from playwright.sync_api import sync_playwright, BrowserContext, Page
 from core.browser.chrome_profiles_manager import ChromeProfileManager
 import os
+import sys
+import logging
 from typing import Optional, List, Dict
+import psutil
 
 STEALTH_INIT_SCRIPT = """
 // Minimal evasions for navigator properties commonly checked
@@ -22,6 +25,35 @@ if (originalQuery) {
   );
 }
 """
+
+def get_chrome_executable() -> Optional[str]:
+    """
+    Find the Chrome executable in this order:
+    1. Bundled Chrome in resources folder (relative to this file or frozen app)
+    2. ProgramData location (C:\\ProgramData\\AutoISP\\chrome-win64\\chrome.exe)
+    3. None (let Playwright use its default)
+    """
+    # Check for bundled Chrome
+    if getattr(sys, 'frozen', False):
+        # Running as packaged app
+        base_path = sys._MEIPASS
+    else:
+        # Running as script - look relative to this file
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.abspath(os.path.join(base_path, "..", "..", ".."))  # Go up to backend-engine
+    
+    bundled_chrome = os.path.join(base_path, "resources", "chrome-win64", "chrome.exe")
+    if os.path.exists(bundled_chrome):
+        return bundled_chrome
+    
+    # Check ProgramData location
+    programdata_chrome = r"C:\ProgramData\AutoISP\chrome-win64\chrome.exe"
+    if os.path.exists(programdata_chrome):
+        return programdata_chrome
+    
+    # Return None to let Playwright use default
+    return None
+
 
 class PlaywrightBrowserFactory:
     """
@@ -52,7 +84,8 @@ class PlaywrightBrowserFactory:
         self.profile_dir = profile_dir
         self.channel = channel
         self.headless = headless
-        self.executable_path = executable_path
+        # Auto-detect Chrome executable if not provided
+        self.executable_path = executable_path or get_chrome_executable()
         self.additional_args = additional_args or []
         self.use_stealth = use_stealth
         self.start_maximized = start_maximized
@@ -65,12 +98,16 @@ class PlaywrightBrowserFactory:
         self._context: Optional[BrowserContext] = None
         self._opened = False
 
+        self.logger = logging.getLogger("autoisp")
+
     def start(self):
         """Start browser with extension"""
         if self._opened:
             return
             
         print(f"🚀 Starting browser with {self.user_agent_type} user agent...")
+        if self.executable_path:
+            print(f"📂 Using Chrome: {self.executable_path}")
 
         os.makedirs(self.profile_path, exist_ok=True)
         self._pw = sync_playwright().start()
@@ -80,6 +117,30 @@ class PlaywrightBrowserFactory:
             "--disable-infobars",
             "--no-default-browser-check",
             "--disable-dev-shm-usage",
+
+            # Memory critical
+            "--disable-background-networking",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-extensions",
+            "--disable-sync",
+            "--disable-default-apps",
+            "--disable-component-update",
+            "--disable-client-side-phishing-detection",
+            "--disable-hang-monitor",
+            "--disable-popup-blocking",
+
+            # Reduce process count
+            "--process-per-site",
+            "--renderer-process-limit=4",
+
+            # GPU on RDP = useless
+            "--disable-gpu",
+            "--disable-software-rasterizer",
+
+            # Kill Chrome background mode
+            "--disable-features=Translate,BackForwardCache,AcceptCHFrame,MediaRouter"
         ]
 
         # Only start maximized for desktop
@@ -88,12 +149,17 @@ class PlaywrightBrowserFactory:
         
         launch_kwargs = dict(
             user_data_dir=self.profile_path,
-            channel=self.channel,
             headless=self.headless,
             args=args,
             ignore_default_args=["--enable-automation"],
             user_agent=self._get_user_agent()
         )
+        
+        # Use custom executable if available, otherwise use channel
+        if self.executable_path:
+            launch_kwargs['executable_path'] = self.executable_path
+        else:
+            launch_kwargs['channel'] = self.channel
         
         # Proxy configuration
         if self.proxy_config:
@@ -167,13 +233,25 @@ class PlaywrightBrowserFactory:
         
         return page
 
+    @staticmethod
+    def kill_chrome_for_profile(profile_path: str):
+        profile_path = os.path.abspath(profile_path).lower()
+
+        for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+            try:
+                if proc.info["name"] != "chrome.exe":
+                    continue
+
+                cmdline = " ".join(proc.info.get("cmdline") or []).lower()
+                if profile_path in cmdline:
+                    proc.kill()
+
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+
     def close(self):
         """Close context and stop Playwright."""
-        # Unregister first
-        if self.job_id:
-            from core.browser.registry import browser_registry
-            browser_registry.unregister(self.job_id)
-
+        self._opened = False
         if self._context:
             try:
                 self._context.close()
@@ -186,4 +264,43 @@ class PlaywrightBrowserFactory:
             except Exception:
                 pass
             self._pw = None
+        
+        self.kill_chrome_for_profile(self.profile_path)
+        self.logger.info("Chrome processes killed for profile")
+
+    def force_close(self):
+        """Forcefully close browser - kills all pages and browser."""
         self._opened = False
+        self.logger.info("Force closing browser...")
+        
+        # Close all pages first to interrupt any running operations
+        if self._context:
+            try:
+                pages = self._context.pages
+                self.logger.info(f"Closing {len(pages)} pages...")
+                for page in pages:
+                    try:
+                        page.close()
+                    except Exception as e:
+                        pass
+            except Exception as e:
+                self.logger.warning(f"Error accessing pages: {e}")
+            
+            try:
+                self._context.close()
+                self.logger.info("Browser context closed")
+            except Exception as e:
+                pass
+            self._context = None
+        
+        # Force stop Playwright
+        if self._pw:
+            try:
+                self._pw.stop()
+                self.logger.info("Playwright stopped")
+            except Exception as e:
+                pass
+            self._pw = None
+        
+        self.kill_chrome_for_profile(self.profile_path)
+        self.logger.info("Chrome processes killed for profile")

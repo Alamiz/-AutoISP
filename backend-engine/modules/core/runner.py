@@ -4,10 +4,13 @@ import sys
 import os
 
 
-def run_automation(email, password, isp, automation_name, proxy_config=None, device_type="desktop", **kwargs):
+def run_automation(account_id, email, password, isp, automation_name, proxy_config=None, device_type="desktop", job_id=None, **kwargs):
     """
     Global runner for any automation.
     Delegates platform logic to the automation's loader.py.
+    
+    Args:
+        job_id: Optional job ID for browser registration with job manager
     """
 
     logger = logging.getLogger("autoisp")
@@ -28,10 +31,10 @@ def run_automation(email, password, isp, automation_name, proxy_config=None, dev
         loader = importlib.import_module(loader_module_path)
 
         if not hasattr(loader, "run"):
-            raise AttributeError(f"{loader_module_path} missing 'run(email, password, device_type, proxy_config)' function")
+            raise AttributeError(f"{loader_module_path} missing 'run(account_id, email, password, device_type, proxy_config)' function")
 
         logger.info(f"Running {automation_name} on {isp} for profile {profile}")
-        return loader.run(email=email, password=password, device_type=device_type, proxy_config=proxy_config, **kwargs)
+        return loader.run(account_id=account_id, email=email, password=password, device_type=device_type, proxy_config=proxy_config, job_id=job_id, **kwargs)
 
     except Exception as e:
         # Check if it's a cancellation

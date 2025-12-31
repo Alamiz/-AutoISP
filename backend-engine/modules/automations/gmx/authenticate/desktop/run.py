@@ -11,15 +11,21 @@ from core.flow_engine.state_handler import StateHandlerRegistry
 from core.flow_engine.step import StepStatus
 from .handlers import (
     LoginPageHandler,
-    LoginCaptchaHandler,
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
     SmartFeaturesPopupHandler,
-    SecuritySuspensionHandler,
     UnknownPageHandler,
 )
+from automations.common_handlers import (
+    WrongPasswordPageHandler,
+    WrongEmailPageHandler,
+    LoginCaptchaHandler,
+    SecuritySuspensionHandler,
+    PhoneVerificationHandler
+)
 from core.pages_signatures.gmx.desktop import PAGE_SIGNATURES
+from crud.account import update_account_state
 
 class GMXAuthentication(HumanAction):
     """
@@ -32,13 +38,15 @@ class GMXAuthentication(HumanAction):
     # Maximum flow iterations to prevent infinite loops
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", job_id=None):
-        super().__init__(job_id=job_id)
+    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="desktop", job_id=None):
+        super().__init__()
+        self.account_id = account_id
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
         self.signatures = PAGE_SIGNATURES
+        self.job_id = job_id  # For browser registration with job_manager
         
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
@@ -62,13 +70,16 @@ class GMXAuthentication(HumanAction):
         
         # Register handlers for authentication page states
         registry.register("gmx_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
-        registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self, self.logger))
+        registry.register("gmx_login_wrong_password", WrongPasswordPageHandler(self.account_id, self.logger))
+        registry.register("gmx_login_wrong_username", WrongEmailPageHandler(self.account_id, self.logger))
+        registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1_core", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
         registry.register("gmx_inbox_smart_features_popup", SmartFeaturesPopupHandler(self, self.logger))
-        registry.register("gmx_security_suspension", SecuritySuspensionHandler(self, self.logger))
+        registry.register("gmx_security_suspension", SecuritySuspensionHandler(self.account_id, self.logger))
+        registry.register("gmx_phone_verification", PhoneVerificationHandler(self.account_id, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         
         return registry
@@ -89,6 +100,8 @@ class GMXAuthentication(HumanAction):
         """
         Runs authentication flow for GMX
         """
+        from modules.core.job_manager import job_manager  # Import here to avoid circular deps
+        
         self.logger.info(f"Starting authentication flow for {self.email}")
         
         # Log proxy usage if configured
@@ -102,11 +115,18 @@ class GMXAuthentication(HumanAction):
             # Start browser with proxy configuration
             self.browser.start()
             
+            # Register browser with job_manager for force-close on stop
+            if self.job_id:
+                job_manager.register_browser(self.job_id, self.browser)
+            
             # Create new page
             page = self.browser.new_page()
 
             # Authenticate using StatefulFlow
             self.authenticate(page)
+            
+            # Update account state to active on success
+            update_account_state(self.account_id, "active")
             
             self.logger.info(f"Authentication successful for {self.email}")
             return {"status": "success", "message": "Authentication completed successfully"}
@@ -126,6 +146,9 @@ class GMXAuthentication(HumanAction):
             self.logger.error(f"Unexpected error for {self.email}: {e}")
             return {"status": "failed", "message": str(e)}
         finally:
+            # Unregister browser from job_manager
+            if self.job_id:
+                job_manager.unregister_browser(self.job_id)
             # Close browser
             self.browser.close()
 

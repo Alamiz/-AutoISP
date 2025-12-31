@@ -9,3 +9,4 @@ httpx
 websockets
 requests
 python-dotenv
+psutil

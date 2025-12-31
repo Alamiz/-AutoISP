@@ -33,7 +33,7 @@ export interface Account {
   };
   label: string;
   last_sync: string;
-  status: "active" | "inactive" | "error" | "disabled";
+  status: "active" | "inactive" | "error" | "disabled" | "suspended" | "phone_verification" | "captcha" | "wrong_password" | "wrong_username";
   latest_automation: string;
   provider: "gmx" | "webde";
   type: "desktop" | "mobile";
@@ -54,10 +54,11 @@ export interface Account {
 export interface AutomationParam {
   name: string;
   label: string;
-  type: "text" | "number" | "boolean" | "textarea";
+  type: "text" | "number" | "boolean" | "textarea" | "date" | "file";
   placeholder?: string;
   required?: boolean;
   defaultValue?: string | number | boolean;
+  accept?: string; // For file inputs, e.g. ".vcf"
 }
 
 export interface Automation {

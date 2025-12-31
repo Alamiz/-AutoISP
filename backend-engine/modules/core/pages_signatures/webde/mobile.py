@@ -173,6 +173,24 @@ PAGE_SIGNATURES = {
                 "weight": 4.0,
                 "should_exist": False
             },
+            {
+                "name": "Error message",
+                "css_selector": 'p[data-testid="error-password"]',
+                "contains_text": None,
+                "require_english": False,
+                "description": "Wrong password error message.",
+                "weight": 4.0,
+                "should_exist": False
+            },
+            {
+                "name": "Error message",
+                "css_selector": 'p[data-testid="error-username"]',
+                "contains_text": None,
+                "require_english": False,
+                "description": "Wrong username error message.",
+                "weight": 4.0,
+                "should_exist": False
+            },
         ]
     },
     "webde_login_captcha_page": {
@@ -187,6 +205,134 @@ PAGE_SIGNATURES = {
                 "require_english": False,
                 "description": "",  
                 "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "webde_login_wrong_username": {
+        "description": "WebDE login wrong username page.",
+        "required_sublink": "auth.web.de/login/mobile",
+        "checks": [
+            {
+                "name": "Email input",
+                "css_selector": 'form input#username',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Continue button",
+                "css_selector": 'form button[type="submit"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Registration button",
+                "css_selector": 'button[data-testid="button-registration"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Error message",
+                "css_selector": 'p[data-testid="error-username"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Wrong username error message.",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "webde_login_wrong_password": {
+        "description": "WebDE login wrong password page.",
+        "required_sublink": "auth.web.de/login/mobile",
+        "checks": [
+            {
+                "name": "Email input",
+                "css_selector": 'form input#username',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Password input",
+                "css_selector": 'input[type="password"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Continue button",
+                "css_selector": 'form button[type="submit"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Registration button",
+                "css_selector": 'button[data-testid="button-registration"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Error message",
+                "css_selector": 'p[data-testid="error-password"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Wrong password error message.",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "webde_login_not_possible": {
+        "description": "WebDE login not possible page.",
+        "required_sublink": "auth.web.de/login/mobile",
+        "checks": [
+            {
+                "name": "Alert message",
+                "css_selector": 'div[role="alert"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Back button",
+                "css_selector": 'button[data-testid="button-back"]',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 2.0,
                 "should_exist": True
             },
         ]

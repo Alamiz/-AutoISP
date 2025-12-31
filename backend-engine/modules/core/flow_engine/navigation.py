@@ -4,6 +4,7 @@
 import time
 import logging
 from playwright.sync_api import Page
+from core.utils.browser_utils import navigate_to
 
 
 def navigate_with_retry(
@@ -38,7 +39,7 @@ def navigate_with_retry(
             if logger:
                 logger.info(f"Navigating to {url} (attempt {attempt}/{max_retries})")
             
-            page.goto(url, timeout=timeout)
+            navigate_to(page, url)
             return True
             
         except Exception as e:

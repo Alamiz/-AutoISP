@@ -69,7 +69,8 @@ class HumanAction(ABC):
         """
         self.human_behavior.wait_before_action()
         element = self._find_element_with_humanization(page, selectors, deep_search=deep_search, timeout=timeout)
-        self.human_behavior.type_text(element, text)
+        # self.human_behavior.type_text(element, text)
+        element.fill(text)
         
     def human_click(self, page: Page, selectors: list[str], deep_search: bool = False, force: bool = False, timeout: Optional[int] = None):
         """

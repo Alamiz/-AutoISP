@@ -11,20 +11,24 @@ from core.flow_engine.step import StepStatus
 from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
 from .handlers import UnknownPageHandler
 from core.pages_signatures.webde.mobile import PAGE_SIGNATURES
+from datetime import datetime
+from core.utils.browser_utils import navigate_to
 
 class ReportNotSpam(HumanAction):
     """
     web.de Mobile Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="mobile", search_text=None, max_flow_retries=3):
+    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="mobile", search_text=None, max_flow_retries=3, start_date=None, end_date=None, job_id=None):
         super().__init__()
+        self.account_id = account_id
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
         self.search_text = search_text
         self.max_flow_retries = max_flow_retries
+        self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
@@ -35,6 +39,26 @@ class ReportNotSpam(HumanAction):
             proxy_config=proxy_config,
             user_agent_type=user_agent_type
         )
+
+        # Parse dates
+        if start_date:
+            try:
+                self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid start_date format: {start_date}")
+                self.start_date = datetime(1970, 1, 1).date()
+        else:
+            self.start_date = datetime(1970, 1, 1).date()
+
+        if end_date:
+            try:
+                self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid end_date format: {end_date}")
+                self.end_date = datetime.now().date()
+        else:
+            self.end_date = datetime.now().date()
+
 
     def _setup_state_handlers(self) -> StateHandlerRegistry:
         """Setup state handler registry for unexpected page states."""
@@ -81,14 +105,19 @@ class ReportNotSpam(HumanAction):
         
         try:
             self.browser.start()
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
 
             # Authenticate first
             webde_auth = WebDEAuthentication(
+                self.account_id,
                 self.email, 
                 self.password, 
                 self.proxy_config,
-                self.user_agent_type
+                self.user_agent_type,
+                self.job_id
             )
 
             try:
@@ -122,7 +151,7 @@ class ReportNotSpam(HumanAction):
                     page.wait_for_timeout(wait_time)
                     
                     try:
-                        page.goto("https://lightmailer-bs.web.de/")
+                        navigate_to(page, "https://lightmailer-bs.web.de/")
                         page.wait_for_load_state("domcontentloaded")
                     except Exception as e:
                         self.logger.warning(f"Failed to reset to main page: {e}")
@@ -138,4 +167,7 @@ class ReportNotSpam(HumanAction):
             self.logger.error(f"Critical error in automation: {e}", exc_info=True)
             return {"status": "failed", "message": f"Critical error: {str(e)}"}
         finally:
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.unregister_browser(self.job_id)
             self.browser.close()

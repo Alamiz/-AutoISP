@@ -1,208 +1,128 @@
 import logging
+from datetime import datetime
 from playwright.sync_api import Page
-from core.browser.browser_helper import PlaywrightBrowserFactory
-from core.humanization.actions import HumanAction
 from automations.gmx.authenticate.desktop.run import GMXAuthentication
+from core.browser.browser_helper import PlaywrightBrowserFactory
+from core.utils.retry_decorators import RequiredActionFailed
+from core.humanization.actions import HumanAction
+from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import SequentialFlow
 from core.flow_engine.state_handler import StateHandlerRegistry
-from .steps import NavigateToSpamStep
-from .handlers import (
-    UnknownPageHandler,
-)
+from core.flow_engine.step import StepStatus
+from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
+from .handlers import UnknownPageHandler
 from core.pages_signatures.gmx.desktop import PAGE_SIGNATURES
+
 
 class ReportNotSpam(HumanAction):
     """
-    GMX Report Not Spam automation using step-based flow with state handling
-    
-    Retry Strategy:
-    - Step-level: Each step retries based on max_retries (default: 1)
-    - Flow-level: Entire automation can be retried via execute() max_flow_retries parameter
+    gmx Desktop Report Not Spam using SequentialFlow
     """
-    def __init__(
-        self, 
-        email, 
-        password, 
-        proxy_config=None, 
-        user_agent_type="desktop", 
-        search_text=None,
-        max_flow_retries=3
-    ):
+    
+    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="desktop", search_text=None, start_date=None, end_date=None, job_id=None):
         super().__init__()
+        self.account_id = account_id
         self.email = email
         self.password = password
         self.proxy_config = proxy_config
         self.user_agent_type = user_agent_type
         self.search_text = search_text
-        self.max_flow_retries = max_flow_retries
+        self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
         self.profile = self.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
         self.reported_email_ids = []
 
+        # Parse dates
+        if start_date:
+            try:
+                self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid start_date format: {start_date}")
+                self.start_date = datetime(1970, 1, 1).date()
+        else:
+            self.start_date = datetime(1970, 1, 1).date()
+
+        if end_date:
+            try:
+                self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                self.logger.error(f"Invalid end_date format: {end_date}")
+                self.end_date = datetime.now().date()
+        else:
+            self.end_date = datetime.now().date()
+
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
             proxy_config=proxy_config,
-            user_agent_type=user_agent_type
+            user_agent_type=user_agent_type,
+            headless=False
         )
 
     def _setup_state_handlers(self) -> StateHandlerRegistry:
-        """
-        Setup state handler registry with all handlers.
-        """
-        from core.utils.identifier import identify_page
-        
+        """Setup state handler registry for unexpected page states."""
         registry = StateHandlerRegistry(
             identifier_func=identify_page,
             signatures=self.signatures,
             logger=self.logger
         )
-        
-        # Register handlers for different page states
-        registry.register("unknown", UnknownPageHandler(logger=self.logger))
-        
+        registry.register("unknown", UnknownPageHandler(self, self.logger))
         return registry
 
-    def _execute_flow(self, page: Page) -> dict:
-        """
-        Internal method to execute the automation flow once.
-        Separated for flow-level retry logic.
-        """
-        try:
-            # Setup state handlers
-            state_registry = self._setup_state_handlers()
-
-            # Start the step-based flow with state handling
-            # Define steps for the sequential flow
-            from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
-            from core.flow_engine.smart_flow import SequentialFlow
-            
-            steps = [
-                NavigateToSpamStep(self, self.logger),
-                ReportSpamEmailsStep(self, self.logger),
-                OpenReportedEmailsStep(self, self.logger)
-            ]
-
-            # Start the sequential flow with state handling
-            flow = SequentialFlow(steps, state_registry=state_registry, logger=self.logger)
-            
-            result = flow.run(page)
-            
-            if result.status.value == "failure":
-                return {
-                    "status": "failed", 
-                    "message": result.message,
-                    "retry_recommended": True  # Signal that retry might help
-                }
-
-            return {
-                "status": "success", 
-                "message": "Reported not spam",
-                "emails_processed": len(self.reported_email_ids)
-            }
-
-        except Exception as e:
-            self.logger.error(f"Exception in flow execution: {e}", exc_info=True)
-            return {
-                "status": "failed", 
-                "message": str(e),
-                "retry_recommended": True
-            }
-
     def execute(self):
-        """
-        Execute the automation with flow-level retry logic.
-        
-        Returns:
-            dict: Result with status, message, and metadata
-        """
-        self.logger.info(f"Starting GMX Report Not Spam for {self.email}")
-        self.logger.info(f"Flow retry configuration: max_retries={self.max_flow_retries}")
-        
-        flow_attempt = 0
-        last_result = None
+        self.logger.info(f"Starting Report Not Spam for {self.email}")
         
         try:
             self.browser.start()
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
-
-            # Authenticate first (outside retry loop - auth failures are terminal)
-            self.logger.info("Authenticating...")
+            
+            # Authenticate first
             gmx_auth = GMXAuthentication(
+                self.account_id,
                 self.email, 
                 self.password, 
-                self.proxy_config, 
-                self.user_agent_type
+                self.proxy_config,
+                self.user_agent_type,
+                self.job_id
             )
-            try:
-                gmx_auth.authenticate(page)
-            except Exception as e:
-                self.logger.error(f"Authentication failed: {e}")
-                return {"status": "failed", "message": "Authentication failed"}
+            gmx_auth.authenticate(page)
 
-            self.logger.info("Authentication successful")
-
-            # Flow-level retry loop
-            while flow_attempt < self.max_flow_retries:
-                flow_attempt += 1
-                
-                self.logger.info("=" * 60)
-                self.logger.info(f"FLOW ATTEMPT {flow_attempt}/{self.max_flow_retries}")
-                self.logger.info("=" * 60)
-                
-                # Reset state for retry
-                self.reported_email_ids = []
-                
-                # Execute the flow
-                result = self._execute_flow(page)
-                last_result = result
-                
-                # Check if successful
-                if result["status"] == "success":
-                    self.logger.info(f"✓ Flow completed successfully on attempt {flow_attempt}")
-                    return result
-                
-                # Check if retry is recommended
-                if not result.get("retry_recommended", False):
-                    self.logger.error(f"Flow failed with non-retryable error: {result['message']}")
-                    return result
-                
-                # Log retry
-                if flow_attempt < self.max_flow_retries:
-                    self.logger.warning(
-                        f"Flow attempt {flow_attempt} failed: {result['message']}"
-                    )
-                    self.logger.info(f"Retrying flow (attempt {flow_attempt + 1}/{self.max_flow_retries})...")
-                    
-                    # Wait before retry (progressive backoff)
-                    wait_time = 5000 * flow_attempt
-                    self.logger.info(f"Waiting {wait_time/1000}s before retry...")
-                    page.wait_for_timeout(wait_time)
-                    
-                    # Navigate back to inbox for clean retry
-                    try:
-                        page.goto("https://www.gmx.net/")
-                        page.wait_for_load_state("domcontentloaded")
-                        page.wait_for_timeout(2000)
-                    except Exception as e:
-                        self.logger.warning(f"Failed to reset to inbox: {e}")
+            # Report not spam using SequentialFlow
+            self.report_not_spam(page)
             
-            # All retries exhausted
-            self.logger.error(f"Flow failed after {self.max_flow_retries} attempts")
-            return {
-                "status": "failed",
-                "message": f"Flow failed after {self.max_flow_retries} attempts. Last error: {last_result.get('message', 'Unknown')}",
-                "attempts": flow_attempt,
-                "last_error": last_result.get('message')
-            }
-
+            self.logger.info(f"Report not spam successful for {self.email}")
+            return {"status": "success", "message": "Reported not spam"}
+        
+        except RequiredActionFailed as e:
+            self.logger.error(f"Report not spam failed for {self.email}: {e}")
+            return {"status": "failed", "message": str(e)}
         except Exception as e:
-            self.logger.error(f"Critical error in automation: {e}", exc_info=True)
-            return {
-                "status": "failed", 
-                "message": f"Critical error: {str(e)}",
-                "attempts": flow_attempt
-            }
+            self.logger.error(f"Unexpected error for {self.email}: {e}")
+            return {"status": "failed", "message": str(e)}
         finally:
+            if self.job_id:
+                from modules.core.job_manager import job_manager
+                job_manager.unregister_browser(self.job_id)
             self.browser.close()
 
+    def report_not_spam(self, page: Page):
+        """Report not spam using SequentialFlow."""
+        state_registry = self._setup_state_handlers()
+        
+        # Define steps in order
+        steps = [
+            NavigateToSpamStep(self, self.logger),
+            ReportSpamEmailsStep(self, self.logger),
+            OpenReportedEmailsStep(self, self.logger),
+        ]
+        
+        flow = SequentialFlow(steps, state_registry=state_registry, logger=self.logger)
+        result = flow.run(page)
+        
+        if result.status == StepStatus.FAILURE:
+            raise RequiredActionFailed(f"Failed to complete report. Last error: {result.message}")
+        
+        self.logger.info("Report not spam completed via SequentialFlow")

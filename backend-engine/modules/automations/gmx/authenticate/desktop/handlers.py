@@ -3,12 +3,11 @@
 State handlers for GMX Authentication using StatefulFlow.
 Each handler manages a specific page state during authentication.
 """
-import logging
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.humanization.actions import HumanAction
 from core.utils.element_finder import deep_find_elements
-
+from core.utils.browser_utils import navigate_to
 
 class LoginPageHandler(StateHandler):
     """Handle GMX login page - enter credentials"""
@@ -21,8 +20,31 @@ class LoginPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("LoginPageHandler: Entering credentials")
+            # Check if we are already at the password step (e.g. after captcha retry)
+            # Use deep_find_elements because it's in an iframe
+            password_elements = deep_find_elements(page, "input#password")
+            password_field_visible = any(el.is_visible() for el in password_elements)
+
+            if password_field_visible:
+                self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
+                
+                self.human_action.human_fill(
+                    page,
+                    selectors=['input#password'],
+                    text=self.password,
+                    deep_search=True
+                )
+                
+                self.human_action.human_click(
+                    page,
+                    selectors=['button[type="submit"][data-testid="button-submit"]'],
+                    deep_search=True
+                )
+                
+                self.logger.info("LoginPageHandler: Credentials submitted (password only)")
+                return "continue"
+
+            self.logger.info("LoginPageHandler: Entering credentials")
             
             # Fill email
             self.human_action.human_fill(
@@ -41,8 +63,7 @@ class LoginPageHandler(StateHandler):
 
             # Check for captcha after clicking continue
             if len(deep_find_elements(page, "div[data-testid='captcha']")) > 0:
-                self.logger.warning("LoginPageHandler: Captcha detected, aborting.")
-                return "abort"
+                return "continue"
 
             
             # Fill password
@@ -60,28 +81,13 @@ class LoginPageHandler(StateHandler):
                 deep_search=True
             )
             
-            page.wait_for_timeout(2000)
-            if self.logger:
-                self.logger.info("LoginPageHandler: Credentials submitted")
+            self.logger.info("LoginPageHandler: Credentials submitted")
             
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"LoginPageHandler: Failed - {e}")
+            self.logger.error(f"LoginPageHandler: Failed - {e}")
             return "retry"
-
-class LoginCaptchaHandler(StateHandler):
-    """Handle login captcha"""
-    
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
-    def handle(self, page: Page) -> HandlerAction:
-        self.logger.warning("LoginCaptchaHandler: Captcha detected")
-        return "abort"
-
 
 class LoggedInPageHandler(StateHandler):
     """Handle already authenticated page - click continue"""
@@ -92,8 +98,7 @@ class LoggedInPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("LoggedInPageHandler: Clicking continue")
+            self.logger.info("LoggedInPageHandler: Clicking continue")
             
             self.human_action.human_click(
                 page,
@@ -105,10 +110,8 @@ class LoggedInPageHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"LoggedInPageHandler: Failed - {e}")
+            self.logger.error(f"LoggedInPageHandler: Failed - {e}")
             return "retry"
-
 
 class AdsPreferencesPopup1Handler(StateHandler):
     """Handle ads preferences popup type 1"""
@@ -119,8 +122,7 @@ class AdsPreferencesPopup1Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("AdsPreferencesPopup1Handler: Accepting")
+            self.logger.info("AdsPreferencesPopup1Handler: Accepting")
             
             self.human_action.human_click(
                 page,
@@ -132,10 +134,8 @@ class AdsPreferencesPopup1Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}")
             return "retry"
-
 
 class AdsPreferencesPopup2Handler(StateHandler):
     """Handle ads preferences popup type 2"""
@@ -146,8 +146,7 @@ class AdsPreferencesPopup2Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("AdsPreferencesPopup2Handler: Denying")
+            self.logger.info("AdsPreferencesPopup2Handler: Denying")
             
             self.human_action.human_click(
                 page,
@@ -159,10 +158,8 @@ class AdsPreferencesPopup2Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
             return "retry"
-
 
 class SmartFeaturesPopupHandler(StateHandler):
     """Handle smart features popup"""
@@ -173,8 +170,7 @@ class SmartFeaturesPopupHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.info("SmartFeaturesPopupHandler: Accepting")
+            self.logger.info("SmartFeaturesPopupHandler: Accepting")
             
             self.human_action.human_click(
                 page,
@@ -186,19 +182,8 @@ class SmartFeaturesPopupHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}")
+            self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}")
             return "retry"
-
-class SecuritySuspensionHandler(StateHandler):
-    """Handle security suspension popup"""
-    
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
-    def handle(self, page: Page) -> HandlerAction:
-        return "abort"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to GMX"""
@@ -209,14 +194,12 @@ class UnknownPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            if self.logger:
-                self.logger.warning("UnknownPageHandler: Redirecting to GMX")
+            self.logger.warning("UnknownPageHandler: Redirecting to GMX")
             
-            page.goto("https://www.gmx.net/")
+            navigate_to(page, "https://www.gmx.net/")
             self.human_action.human_behavior.read_delay()
             return "retry"
             
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"UnknownPageHandler: Failed - {e}")
+            self.logger.error(f"UnknownPageHandler: Failed - {e}")
             return "retry"

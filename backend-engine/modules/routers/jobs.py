@@ -23,17 +23,17 @@ def cancel_job(job_id: str):
 
 @router.post("/{job_id}/stop")
 def stop_job(job_id: str):
-    """Stop a specific job (queued or running)."""
+    """Stop a specific job (running or queued)."""
     if job_manager.stop_job(job_id):
-        return {"status": "stopping", "job_id": job_id}
+        return {"status": "stopped", "job_id": job_id}
     raise HTTPException(status_code=404, detail="Job not found")
 
 
 @router.post("/stop-all")
 def stop_all_jobs():
-    """Stop all jobs (clear queue and stop running)."""
-    job_manager.stop_all_jobs()
-    return {"status": "stopping_all"}
+    """Stop all running and queued jobs."""
+    result = job_manager.stop_all_jobs()
+    return {"status": "stopped", **result}
 
 
 @router.websocket("/ws")

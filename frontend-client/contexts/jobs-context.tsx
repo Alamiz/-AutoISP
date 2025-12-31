@@ -125,9 +125,12 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
                 break
 
             case "job_cancelled":
+            case "job_stopped":
                 setJobs((prev) => ({
                     ...prev,
+                    running: prev.running.filter((j) => j.id !== data.job.id),
                     queued: prev.queued.filter((j) => j.id !== data.job.id),
+                    completed: [data.job, ...prev.completed.slice(0, 9)],
                 }))
                 break
         }
@@ -179,19 +182,23 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
+    // Stop a specific job
     const stopJob = useCallback(async (jobId: string) => {
-        try {
-            await fetch(`${LOCAL_API_URL}/jobs/${jobId}/stop`, { method: "POST" })
-        } catch (e) {
-            console.error("Failed to stop job:", e)
+        const res = await fetch(`${LOCAL_API_URL}/jobs/${jobId}/stop`, {
+            method: "POST",
+        })
+        if (!res.ok) {
+            throw new Error(`Failed to stop job: ${res.status}`)
         }
     }, [])
 
+    // Stop all jobs
     const stopAllJobs = useCallback(async () => {
-        try {
-            await fetch(`${LOCAL_API_URL}/jobs/stop-all`, { method: "POST" })
-        } catch (e) {
-            console.error("Failed to stop all jobs:", e)
+        const res = await fetch(`${LOCAL_API_URL}/jobs/stop-all`, {
+            method: "POST",
+        })
+        if (!res.ok) {
+            throw new Error(`Failed to stop all jobs: ${res.status}`)
         }
     }, [])
 
