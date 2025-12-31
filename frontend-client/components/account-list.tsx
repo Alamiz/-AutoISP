@@ -589,12 +589,12 @@ export function AccountList() {
                               </div>
                             );
                           }
-                          return (
-                            <Badge className="bg-green-500/10 text-green-400 border-green-500/20 flex items-center gap-1">
-                              <Check className="h-3 w-3" />
-                              Idle
-                            </Badge>
-                          );
+                          // return (
+                          //   <Badge className="bg-green-500/10 text-green-400 border-green-500/20 flex items-center gap-1">
+                          //     <Check className="h-3 w-3" />
+                          //     Idle
+                          //   </Badge>
+                          // );
                         })()}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 truncate">{account.latest_automation}</p>

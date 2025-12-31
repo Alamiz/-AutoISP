@@ -113,23 +113,6 @@ export const automations: Automation[] = [
         ],
     },
     {
-        id: "open_profile",
-        name: "Open Profile",
-        description: "Open the browser with the user profile for manual interaction.",
-        category: "Test",
-        provider: "webde",
-        estimatedDuration: "10m",
-        params: [
-            {
-                name: "duration",
-                label: "Duration (in minutes)",
-                type: "number",
-                placeholder: "e.g. '10'",
-                required: true,
-            },
-        ],
-    },
-    {
         id: "import_contacts",
         name: "Import Contacts",
         description: "Import contacts from a .vcf file into the address book.",
@@ -142,6 +125,23 @@ export const automations: Automation[] = [
                 label: "Contacts File (.vcf)",
                 type: "file",
                 accept: ".vcf",
+                required: true,
+            },
+        ],
+    },
+    {
+        id: "open_profile",
+        name: "Open Profile",
+        description: "Open the browser with the user profile for manual interaction.",
+        category: "Test",
+        provider: "webde",
+        estimatedDuration: "10m",
+        params: [
+            {
+                name: "duration",
+                label: "Duration (in minutes)",
+                type: "number",
+                placeholder: "e.g. '10'",
                 required: true,
             },
         ],
