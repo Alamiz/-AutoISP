@@ -104,9 +104,6 @@ class WebDEAuthentication(HumanAction):
             page = self.browser.new_page()
             self.authenticate(page)
             
-            # Update account state to active on success
-            update_account_state(self.account_id, "active")
-            
             self.logger.info(f"Authentication successful for {self.email}")
             return {"status": "success", "message": "Authentication completed successfully"}
         
@@ -141,4 +138,7 @@ class WebDEAuthentication(HumanAction):
         if result.status == StepStatus.FAILURE:
             raise RequiredActionFailed(f"Failed to reach inbox. Last error: {result.message}")
         
+        # Update account state to active on success
+        update_account_state(self.account_id, "active")
+
         self.logger.info("Authentication completed via StatefulFlow")

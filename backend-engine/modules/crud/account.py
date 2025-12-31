@@ -120,6 +120,45 @@ def get_account_ids(provider: str = None):
         logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
 
+def get_accounts_by_ids(
+    select_all: bool = False,
+    excluded_ids: list = None,
+    account_ids: list = None,
+    provider: str = None
+):
+    """
+    Fetches accounts from the external API using the /by_ids endpoint.
+    Handles both select_all mode (with optional exclusions) and direct ID list mode.
+    
+    Args:
+        select_all: If True, fetch all accounts for the provider (minus excluded_ids)
+        excluded_ids: List of account IDs to exclude when select_all is True
+        account_ids: List of specific account IDs to fetch (used when select_all is False)
+        provider: Provider filter (required when select_all is True)
+    
+    Returns:
+        List of account dictionaries
+    """
+    try:
+        with httpx.Client() as client:
+            url = EXTERNAL_ACCOUNT_API_BASE_URL + "/by_ids/"
+            payload = {
+                "select_all": select_all,
+                "excluded_ids": excluded_ids or [],
+                "account_ids": account_ids or [],
+                "provider": provider
+            }
+            response = client.post(url, json=payload, headers=_get_headers())
+            response.raise_for_status()
+            return response.json()
+    except httpx.RequestError as exc:
+        logger.error(f"An error occurred while requesting accounts by IDs: {exc}")
+        raise HTTPException(status_code=500, detail="Could not connect to external account service")
+    except httpx.HTTPStatusError as exc:
+        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
+        raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
+
+
 def update_account_state(account_id: str, state: str):
     """
     Updates the status of an account in the Master API.

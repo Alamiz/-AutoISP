@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Play, Settings, Clock, Zap, Mail, Archive, Paperclip, Shield, Search, FlaskConical, Loader2, Calendar as CalendarIcon } from "lucide-react"
+import { Play, Settings, Clock, Zap, Mail, Archive, Paperclip, Shield, Search, FlaskConical, Loader2, Calendar as CalendarIcon, RotateCw } from "lucide-react"
 import { AutomationScheduler } from "./automation-scheduler"
 import { apiPost } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -136,6 +136,34 @@ export function AutomationControls() {
     },
   })
 
+  const runSequentialAutomations = useMutation({
+    mutationFn: async ({ automationId, automation }: { automationId: string, automation: Automation }) => {
+      return await apiPost('/automations/run-sequential', {
+        automation_id: automation.id,
+        parameters: automationParams[automationId] || {},
+        ...(isAllSelected
+          ? { select_all: true, provider: globalProvider?.slug, excluded_ids: Array.from(excludedIds) }
+          : { account_ids: availableAccounts.map(acc => acc.id) }),
+      },
+        "local"
+      )
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["accounts"] })
+    },
+    onError: (err, variables) => {
+      console.error(`Error running sequential automation ${variables.automation.name}:`, err)
+      toast.error(`Failed to run sequential ${variables.automation.name}`)
+    },
+    onSuccess: (data, variables) => {
+      toast.success(`Sequential run completed: ${variables.automation.name}`)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      queryClient.invalidateQueries({ queryKey: ["activities"] })
+    },
+  })
+
   const handleRunAutomations = async () => {
     if (scheduleType === "later") {
       setShowScheduler(true)
@@ -154,6 +182,20 @@ export function AutomationControls() {
     }
   }
 
+  const handleRunSequential = async () => {
+    for (const automationId of selectedAutomations) {
+      const automation = availableAutomations.find(a => a.id === automationId)
+      if (automation) {
+        try {
+          await runSequentialAutomations.mutateAsync({ automationId, automation })
+        } catch (error) {
+          console.error(`Error running sequential automation ${automation.name}:`, error)
+        }
+      }
+    }
+    clearSelection();
+  }
+
   const selectedAutomationObjects = availableAutomations.filter((automation) =>
     selectedAutomations.includes(automation.id),
   )
@@ -169,6 +211,8 @@ export function AutomationControls() {
       return true
     })
   })
+
+  const isRunning = runAutomations.isPending || runSequentialAutomations.isPending
 
   return (
     <>
@@ -316,23 +360,10 @@ export function AutomationControls() {
                   </div>
                 </div>
 
-                {/* <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-foreground">Schedule</h4>
-                  <Select value={scheduleType} onValueChange={(value: "now" | "later") => setScheduleType(value)}>
-                    <SelectTrigger className="bg-input border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="now">Run Now</SelectItem>
-                      <SelectItem value="later">Schedule for Later</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div> */}
-
                 <div className="flex gap-2 pt-4">
                   <Button
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                    disabled={!hasRequiredParams || getSelectedCount() === 0 || runAutomations.isPending}
+                    disabled={!hasRequiredParams || getSelectedCount() === 0 || isRunning}
                     onClick={handleRunAutomations}
                   >
                     {runAutomations.isPending ? (
@@ -342,14 +373,19 @@ export function AutomationControls() {
                     )}
                     {runAutomations.isPending ? "Submitting..." : (scheduleType === "now" ? "Run Now" : "Schedule")}
                   </Button>
-                  {/* <Button
+                  <Button
                     variant="outline"
-                    size="icon"
-                    className="border-border hover:bg-accent bg-transparent"
-                    disabled={selectedAccounts.length === 0}
+                    className="flex-1 border-border hover:bg-accent"
+                    disabled={!hasRequiredParams || getSelectedCount() === 0 || isRunning}
+                    onClick={handleRunSequential}
                   >
-                    <Settings className="h-4 w-4" />
-                  </Button> */}
+                    {runSequentialAutomations.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RotateCw className="h-4 w-4 mr-2" />
+                    )}
+                    {runSequentialAutomations.isPending ? "Running..." : "Run Sequential"}
+                  </Button>
                 </div>
 
                 {!hasRequiredParams && (

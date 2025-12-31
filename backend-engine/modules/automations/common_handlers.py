@@ -21,7 +21,7 @@ class WrongEmailPageHandler(CommonHandler):
     def handle(self, page: Page = None) -> HandlerAction:
         if self.logger:
             self.logger.warning("WrongEmailPageHandler: Wrong email detected")
-        update_account_state(self.account_id, "wrong_email")
+        update_account_state(self.account_id, "wrong_username")
         return "abort"
 
 class LoginNotPossiblePageHandler(CommonHandler):

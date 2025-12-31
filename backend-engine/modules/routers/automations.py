@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from modules.core.runner import run_automation
 from modules.core.job_manager import job_manager, Job
-from modules.crud.account import get_account_by_id, get_account_ids
+from modules.crud.account import get_account_by_id, get_account_ids, get_accounts_by_ids
 from modules.crud.activity import ActivityManager
 from pydantic import BaseModel
 from typing import List, Optional
@@ -97,26 +97,18 @@ def trigger_automation(request: AutomationRequest):
         skipped_accounts = []
         failed_accounts = []
 
-        # Determine which account IDs to process
-        if request.select_all and request.provider:
-            # Select-all mode: fetch all account IDs for provider using lightweight endpoint
-            all_ids = get_account_ids(provider=request.provider)
+        # Fetch all accounts in a single batch request to the master API
+        accounts = get_accounts_by_ids(
+            select_all=request.select_all,
+            excluded_ids=request.excluded_ids,
+            account_ids=request.account_ids,
+            provider=request.provider
+        )
+
+        for account in accounts:
+            account_id = account.get("id")
             
-            # Exclude specified IDs
-            excluded_set = set(request.excluded_ids or [])
-            account_ids = [id for id in all_ids if id not in excluded_set]
-        else:
-            # Manual selection mode
-            account_ids = request.account_ids or []
-
-        for account_id in account_ids:
-            # Account IDs are UUID strings; force string to ensure compatibility
-            account = get_account_by_id(account_id)
-
-            if not account:
-                failed_accounts.append(
-                    {"account_id": account_id, "reason": "Account not found"}
-                )
+            if not account_id:
                 continue
 
             # Check if account is already busy
@@ -175,3 +167,127 @@ def trigger_automation(request: AutomationRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/run-sequential")
+def run_sequential_automation(request: AutomationRequest):
+    """
+    Run automations sequentially in a simple loop.
+    No queue, no multithreading - just one after another.
+    Handles select_all/excluded_ids logic like /run endpoint.
+    """
+    try:
+        results = []
+        failed_accounts = []
+
+        # Determine which account IDs to process (same logic as /run)
+        if request.select_all and request.provider:
+            all_ids = get_account_ids(provider=request.provider)
+            excluded_set = set(request.excluded_ids or [])
+            account_ids = [id for id in all_ids if id not in excluded_set]
+        else:
+            account_ids = request.account_ids or []
+
+        for account_id in account_ids:
+            account = get_account_by_id(account_id)
+
+            if not account:
+                failed_accounts.append(
+                    {"account_id": account_id, "reason": "Account not found"}
+                )
+                continue
+
+            # Extract password from credentials
+            password = None
+            credentials = account.get("credentials", {})
+            if credentials and "password" in credentials:
+                password = credentials["password"]
+
+            if not password:
+                failed_accounts.append(
+                    {"account_id": account_id, "reason": "Password missing in account credentials"}
+                )
+                continue
+
+            # Record start time
+            executed_at = datetime.utcnow().isoformat()
+
+            try:
+                # Run automation directly (synchronously)
+                result = run_automation(
+                    account_id=account_id,
+                    email=account.get("email"),
+                    password=password,
+                    isp=account.get("provider"),
+                    automation_name=request.automation_id,
+                    proxy_config=account.get("proxy_settings"),
+                    device_type=account.get("type", "desktop"),
+                    **request.parameters
+                )
+
+                completed_at = datetime.utcnow().isoformat()
+
+                # Log success activity
+                ActivityManager.create_activity(
+                    action="run_automation",
+                    status=result.get("status", "success"),
+                    account_id=account_id,
+                    details=result.get("message", ""),
+                    metadata={
+                        "automation_id": request.automation_id,
+                        "device_type": account.get("type", "desktop"),
+                        "status": result.get("status", "success"),
+                        "message": result.get("message", ""),
+                        "mode": "sequential"
+                    },
+                    executed_at=executed_at,
+                    completed_at=completed_at
+                )
+
+                results.append({
+                    "account_id": account_id,
+                    "account_email": account.get("email"),
+                    "status": result.get("status", "success"),
+                    "message": result.get("message", "")
+                })
+
+            except Exception as e:
+                completed_at = datetime.utcnow().isoformat()
+                error_msg = str(e)
+
+                # Log failure activity
+                ActivityManager.create_activity(
+                    action="run_automation",
+                    status="failed",
+                    account_id=account_id,
+                    details=f"Automation '{request.automation_id}' failed: {error_msg}",
+                    metadata={
+                        "automation_id": request.automation_id,
+                        "error": error_msg,
+                        "device_type": account.get("type", "desktop"),
+                        "mode": "sequential"
+                    },
+                    executed_at=executed_at,
+                    completed_at=completed_at
+                )
+
+                results.append({
+                    "account_id": account_id,
+                    "account_email": account.get("email"),
+                    "status": "failed",
+                    "error": error_msg
+                })
+
+        return {
+            "status": "completed",
+            "automation_id": request.automation_id,
+            "parameters": request.parameters,
+            "results": results,
+            "failed_accounts": failed_accounts,
+            "total_processed": len(results),
+            "total_failed": len(failed_accounts)
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

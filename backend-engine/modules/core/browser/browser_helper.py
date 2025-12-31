@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright, BrowserContext, Page
 from core.browser.chrome_profiles_manager import ChromeProfileManager
 import os
+import sys
 import logging
 from typing import Optional, List, Dict
 import psutil
@@ -24,6 +25,35 @@ if (originalQuery) {
   );
 }
 """
+
+def get_chrome_executable() -> Optional[str]:
+    """
+    Find the Chrome executable in this order:
+    1. Bundled Chrome in resources folder (relative to this file or frozen app)
+    2. ProgramData location (C:\\ProgramData\\AutoISP\\chrome-win64\\chrome.exe)
+    3. None (let Playwright use its default)
+    """
+    # Check for bundled Chrome
+    if getattr(sys, 'frozen', False):
+        # Running as packaged app
+        base_path = sys._MEIPASS
+    else:
+        # Running as script - look relative to this file
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.abspath(os.path.join(base_path, "..", "..", ".."))  # Go up to backend-engine
+    
+    bundled_chrome = os.path.join(base_path, "resources", "chrome-win64", "chrome.exe")
+    if os.path.exists(bundled_chrome):
+        return bundled_chrome
+    
+    # Check ProgramData location
+    programdata_chrome = r"C:\ProgramData\AutoISP\chrome-win64\chrome.exe"
+    if os.path.exists(programdata_chrome):
+        return programdata_chrome
+    
+    # Return None to let Playwright use default
+    return None
+
 
 class PlaywrightBrowserFactory:
     """
@@ -53,7 +83,8 @@ class PlaywrightBrowserFactory:
         self.profile_dir = profile_dir
         self.channel = channel
         self.headless = headless
-        self.executable_path = executable_path
+        # Auto-detect Chrome executable if not provided
+        self.executable_path = executable_path or get_chrome_executable()
         self.additional_args = additional_args or []
         self.use_stealth = use_stealth
         self.start_maximized = start_maximized
@@ -73,6 +104,8 @@ class PlaywrightBrowserFactory:
             return
             
         print(f"🚀 Starting browser with {self.user_agent_type} user agent...")
+        if self.executable_path:
+            print(f"📂 Using Chrome: {self.executable_path}")
 
         os.makedirs(self.profile_path, exist_ok=True)
         self._pw = sync_playwright().start()
@@ -114,12 +147,17 @@ class PlaywrightBrowserFactory:
         
         launch_kwargs = dict(
             user_data_dir=self.profile_path,
-            channel=self.channel,
             headless=self.headless,
             args=args,
             ignore_default_args=["--enable-automation"],
             user_agent=self._get_user_agent()
         )
+        
+        # Use custom executable if available, otherwise use channel
+        if self.executable_path:
+            launch_kwargs['executable_path'] = self.executable_path
+        else:
+            launch_kwargs['channel'] = self.channel
         
         # Proxy configuration
         if self.proxy_config:
@@ -238,7 +276,6 @@ class PlaywrightBrowserFactory:
                         page.close()
                     except Exception as e:
                         pass
-                        # logger.warning(f"Error closing page: {e}")
             except Exception as e:
                 self.logger.warning(f"Error accessing pages: {e}")
             
@@ -247,7 +284,6 @@ class PlaywrightBrowserFactory:
                 self.logger.info("Browser context closed")
             except Exception as e:
                 pass
-                # logger.warning(f"Error closing context: {e}")
             self._context = None
         
         # Force stop Playwright
@@ -257,7 +293,6 @@ class PlaywrightBrowserFactory:
                 self.logger.info("Playwright stopped")
             except Exception as e:
                 pass
-                # logger.warning(f"Error stopping Playwright: {e}")
             self._pw = None
         
         self.kill_chrome_for_profile(self.profile_path)
