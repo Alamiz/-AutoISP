@@ -117,6 +117,22 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "gmx_phone_verification": {
+        "description": "GMX Login phone verification page.",
+        "required_sublink": "interception.gmx.net",
+        "checks": [
+            {
+                "name": "Phone text",
+                "css_selector": 'div.mtan-code-input__panel',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Phone number text",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_logged_in_page": {
         "description": "GMX Confirm user page.",
         "required_sublink": "www.gmx.net",

@@ -293,6 +293,22 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "gmx_phone_verification": {
+        "description": "GMX Login phone verification page.",
+        "required_sublink": "interception.gmx.net",
+        "checks": [
+            {
+                "name": "Phone text",
+                "css_selector": 'div.mtan-code-input__panel',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Phone number text",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_inbox_ads_preferences_popup_1": {
         "description": "GMX email ads preferences popup (core).",
         "required_sublink": "gmx.net",

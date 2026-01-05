@@ -126,6 +126,22 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "webde_phone_verification": {
+        "description": "Webde Login phone verification page.",
+        "required_sublink": "interception.web.de",
+        "checks": [
+            {
+                "name": "Phone text",
+                "css_selector": 'div.mtan-code-input__panel',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "Phone number text",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_logged_in_page": {
         "description": "Webde Confirm user page.",
         "required_sublink": "web.de",

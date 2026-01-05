@@ -228,6 +228,11 @@ class JobManager:
         with self._lock:
             event = self._stop_signals.get(job_id)
             return event.is_set() if event else False
+
+    def check_cancellation(self, job_id: str):
+        """Check if job should be cancelled and raise exception if so."""
+        if self.is_stopping(job_id):
+            raise Exception(f"Job {job_id} was cancelled")
     
     def _create_stop_signal(self, job_id: str) -> threading.Event:
         """Create a stop signal for a new job."""

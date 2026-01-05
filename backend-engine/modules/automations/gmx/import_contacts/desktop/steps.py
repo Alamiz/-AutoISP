@@ -39,11 +39,6 @@ class SelectSourceStep(Step):
         try:
             self.logger.info("Selecting Import Source")
             
-            # Randomly choose between file or gmx source as requested
-            # "randomly click either one of this two: div[data-action="select"][data-source="file"], div[data-action="select"][data-source="gmx"]"
-            # However, the user request says: "click input#fileimport-file or input#fileimport-gmx if choosed gmx in the previouse step"
-            # This implies if we choose "gmx", we use input#fileimport-gmx. If "file", input#fileimport-file.
-            
             sources = ["file", "gmx"]
             chosen_source = random.choice(sources)
             self.logger.info(f"Chosen source: {chosen_source}")
@@ -74,9 +69,6 @@ class UploadFileStep(Step):
             self.logger.info(f"Uploading file: {vcf_path}")
             
             chosen_source = getattr(self.automation, "chosen_source", "file")
-            
-            # "click input#fileimport-file or input#fileimport-gmx if choosed gmx in the previouse step and import the file"
-            # Actually we need to set the input file, not just click.
             
             input_selector = 'input#fileimport-gmx' if chosen_source == 'gmx' else 'input#fileimport-file'
             
@@ -130,16 +122,9 @@ class VerifyImportStep(Step):
         try:
             self.logger.info("Verifying Import Completion")
             
-            # "check this: div[class="status hide complete"] > div[class="content box ok"] to verify if completed successfully"
-            # Note: "hide" class usually means hidden. If it's "status hide complete", maybe it becomes visible or class changes?
-            # Or maybe the user meant `div.status.complete` (without hide)?
-            # Assuming the user provided selector is what we should look for, but "hide" is suspicious.
-            # Usually success messages appear.
-            # Let's try to find it. If deep_search=True, we look everywhere.
-            
             success_element = self.automation._find_element_with_humanization(
                 page,
-                selectors=['div.status.complete div.content.box.ok'], # Adjusted slightly to be more robust CSS selector
+                selectors=['div.status.complete div.content.box.ok'],
                 deep_search=True,
                 timeout=10000
             )
