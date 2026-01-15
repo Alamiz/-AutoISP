@@ -28,7 +28,7 @@ def run(account_id, email, password, device_type="desktop", proxy_config=None, j
         email=email, 
         password=password, 
         proxy_config=proxy_config, 
-        user_agent_type=device_type,
+        user_agent_type="desktop",
         vcf_file_path=vcf_file_path,
         job_id=job_id
     )

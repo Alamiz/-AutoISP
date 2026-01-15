@@ -53,6 +53,18 @@ function createWindow() {
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
+
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        if (input.type === 'keyDown') {
+            if (input.key === 'F12') {
+                mainWindow?.webContents.toggleDevTools();
+                event.preventDefault();
+            } else if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+                mainWindow?.webContents.toggleDevTools();
+                event.preventDefault();
+            }
+        }
+    });
 }
 
 function createLoadingWindow() {

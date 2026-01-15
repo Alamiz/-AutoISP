@@ -3,4 +3,4 @@ from playwright.sync_api import Page
 
 @retry_action()
 def navigate_to(page: Page, url: str):
-    page.goto(url)
+    page.goto(url, timeout=90_000)
