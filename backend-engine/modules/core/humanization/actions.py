@@ -80,7 +80,7 @@ class HumanAction(ABC):
         self.human_behavior.wait_before_action()
         element = self._find_element_with_humanization(page, selectors, deep_search=deep_search, timeout=timeout)
 
-        self.human_behavior.click(element, force=force)
+        self.human_behavior.click(page, element, force=force)
 
     def human_select(self, page: Page, selectors: list[str], value: Optional[str] = None, label: Optional[str] = None, deep_search: bool = False, timeout: Optional[int] = None):
         """

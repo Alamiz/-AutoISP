@@ -67,7 +67,7 @@ class GMXAuthentication(HumanAction):
         registry.register("gmx_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
         registry.register("gmx_login_wrong_password", WrongPasswordPageHandler(self.account_id, self.logger))
         registry.register("gmx_login_wrong_username", WrongEmailPageHandler(self.account_id, self.logger))
-        registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger))
+        registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger, self.job_id))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))

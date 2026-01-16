@@ -48,17 +48,43 @@ class HumanBehavior:
         else:
             element.type(text, delay=self._human_typing_delay())
     
-    def click(self, element: Locator, force: bool = False):
-        """Click with human-like mouse movement"""
-        # Small delay before clicking (simulating mouse movement)
-        self._random_delay(*self.mouse_move_duration_range)
-        
-        # Occasionally double-check by hovering first
-        if random.random() > 0.7:  # 30% chance
-            element.hover()
-            self._random_delay(200, 500)
-        
-        element.click(force=force)
+    def click(self, page: Page, element: ElementHandle, force: bool = False):
+        """
+        Perform a human-like mouse movement and click.
+        """
+
+        box = element.bounding_box()
+        if not box:
+            element.click(force=force)
+            return
+
+        # Target point with slight randomness
+        target_x = box["x"] + box["width"] * random.uniform(0.3, 0.7)
+        target_y = box["y"] + box["height"] * random.uniform(0.3, 0.7)
+
+        # Current mouse position (fallback if unknown)
+        start_x = random.randint(0, 100)
+        start_y = random.randint(0, 100)
+
+        steps = random.randint(18, 30)
+
+        for i in range(steps):
+            t = i / steps
+            # Ease-in-out curve
+            eased = t * t * (3 - 2 * t)
+
+            x = start_x + (target_x - start_x) * eased
+            y = start_y + (target_y - start_y) * eased
+
+            page.mouse.move(x, y)
+            time.sleep(random.uniform(0.008, 0.02))
+
+        # Small hesitation before click
+        time.sleep(random.uniform(0.1, 0.25))
+
+        page.mouse.down()
+        time.sleep(random.uniform(0.05, 0.12))
+        page.mouse.up()
     
     def hover(self, element: Locator):
         """Hover over an element with human-like behavior"""

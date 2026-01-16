@@ -94,30 +94,43 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
     if (!file) return alert("Please select a file first!");
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       const text = await file.text();
       const lines = text.split(/\r?\n/).filter(line => line.trim());
       const hasHeader = lines[0].toLowerCase().includes("email,");
       const dataLines = hasHeader ? lines.slice(1) : lines;
 
-      const proxyList = parseProxies(proxies)
-      const totalAccounts = dataLines.length
-      const mobileCount = Math.round(totalAccounts * (mobilePercentage / 100))
+      // --------------------------------------------------
+      // REMOVE DUPLICATED EMAILS (case-insensitive)
+      // --------------------------------------------------
+      const seenEmails = new Set<string>();
+      const uniqueLines = dataLines.filter(line => {
+        const email = line.split(",")[0]?.trim().toLowerCase();
+        if (!email || seenEmails.has(email)) return false;
+        seenEmails.add(email);
+        return true;
+      });
 
-      const accounts = dataLines.map((line, index) => {
-        const [email, password, recovery_email, number] = line.split(",").map(s => s.trim());
+      const proxyList = parseProxies(proxies);
+
+      const totalAccounts = uniqueLines.length;
+      const mobileCount = Math.round(totalAccounts * (mobilePercentage / 100));
+
+      const accounts = uniqueLines.map((line, index) => {
+        const [email, password, recovery_email, number] =
+          line.split(",").map(s => s.trim());
 
         // Assign Proxy (Round Robin)
-        const proxy = proxyList.length > 0 ? proxyList[index % proxyList.length] : undefined
+        const proxy =
+          proxyList.length > 0 ? proxyList[index % proxyList.length] : undefined;
 
         // Assign Device Type
-        // First N accounts get mobile, rest get desktop (simple distribution)
-        const type = index < mobileCount ? "mobile" : "desktop"
+        const type = index < mobileCount ? "mobile" : "desktop";
 
         return {
           email,
-          provider: selectedProvider?.name === "Web.de" ? "webde" : "gmx", // Use global provider
+          provider: selectedProvider?.name === "Web.de" ? "webde" : "gmx",
           type,
           credentials: {
             password,
@@ -130,21 +143,25 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
 
       const response = await apiPost("/api/accounts/bulk-upload/", accounts);
       console.log("Upload response:", response);
-      toast.success(`Successfully uploaded ${accounts.length} accounts.`)
 
-      onOpenChange(false)
-      setFile(null)
-      setStep(1)
-      setProxies("")
-      setMobilePercentage(0)
-      onAccountSaved()
+      toast.success(
+        `Successfully uploaded ${accounts.length} unique accounts.`
+      );
+
+      onOpenChange(false);
+      setFile(null);
+      setStep(1);
+      setProxies("");
+      setMobilePercentage(0);
+      onAccountSaved();
     } catch (error) {
-      console.error("Error uploading file:", error)
-      toast.error("Error uploading file. Please check the format and try again.")
+      console.error("Error uploading file:", error);
+      toast.error("Error uploading file. Please check the format and try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
 
   const handleCancel = () => {
     setFile(null)

@@ -10,7 +10,14 @@ class OpenAddressBookStep(Step):
             self.logger.info("Navigating to Address Book")
             self.automation.human_click(
                 page,
-                selectors=['div#actions-menu-primary a[data-item-name="addressbook"]'],
+                selectors=['nav#top-nav button[aria-controls="menu-services"]'],
+                deep_search=False
+            )
+            page.wait_for_timeout(1000)
+
+            self.automation.human_click(
+                page,
+                selectors=['button[data-item-name="addressbook"]'],
                 deep_search=False
             )
             page.wait_for_timeout(3000)
