@@ -48,10 +48,16 @@ class HumanBehavior:
         else:
             element.type(text, delay=self._human_typing_delay())
     
-    def click(self, page: Page, element: ElementHandle, force: bool = False):
+    def click(self, element: ElementHandle, page: Optional[Page] = None, force: bool = False):
         """
         Perform a human-like mouse movement and click.
+        If page is not provided, fall back to element.click().
         """
+
+        # If no page, we cannot move the mouse → fallback
+        if page is None:
+            element.click(force=force)
+            return
 
         box = element.bounding_box()
         if not box:
@@ -70,7 +76,6 @@ class HumanBehavior:
 
         for i in range(steps):
             t = i / steps
-            # Ease-in-out curve
             eased = t * t * (3 - 2 * t)
 
             x = start_x + (target_x - start_x) * eased
@@ -79,7 +84,6 @@ class HumanBehavior:
             page.mouse.move(x, y)
             time.sleep(random.uniform(0.008, 0.02))
 
-        # Small hesitation before click
         time.sleep(random.uniform(0.1, 0.25))
 
         page.mouse.down()
