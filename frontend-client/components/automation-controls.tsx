@@ -37,7 +37,7 @@ export function AutomationControls() {
   const [automationParams, setAutomationParams] = useState<Record<string, Record<string, any>>>({})
   const [activeTab, setActiveTab] = useState("select")
 
-  const { selectedAccounts, clearSelection, getSelectedCount, isAllSelected, excludedIds } = useAccounts()
+  const { selectedAccounts, clearSelection, getSelectedCount, isAllSelected, excludedIds, statusFilter } = useAccounts()
   const queryClient = useQueryClient()
   const { busyAccountIds } = useJobs()
   const availableAccounts = selectedAccounts.filter(acc => !busyAccountIds.has(acc.id))
@@ -115,7 +115,12 @@ export function AutomationControls() {
         automation_id: automation.id,
         parameters: automationParams[automationId] || {},
         ...(isAllSelected
-          ? { select_all: true, provider: globalProvider?.slug, excluded_ids: Array.from(excludedIds) }
+          ? {
+            select_all: true,
+            provider: globalProvider?.slug,
+            excluded_ids: Array.from(excludedIds),
+            status: statusFilter && statusFilter !== "all" ? statusFilter : undefined
+          }
           : { account_ids: availableAccounts.map(acc => acc.id) }),
       },
         "local"
@@ -142,7 +147,12 @@ export function AutomationControls() {
         automation_id: automation.id,
         parameters: automationParams[automationId] || {},
         ...(isAllSelected
-          ? { select_all: true, provider: globalProvider?.slug, excluded_ids: Array.from(excludedIds) }
+          ? {
+            select_all: true,
+            provider: globalProvider?.slug,
+            excluded_ids: Array.from(excludedIds),
+            status: statusFilter && statusFilter !== "all" ? statusFilter : undefined
+          }
           : { account_ids: availableAccounts.map(acc => acc.id) }),
       },
         "local"

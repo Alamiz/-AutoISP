@@ -30,7 +30,8 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
         },
-        frame: false
+        frame: false,
+        icon: path.join(__dirname, '../../public/logo.png')
     });
 
     if (isDev) {

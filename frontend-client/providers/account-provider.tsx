@@ -21,6 +21,10 @@ type AccountContextType = {
   // Helpers
   isAccountSelected: (accountId: string) => boolean
   getSelectedCount: () => number
+
+  // Filtering
+  statusFilter: string | null
+  setStatusFilter: (status: string | null) => void
 }
 
 export const AccountContext = createContext<AccountContextType | null>(null)
@@ -30,6 +34,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [isAllSelected, setIsAllSelected] = useState(false)
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
   const [totalCount, setTotalCount] = useState(0)
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
 
   // Legacy setter for backward compatibility
   const setSelectedAccounts = useCallback((accounts: Account[]) => {
@@ -103,12 +108,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     isAllSelected,
     excludedIds,
     totalCount,
+    statusFilter,
     setSelectedAccounts,
     selectAccount,
     deselectAccount,
     selectAllAccounts,
     clearSelection,
     setTotalCount,
+    setStatusFilter,
     isAccountSelected,
     getSelectedCount,
   }), [
@@ -123,6 +130,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     clearSelection,
     isAccountSelected,
     getSelectedCount,
+    statusFilter,
   ])
 
   return (

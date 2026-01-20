@@ -6,7 +6,7 @@ import { useState, useRef } from "react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Upload, Download, FileText, Settings, ArrowRight, ArrowLeft } from "lucide-react"
-import { apiPost } from "@/lib/api"
+import { apiPost, ApiError } from "@/lib/api"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
@@ -156,7 +156,11 @@ export function BulkUploader({ open, onOpenChange, onAccountSaved }: BulkUploade
       onAccountSaved();
     } catch (error) {
       console.error("Error uploading file:", error);
-      toast.error("Error uploading file. Please check the format and try again.");
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error("Error uploading file. Please check the format and try again.");
+      }
     } finally {
       setLoading(false);
     }

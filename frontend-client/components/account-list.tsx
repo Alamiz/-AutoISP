@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw, Smartphone, Monitor, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, Check, Square } from "lucide-react"
+import { Plus, Upload, MoreHorizontal, History, Edit, Trash2, CircleSlashIcon, CheckCircle, Trash, Database, RotateCcw, Smartphone, Monitor, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, Check, Square, Filter } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AccountDrawer } from "./account-drawer"
 import { BulkUploader } from "./bulk-uploader"
 import { AccountHistoryModal } from "./account-history-modal"
@@ -48,7 +49,9 @@ export function AccountList() {
     isAccountSelected,
     getSelectedCount,
     setTotalCount,
-    excludedIds
+    excludedIds,
+    statusFilter,
+    setStatusFilter
   } = useAccounts();
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
@@ -85,10 +88,14 @@ export function AccountList() {
   }, [selectedProvider, clearSelection])
 
   const { data: paginatedData, isLoading } = useQuery<PaginatedResponse<Account>>({
-    queryKey: ["accounts", page, selectedProvider?.slug],
+    queryKey: ["accounts", page, selectedProvider?.slug, statusFilter],
     queryFn: async () => {
       if (!selectedProvider) return { count: 0, next: null, previous: null, results: [] };
-      return await apiGet<PaginatedResponse<Account>>(`/api/accounts?page=${page}&provider=${selectedProvider.slug}`);
+      let url = `/api/accounts?page=${page}&provider=${selectedProvider.slug}`;
+      if (statusFilter && statusFilter !== "all") {
+        url += `&status=${statusFilter}`;
+      }
+      return await apiGet<PaginatedResponse<Account>>(url);
     },
     enabled: !!selectedProvider,
     placeholderData: (previousData) => previousData, // Keep previous data while fetching new page
@@ -181,7 +188,7 @@ export function AccountList() {
   }
 
   const bulkDeleteAccounts = useMutation({
-    mutationFn: async (payload: { account_ids?: string[], select_all?: boolean, provider?: string, excluded_ids?: string[] }) => {
+    mutationFn: async (payload: { account_ids?: string[], select_all?: boolean, provider?: string, excluded_ids?: string[], status?: string }) => {
       await apiDelete('/api/accounts/bulk-delete/', payload)
       return payload
     },
@@ -237,7 +244,8 @@ export function AccountList() {
       bulkDeleteAccounts.mutate({
         select_all: true,
         provider: selectedProvider?.slug,
-        excluded_ids: Array.from(excludedIds)
+        excluded_ids: Array.from(excludedIds),
+        status: statusFilter && statusFilter !== "all" ? statusFilter : undefined
       });
     } else if (selectedAccounts.length > 0) {
       const selectedAccountIds = selectedAccounts.map(acc => acc.id);
@@ -420,6 +428,26 @@ export function AccountList() {
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
+              <Select value={statusFilter || "all"} onValueChange={(val) => setStatusFilter(val === "all" ? null : val)}>
+                <SelectTrigger className="w-[150px] h-8 text-xs border-border bg-card">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                    <SelectValue placeholder="Filter Status" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="disabled">Disabled</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                  <SelectItem value="phone_verification">Phone Verification</SelectItem>
+                  <SelectItem value="captcha">Captcha</SelectItem>
+                  <SelectItem value="wrong_password">Wrong Password</SelectItem>
+                  <SelectItem value="wrong_username">Wrong Username</SelectItem>
+                </SelectContent>
+              </Select>
               {/* Stop All Button */}
               <TooltipProvider>
                 <Tooltip>

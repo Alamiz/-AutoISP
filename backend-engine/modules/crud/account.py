@@ -124,7 +124,8 @@ def get_accounts_by_ids(
     select_all: bool = False,
     excluded_ids: list = None,
     account_ids: list = None,
-    provider: str = None
+    provider: str = None,
+    status: str = None
 ):
     """
     Fetches accounts from the external API using the /by_ids endpoint.
@@ -135,6 +136,7 @@ def get_accounts_by_ids(
         excluded_ids: List of account IDs to exclude when select_all is True
         account_ids: List of specific account IDs to fetch (used when select_all is False)
         provider: Provider filter (required when select_all is True)
+        status: Status filter (optional, used when select_all is True)
     
     Returns:
         List of account dictionaries
@@ -146,7 +148,8 @@ def get_accounts_by_ids(
                 "select_all": select_all,
                 "excluded_ids": excluded_ids or [],
                 "account_ids": account_ids or [],
-                "provider": provider
+                "provider": provider,
+                "status": status
             }
             response = client.post(url, json=payload, headers=_get_headers())
             response.raise_for_status()

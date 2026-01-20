@@ -18,6 +18,7 @@ class AutomationRequest(BaseModel):
     select_all: Optional[bool] = False
     provider: Optional[str] = None
     excluded_ids: Optional[List[str]] = []
+    status: Optional[str] = None
 
 
 def execute_job(job: Job):
@@ -124,7 +125,8 @@ def trigger_automation(request: AutomationRequest):
             select_all=request.select_all,
             excluded_ids=request.excluded_ids,
             account_ids=request.account_ids,
-            provider=request.provider
+            provider=request.provider,
+            status=request.status
         )
 
         for account in accounts:
@@ -204,9 +206,16 @@ def run_sequential_automation(request: AutomationRequest):
 
         # Determine which account IDs to process (same logic as /run)
         if request.select_all and request.provider:
-            all_ids = get_account_ids(provider=request.provider)
-            excluded_set = set(request.excluded_ids or [])
-            account_ids = [id for id in all_ids if id not in excluded_set]
+            # We need to fetch the accounts first if status is involved, or use get_accounts_by_ids directly
+            # Since get_account_ids doesn't support status, we should use get_accounts_by_ids here too
+            # to ensure consistent filtering.
+            accounts = get_accounts_by_ids(
+                select_all=True,
+                excluded_ids=request.excluded_ids,
+                provider=request.provider,
+                status=request.status
+            )
+            account_ids = [acc['id'] for acc in accounts]
         else:
             account_ids = request.account_ids or []
 
