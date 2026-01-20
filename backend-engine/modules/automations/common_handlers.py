@@ -38,7 +38,8 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
     """Handle login captcha with auto-solve + fallback to user"""
 
     CAPTCHA_SELECTOR = [
-        'div[data-testid="captcha-view"] div.cf-checkbox'
+        'div[data-testid="captcha-view"] div.cf-checkbox',
+        'div[data-testid="captcha-container"] div.cf-checkbox'
     ]
 
     PASSWORD_SELECTOR = "input#password"

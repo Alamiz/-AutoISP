@@ -144,17 +144,27 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "require_english": False,
                 "description": "Login iframe",
-                "weight": 2.0,
+                "weight": 3.0,
                 "should_exist": True
             },
             {
-                "name": "User avatar",
+                "name": "User avatar 1",
                 "css_selector": 'account-avatar-homepage[role="button"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,
                 "description": "",
-                "weight": 2.0,
+                "weight": 1.0,
+                "should_exist": True
+            },
+            {
+                "name": "User avatar 2",
+                "css_selector": 'appa-account-avatar div.appa-user-icon',
+                "contains_text": None,
+                "min_count": 1,
+                "require_english": False,
+                "description": "",
+                "weight": 1.0,
                 "should_exist": True
             },
             {
