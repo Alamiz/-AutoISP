@@ -11,8 +11,10 @@ class StateHandler:
     Base class for handling unexpected page states.
     Subclass this to implement specific page handlers.
     """
-    def __init__(self, logger=None):
+    def __init__(self, automation=None, logger=None):
+        self.automation = automation
         self.logger = logger
+        self.account = automation.account if automation else None
     
     def handle(self, page: Page) -> HandlerAction:
         """

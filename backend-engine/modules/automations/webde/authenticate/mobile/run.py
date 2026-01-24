@@ -36,22 +36,19 @@ class WebDEAuthentication(HumanAction):
     GOAL_STATES = {"webde_folder_list_page"}
     MAX_FLOW_ITERATIONS = 15
     
-    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="mobile", job_id=None):
+    def __init__(self, account, user_agent_type="mobile", job_id=None):
         super().__init__()
-        self.account_id = account_id
-        self.email = email
-        self.password = password
-        self.proxy_config = proxy_config
+        self.account = account
         self.user_agent_type = user_agent_type
         self.signatures = PAGE_SIGNATURES
         self.job_id = job_id
         
         self.logger = logging.getLogger("autoisp")
-        self.profile = self.email.split('@')[0]
+        self.profile = self.account.email.split('@')[0]
         
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
-            proxy_config=proxy_config,
+            account=self.account,
             user_agent_type=user_agent_type,
             job_id=job_id
         )
@@ -65,16 +62,16 @@ class WebDEAuthentication(HumanAction):
         )
         
         registry.register("webde_register_page", RegisterPageHandler(self, self.logger))
-        registry.register("webde_login_page", LoginPageHandler(self, self.email, self.password, self.logger))
-        registry.register("webde_login_not_possible", LoginNotPossiblePageHandler(self.account_id, self.logger))
-        registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self.account_id, self.logger))
-        registry.register("webde_login_wrong_username", WrongEmailPageHandler(self.account_id, self.logger))
-        registry.register("webde_login_captcha_page", LoginCaptchaHandler(self.account_id, self.logger, self.job_id))
+        registry.register("webde_login_page", LoginPageHandler(self, self.logger))
+        registry.register("webde_login_not_possible", LoginNotPossiblePageHandler(self, self.logger))
+        registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
+        registry.register("webde_login_wrong_username", WrongEmailPageHandler(self, self.logger))
+        registry.register("webde_login_captcha_page", LoginCaptchaHandler(self, self.logger, self.job_id))
         registry.register("webde_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("webde_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
         registry.register("webde_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
-        registry.register("webde_security_suspension", SecuritySuspensionHandler(self.account_id, self.logger))
-        registry.register("webde_phone_verification", PhoneVerificationHandler(self.account_id, self.logger))
+        registry.register("webde_security_suspension", SecuritySuspensionHandler(self, self.logger))
+        registry.register("webde_phone_verification", PhoneVerificationHandler(self, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         
         return registry
@@ -85,19 +82,19 @@ class WebDEAuthentication(HumanAction):
             page_id = identify_page(page, page.url, self.signatures)
             is_goal = page_id in self.GOAL_STATES
             if is_goal:
-                self.logger.info(f"Goal state reached: {page_id}")
+                self.logger.info(f"Goal state reached: {page_id}", extra={"account_id": self.account.id})
             return is_goal
         except Exception as e:
-            self.logger.warning(f"Error checking goal: {e}")
+            self.logger.warning(f"Error checking goal: {e}", extra={"account_id": self.account.id})
             return False
 
     def execute(self) -> dict:
         """Runs authentication flow for web.de Mobile"""
-        self.logger.info(f"Starting mobile authentication for {self.email}")
+        self.logger.info("Starting mobile authentication", extra={"account_id": self.account.id})
         
-        if self.proxy_config:
-            proxy_info = f"{self.proxy_config['protocol']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
-            self.logger.info(f"Using proxy: {proxy_info}")
+        if self.account.proxy_settings:
+            proxy_info = f"{self.account.proxy_settings['protocol']}://{self.account.proxy_settings['host']}:{self.account.proxy_settings['port']}"
+            self.logger.info(f"Using proxy: {proxy_info}", extra={"account_id": self.account.id})
         
         try:
             self.browser.start()
@@ -107,22 +104,22 @@ class WebDEAuthentication(HumanAction):
             page = self.browser.new_page()
             self.authenticate(page)
             
-            self.logger.info(f"Authentication successful for {self.email}")
+            self.logger.info("Authentication successful", extra={"account_id": self.account.id})
             return {"status": "success", "message": "Authentication completed successfully"}
         
         except JobCancelledException:
             raise
         except PlaywrightError as e:
             if "Target closed" in str(e):
-                self.logger.warning(f"Browser closed manually for {self.email}")
+                self.logger.warning("Browser closed manually", extra={"account_id": self.account.id})
                 return {"status": "failed", "message": "Browser closed manually"}
-            self.logger.error(f"Playwright error for {self.email}: {e}")
+            self.logger.error(f"Playwright error: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         except RequiredActionFailed as e:
-            self.logger.error(f"Authentication failed for {self.email}: {e}")
+            self.logger.error(f"Authentication failed: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         except Exception as e:
-            self.logger.error(f"Unexpected error for {self.email}: {e}")
+            self.logger.error(f"Unexpected error: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         finally:
             if self.job_id:
@@ -140,6 +137,7 @@ class WebDEAuthentication(HumanAction):
         flow = StatefulFlow(
             state_registry=state_registry,
             goal_checker=self._is_goal_reached,
+            account=self.account,
             max_steps=self.MAX_FLOW_ITERATIONS,
             logger=self.logger,
             job_id=self.job_id
@@ -151,12 +149,12 @@ class WebDEAuthentication(HumanAction):
             raise RequiredActionFailed(f"Failed to reach folder list. Last error: {result.message}")
         
         # Update account state to active on success
-        update_account_state(self.account_id, "active")
+        update_account_state(self.account.id, "active")
 
-        self.logger.info("Authentication completed via StatefulFlow")
+        self.logger.info("Authentication completed via StatefulFlow", extra={"account_id": self.account.id})
 
 
-def main(account_id, email, password, proxy_config=None, device_type="mobile"):
+def main(account, device_type="mobile"):
     """Entry point for web.de mobile authentication"""
-    auth = WebDEAuthentication(account_id, email, password, proxy_config, device_type)
+    auth = WebDEAuthentication(account, device_type)
     return auth.execute()

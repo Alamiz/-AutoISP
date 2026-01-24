@@ -1,22 +1,14 @@
-# automations/gmx/authenticate/desktop/handlers.py
 """
 State handlers for GMX Authentication using StatefulFlow.
 Each handler manages a specific page state during authentication.
 """
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
-from core.humanization.actions import HumanAction
 from core.utils.element_finder import deep_find_elements
 from core.utils.browser_utils import navigate_to
 
 class LoginPageHandler(StateHandler):
     """Handle GMX login page - enter credentials"""
-    
-    def __init__(self, human_action: HumanAction, email: str, password: str, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-        self.email = email
-        self.password = password
     
     def handle(self, page: Page) -> HandlerAction:
         try:
@@ -26,36 +18,36 @@ class LoginPageHandler(StateHandler):
             password_field_visible = any(el.is_visible() for el in password_elements)
 
             if password_field_visible:
-                self.logger.info("LoginPageHandler: Password field visible, skipping email entry")
+                self.logger.info("LoginPageHandler: Password field visible, skipping email entry", extra={"account_id": self.account.id})
                 
-                self.human_action.human_fill(
+                self.automation.human_fill(
                     page,
                     selectors=['input#password'],
-                    text=self.password,
+                    text=self.account.password,
                     deep_search=True
                 )
                 
-                self.human_action.human_click(
+                self.automation.human_click(
                     page,
                     selectors=['button[type="submit"][data-testid="button-submit"]'],
                     deep_search=True
                 )
                 
-                self.logger.info("LoginPageHandler: Credentials submitted (password only)")
+                self.logger.info("LoginPageHandler: Credentials submitted (password only)", extra={"account_id": self.account.id})
                 return "continue"
 
-            self.logger.info("LoginPageHandler: Entering credentials")
+            self.logger.info("LoginPageHandler: Entering credentials", extra={"account_id": self.account.id})
             
             # Fill email
-            self.human_action.human_fill(
+            self.automation.human_fill(
                 page,
                 selectors=['input#username'],
-                text=self.email,
+                text=self.account.email,
                 deep_search=True
             )
             
             # Click continue
-            self.human_action.human_click(
+            self.automation.human_click(
                 page,
                 selectors=['button[type="submit"][data-testid="button-continue"]'],
                 deep_search=True
@@ -67,40 +59,36 @@ class LoginPageHandler(StateHandler):
 
             
             # Fill password
-            self.human_action.human_fill(
+            self.automation.human_fill(
                 page,
                 selectors=['input#password'],
-                text=self.password,
+                text=self.account.password,
                 deep_search=True
             )
             
             # Click submit
-            self.human_action.human_click(
+            self.automation.human_click(
                 page,
                 selectors=['button[type="submit"][data-testid="button-submit"]'],
                 deep_search=True
             )
             
-            self.logger.info("LoginPageHandler: Credentials submitted")
+            self.logger.info("LoginPageHandler: Credentials submitted", extra={"account_id": self.account.id})
             
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"LoginPageHandler: Failed - {e}")
+            self.logger.error(f"LoginPageHandler: Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 class LoggedInPageHandler(StateHandler):
     """Handle already authenticated page - click continue"""
     
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("LoggedInPageHandler: Clicking continue")
+            self.logger.info("LoggedInPageHandler: Clicking continue", extra={"account_id": self.account.id})
             
-            self.human_action.human_click(
+            self.automation.human_click(
                 page,
                 selectors=["button[data-component-path='openInbox.continue-button']"],
                 deep_search=True
@@ -110,21 +98,17 @@ class LoggedInPageHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"LoggedInPageHandler: Failed - {e}")
+            self.logger.error(f"LoggedInPageHandler: Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 class AdsPreferencesPopup1Handler(StateHandler):
     """Handle ads preferences popup type 1"""
     
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("AdsPreferencesPopup1Handler: Accepting")
+            self.logger.info("AdsPreferencesPopup1Handler: Accepting", extra={"account_id": self.account.id})
             
-            self.human_action.human_click(
+            self.automation.human_click(
                 page,
                 selectors=["button#save-all-pur"],
                 deep_search=True
@@ -134,21 +118,17 @@ class AdsPreferencesPopup1Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 class AdsPreferencesPopup2Handler(StateHandler):
     """Handle ads preferences popup type 2"""
     
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("AdsPreferencesPopup2Handler: Denying")
+            self.logger.info("AdsPreferencesPopup2Handler: Denying", extra={"account_id": self.account.id})
             
-            self.human_action.human_click(
+            self.automation.human_click(
                 page,
                 selectors=["button#deny"],
                 deep_search=True
@@ -158,21 +138,17 @@ class AdsPreferencesPopup2Handler(StateHandler):
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}")
+            self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 class SmartFeaturesPopupHandler(StateHandler):
     """Handle smart features popup"""
     
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("SmartFeaturesPopupHandler: Accepting")
+            self.logger.info("SmartFeaturesPopupHandler: Accepting", extra={"account_id": self.account.id})
             
-            self.human_action.human_click(
+            self.automation.human_click(
                 page,
                 selectors=['button[data-component-path="acceptall-button"]'],
                 deep_search=True
@@ -182,24 +158,20 @@ class SmartFeaturesPopupHandler(StateHandler):
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}")
+            self.logger.error(f"SmartFeaturesPopupHandler: Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to GMX"""
     
-    def __init__(self, human_action: HumanAction, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.warning("UnknownPageHandler: Redirecting to GMX")
+            self.logger.warning("UnknownPageHandler: Redirecting to GMX", extra={"account_id": self.account.id})
             
             navigate_to(page, "https://www.gmx.net/")
-            self.human_action.human_behavior.read_delay()
+            self.automation.human_behavior.read_delay()
             return "retry"
             
         except Exception as e:
-            self.logger.error(f"UnknownPageHandler: Failed - {e}")
+            self.logger.error(f"UnknownPageHandler: Failed - {e}", extra={"account_id": self.account.id})
             return "retry"

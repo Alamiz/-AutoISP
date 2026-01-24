@@ -10,27 +10,26 @@ class OpenProfile(HumanAction):
     Simple automation to open the browser with the user's profile.
     """
     
-    def __init__(self, email, password, proxy_config=None, user_agent_type="desktop", duration=10, job_id=None):
+    def __init__(self, account, user_agent_type="desktop", duration=10, job_id=None):
         super().__init__()
         self.duration = duration
-        self.email = email
-        self.password = password
-        self.proxy_config = proxy_config
+        self.account = account
         self.user_agent_type = user_agent_type
         self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
-        self.profile = self.email.split('@')[0]
+        self.profile = self.account.email.split('@')[0]
         
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
-            proxy_config=proxy_config,
-            user_agent_type=user_agent_type
+            account=self.account,
+            user_agent_type=user_agent_type,
+            job_id=job_id
         )
 
     def execute(self):
         from modules.core.job_manager import job_manager
         
-        self.logger.info(f"Opening profile for {self.email}")
+        self.logger.info("Opening profile", extra={"account_id": self.account.id})
         
         try:
             self.browser.start()
@@ -40,7 +39,7 @@ class OpenProfile(HumanAction):
             
             navigate_to(page, "https://web.de/")
             
-            self.logger.info("Profile opened. Waiting for manual interaction...")
+            self.logger.info("Profile opened. Waiting for manual interaction...", extra={"account_id": self.account.id})
             
             # Keep open for duration minutes
             page.wait_for_timeout(int(self.duration) * 60 * 1000) 
@@ -48,7 +47,7 @@ class OpenProfile(HumanAction):
             return {"status": "success", "message": "Profile opened"}
         
         except Exception as e:
-            self.logger.error(f"Error opening profile: {e}")
+            self.logger.error("Error opening profile", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         finally:
             if self.job_id:

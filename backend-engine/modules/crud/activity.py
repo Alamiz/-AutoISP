@@ -50,8 +50,8 @@ class ActivityManager:
                 response.raise_for_status()
                 return response.json()
         except httpx.RequestError as exc:
-            logger.error(f"An error occurred while logging activity: {exc}")
+            logger.error(f"An error occurred while logging activity: {exc}", extra={"is_global": True})
             # We don't raise here to avoid failing the main process just because logging failed
             # But maybe we should? For now, just log the error.
         except httpx.HTTPStatusError as exc:
-            logger.error(f"External activity service returned error: {exc.response.status_code} - {exc.response.text}")
+            logger.error(f"External activity service returned error: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})

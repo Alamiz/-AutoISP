@@ -19,25 +19,23 @@ class ReportNotSpam(HumanAction):
     web.de Mobile Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="mobile", search_text=None, max_flow_retries=3, start_date=None, end_date=None, job_id=None):
+    def __init__(self, account, user_agent_type="mobile", search_text=None, max_flow_retries=3, start_date=None, end_date=None, job_id=None):
         super().__init__()
-        self.account_id = account_id
-        self.email = email
-        self.password = password
-        self.proxy_config = proxy_config
+        self.account = account
         self.user_agent_type = user_agent_type
         self.search_text = search_text
         self.max_flow_retries = max_flow_retries
         self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
-        self.profile = self.email.split('@')[0]
+        self.profile = self.account.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
         self.reported_email_ids = []
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
-            proxy_config=proxy_config,
-            user_agent_type=user_agent_type
+            account=self.account,
+            user_agent_type=user_agent_type,
+            job_id=job_id
         )
 
         # Parse dates
@@ -45,7 +43,7 @@ class ReportNotSpam(HumanAction):
             try:
                 self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             except ValueError:
-                self.logger.error(f"Invalid start_date format: {start_date}")
+                self.logger.error(f"Invalid start_date format: {start_date}", extra={"account_id": self.account.id})
                 self.start_date = datetime(1970, 1, 1).date()
         else:
             self.start_date = datetime(1970, 1, 1).date()
@@ -54,7 +52,7 @@ class ReportNotSpam(HumanAction):
             try:
                 self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
             except ValueError:
-                self.logger.error(f"Invalid end_date format: {end_date}")
+                self.logger.error(f"Invalid end_date format: {end_date}", extra={"account_id": self.account.id})
                 self.end_date = datetime.now().date()
         else:
             self.end_date = datetime.now().date()
@@ -81,7 +79,7 @@ class ReportNotSpam(HumanAction):
                 OpenReportedEmailsStep(self, self.logger),
             ]
 
-            flow = SequentialFlow(steps, state_registry=state_registry, logger=self.logger)
+            flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
             result = flow.run(page)
             
             if result.status == StepStatus.FAILURE:
@@ -94,11 +92,11 @@ class ReportNotSpam(HumanAction):
             }
 
         except Exception as e:
-            self.logger.error(f"Exception in flow execution: {e}", exc_info=True)
+            self.logger.error(f"Exception in flow execution: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e), "retry_recommended": True}
 
     def execute(self):
-        self.logger.info(f"Starting Report Not Spam (Mobile) for {self.email}")
+        self.logger.info(f"Starting Report Not Spam (Mobile)", extra={"account_id": self.account.id})
         
         flow_attempt = 0
         last_result = None
@@ -112,34 +110,31 @@ class ReportNotSpam(HumanAction):
 
             # Authenticate first
             webde_auth = WebDEAuthentication(
-                self.account_id,
-                self.email, 
-                self.password, 
-                self.proxy_config,
-                self.user_agent_type,
-                self.job_id
+                account=self.account,
+                user_agent_type=self.user_agent_type,
+                job_id=self.job_id
             )
 
             try:
                 webde_auth.authenticate(page)
             except Exception as e:
-                self.logger.error(f"Authentication failed: {e}")
+                self.logger.error(f"Authentication failed: {e}", extra={"account_id": self.account.id})
                 return {"status": "failed", "message": "Authentication failed"}
             
-            self.logger.info("Authentication successful")
+            self.logger.info("Authentication successful", extra={"account_id": self.account.id})
 
             # Flow-level retry loop
             while flow_attempt < self.max_flow_retries:
                 flow_attempt += 1
                 
-                self.logger.info(f"FLOW ATTEMPT {flow_attempt}/{self.max_flow_retries}")
+                self.logger.info(f"FLOW ATTEMPT {flow_attempt}/{self.max_flow_retries}", extra={"account_id": self.account.id})
                 self.reported_email_ids = []
                 
                 result = self._execute_flow(page)
                 last_result = result
                 
                 if result["status"] == "success":
-                    self.logger.info(f"Flow completed successfully on attempt {flow_attempt}")
+                    self.logger.info(f"Flow completed successfully on attempt {flow_attempt}", extra={"account_id": self.account.id})
                     return result
                 
                 if not result.get("retry_recommended", False):
@@ -147,16 +142,16 @@ class ReportNotSpam(HumanAction):
                 
                 if flow_attempt < self.max_flow_retries:
                     wait_time = 5000 * flow_attempt
-                    self.logger.info(f"Waiting {wait_time/1000}s before retry...")
+                    self.logger.info(f"Waiting {wait_time/1000}s before retry...", extra={"account_id": self.account.id})
                     page.wait_for_timeout(wait_time)
                     
                     try:
                         navigate_to(page, "https://lightmailer-bs.web.de/")
                         page.wait_for_load_state("domcontentloaded")
                     except Exception as e:
-                        self.logger.warning(f"Failed to reset to main page: {e}")
+                        self.logger.warning(f"Failed to reset to main page: {e}", extra={"account_id": self.account.id})
             
-            self.logger.error(f"Flow failed after {self.max_flow_retries} attempts")
+            self.logger.error(f"Flow failed after {self.max_flow_retries} attempts", extra={"account_id": self.account.id})
             return {
                 "status": "failed",
                 "message": f"Flow failed after {self.max_flow_retries} attempts",
@@ -164,7 +159,7 @@ class ReportNotSpam(HumanAction):
             }
 
         except Exception as e:
-            self.logger.error(f"Critical error in automation: {e}", exc_info=True)
+            self.logger.error(f"Critical error in automation: {e}", extra={"account_id": self.account.id}, exc_info=True)
             return {"status": "failed", "message": f"Critical error: {str(e)}"}
         finally:
             if self.job_id:

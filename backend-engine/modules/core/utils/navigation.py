@@ -5,11 +5,12 @@ import time
 import logging
 from playwright.sync_api import Page
 from core.utils.browser_utils import navigate_to
-
+from core.models import Account
 
 def navigate_with_retry(
     page: Page,
     url: str,
+    account: Account,
     max_retries: int = 3,
     retry_delay: float = 3.0,
     timeout: int = 30000,
@@ -37,7 +38,7 @@ def navigate_with_retry(
     for attempt in range(1, max_retries + 1):
         try:
             if logger:
-                logger.info(f"Navigating to {url} (attempt {attempt}/{max_retries})")
+                logger.info(f"Navigating to {url} (attempt {attempt}/{max_retries})", extra={"account_id": account.id})
             
             navigate_to(page, url)
             return True
@@ -60,21 +61,21 @@ def navigate_with_retry(
             ])
             
             if logger:
-                logger.warning(f"Navigation failed (attempt {attempt}/{max_retries}): {error_msg}")
+                logger.warning(f"Navigation failed (attempt {attempt}/{max_retries}): {error_msg}", extra={"account_id": account.id})
             
             if attempt < max_retries:
                 if is_retryable:
                     if logger:
-                        logger.info(f"Retryable error detected. Waiting {retry_delay}s before retry...")
+                        logger.info(f"Retryable error detected. Waiting {retry_delay}s before retry...", extra={"account_id": account.id})
                     time.sleep(retry_delay)
                 else:
                     # Non-retryable error, fail immediately
                     if logger:
-                        logger.error(f"Non-retryable error: {error_msg}")
+                        logger.error(f"Non-retryable error: {error_msg}", extra={"account_id": account.id})
                     raise
             else:
                 if logger:
-                    logger.error(f"Max retries ({max_retries}) exceeded. Last error: {error_msg}")
+                    logger.error(f"Max retries ({max_retries}) exceeded. Last error: {error_msg}", extra={"account_id": account.id})
                 raise
     
     # Should not reach here, but just in case

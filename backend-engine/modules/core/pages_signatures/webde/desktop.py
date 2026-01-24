@@ -158,7 +158,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "User avatar",
-                "css_selector": 'account-avatar-homepage[role="button"]',
+                "css_selector": 'account-avatar[role="button"]',
                 "contains_text": None,
                 "min_count": 1,
                 "require_english": False,

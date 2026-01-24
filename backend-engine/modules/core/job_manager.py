@@ -62,7 +62,7 @@ class JobManager:
         
         # In-memory storage
         self.running_jobs: Dict[str, Job] = {}  # Map job_id -> Job
-        self.max_concurrent_jobs = 5
+        self.max_concurrent_jobs = 10
         
         self.queued_jobs: List[Job] = []
         self.completed_jobs: List[Job] = []  # Keep last N completed
@@ -269,23 +269,23 @@ class JobManager:
             # Force-close browser if registered
             browser = self._active_browsers.pop(job_id, None)
             if browser:
-                self.logger.info(f"Found active browser for job {job_id}, attempting to close...")
+                self.logger.info(f"Found active browser for job {job_id}, attempting to close...", extra={"account_id": job.account_id, "is_global": True})
             else:
-                self.logger.warning(f"No active browser found for job {job_id} during stop")
+                self.logger.warning(f"No active browser found for job {job_id} during stop", extra={"account_id": job.account_id, "is_global": True})
         
         # Close browser outside of lock to avoid deadlock
         if browser:
             try:
                 # Use force_close to interrupt running operations
                 if hasattr(browser, 'force_close'):
-                    self.logger.info(f"Calling force_close() on browser for job {job_id}")
+                    self.logger.info(f"Calling force_close() on browser for job {job_id}", extra={"account_id": job.account_id, "is_global": True})
                     browser.force_close()
                 else:
-                    self.logger.info(f"Calling close() on browser for job {job_id}")
+                    self.logger.info(f"Calling close() on browser for job {job_id}", extra={"account_id": job.account_id, "is_global": True})
                     browser.close()
-                self.logger.info(f"Browser closed successfully for job {job_id}")
+                self.logger.info(f"Browser closed successfully for job {job_id}", extra={"account_id": job.account_id, "is_global": True})
             except Exception as e:
-                self.logger.error(f"Error closing browser for job {job_id}: {e}")
+                self.logger.error(f"Error closing browser for job {job_id}: {e}", extra={"account_id": job.account_id, "is_global": True})
         
         # Mark job as cancelled
         with self._lock:
@@ -312,7 +312,7 @@ class JobManager:
             # Start next job in queue
             self._try_start_next()
         else:
-            self.logger.info(f"Job {job_id} completed while stopping")
+            self.logger.info(f"Job {job_id} completed while stopping", extra={"account_id": job.account_id, "is_global": True})
         
         return True
     

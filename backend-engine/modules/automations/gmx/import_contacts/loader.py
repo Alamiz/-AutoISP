@@ -1,7 +1,7 @@
 from .desktop.run import ImportContacts as DesktopImportContacts
 import os
 
-def run(account_id, email, password, device_type="desktop", proxy_config=None, job_id=None, **kwargs):
+def run(account, job_id=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     """
@@ -24,10 +24,7 @@ def run(account_id, email, password, device_type="desktop", proxy_config=None, j
             print(f"Failed to decode base64 file: {e}")
 
     automation = automation_class(
-        account_id=account_id,
-        email=email, 
-        password=password, 
-        proxy_config=proxy_config, 
+        account=account,
         user_agent_type="desktop",
         vcf_file_path=vcf_file_path,
         job_id=job_id

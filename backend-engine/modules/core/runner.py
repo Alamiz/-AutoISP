@@ -4,17 +4,22 @@ import sys
 import os
 
 
-def run_automation(account_id, email, password, isp, automation_name, proxy_config=None, device_type="desktop", job_id=None, **kwargs):
+from modules.core.models import Account
+
+def run_automation(account: Account, automation_name: str, job_id=None, **kwargs):
     """
     Global runner for any automation.
     Delegates platform logic to the automation's loader.py.
     
     Args:
+        account: Account object containing all account details
+        automation_name: Name of the automation to run
         job_id: Optional job ID for browser registration with job manager
     """
 
     logger = logging.getLogger("autoisp")
-    profile = email.replace("@", "_").replace(".", "_")
+    profile = account.email.replace("@", "_").replace(".", "_")
+    isp = account.provider
 
     if getattr(sys, 'frozen', False):
         modules_path = os.path.join(sys._MEIPASS, 'modules')
@@ -31,16 +36,16 @@ def run_automation(account_id, email, password, isp, automation_name, proxy_conf
         loader = importlib.import_module(loader_module_path)
 
         if not hasattr(loader, "run"):
-            raise AttributeError(f"{loader_module_path} missing 'run(account_id, email, password, device_type, proxy_config)' function")
+            raise AttributeError(f"{loader_module_path} missing 'run(account, job_id, **kwargs)' function")
 
-        logger.info(f"Running {automation_name} on {isp} for profile {profile}")
-        return loader.run(account_id=account_id, email=email, password=password, device_type=device_type, proxy_config=proxy_config, job_id=job_id, **kwargs)
+        logger.info(f"Running {automation_name} on {isp} for profile {profile}", extra={"account_id": account.id, "is_global": True})
+        return loader.run(account=account, job_id=job_id, **kwargs)
 
     except Exception as e:
         # Check if it's a cancellation
         if "JobCancelledException" in str(type(e)):
-             logger.info(f"Automation {automation_name} cancelled for {profile}")
+             logger.info(f"Automation {automation_name} cancelled for {profile}", extra={"account_id": account.id, "is_global": True})
              return {"status": "cancelled", "message": "Job cancelled by user"}
              
-        logger.error(f"Failed to run automation {automation_name}: {e}")
+        logger.error(f"Failed to run automation {automation_name}: {e}", extra={"account_id": account.id, "is_global": True})
         return {"status": "failed", "message": str(e)}

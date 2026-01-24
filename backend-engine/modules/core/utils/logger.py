@@ -14,10 +14,22 @@ class MasterAPILogHandler(logging.Handler):
 
     def emit(self, record):
         log_entry = self.format(record)
+        
+        # Extract is_global from extra (default to False for global logs)
+        is_global = getattr(record, 'is_global', False)
+        
+        # Extract account_id from extra (optional, for automation logs)
+        account_id = getattr(record, 'account_id', None)
+        
         payload = {
             "level": record.levelname,
             "message": log_entry,
+            "is_global": is_global,
         }
+        
+        # Only include account_id if provided
+        if account_id is not None:
+            payload["account"] = account_id
 
         token = token_storage.get_token()
         headers = {"Content-Type": "application/json"}

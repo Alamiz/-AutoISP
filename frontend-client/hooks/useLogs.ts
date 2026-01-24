@@ -1,5 +1,6 @@
 import { LogEntry } from "@/lib/types";
 import { useEffect, useState } from "react";
+import { auth } from "@/lib/auth";
 
 export function useLogs() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -19,7 +20,9 @@ export function useLogs() {
     let reconnectTimeout: NodeJS.Timeout;
 
     const connect = () => {
-      socket = new WebSocket("ws://139.162.141.200:8000/ws/logs"); // adjust URL for backend
+      const token = auth.getAccessToken();
+      const wsUrl = `ws://139.162.141.200:8000/ws/logs/?token=${token}`;
+      socket = new WebSocket(wsUrl); // adjust URL for backend
 
       socket.onopen = () => console.log("WebSocket connected");
 

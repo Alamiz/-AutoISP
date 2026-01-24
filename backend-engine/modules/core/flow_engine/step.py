@@ -25,6 +25,7 @@ class Step:
     def __init__(self, automation=None, logger=None):
         self.automation = automation
         self.logger = logger
+        self.account = automation.account if automation else None
 
     def run(self, page: Page) -> StepResult:
         """

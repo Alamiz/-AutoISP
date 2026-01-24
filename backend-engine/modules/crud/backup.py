@@ -40,10 +40,10 @@ class BackupManager:
                     response.raise_for_status()
                     return response.json()
         except httpx.RequestError as exc:
-            logger.error(f"An error occurred while uploading backup: {exc}")
+            logger.error(f"An error occurred while uploading backup: {exc}", extra={"is_global": True})
             raise HTTPException(status_code=500, detail="Could not connect to external backup service")
         except httpx.HTTPStatusError as exc:
-            logger.error(f"External backup service returned error: {exc.response.status_code} - {exc.response.text}")
+            logger.error(f"External backup service returned error: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})
             raise HTTPException(status_code=exc.response.status_code, detail=f"External backup service error: {exc.response.text}")
 
     @staticmethod
@@ -66,8 +66,8 @@ class BackupManager:
                         async for chunk in response.aiter_bytes():
                             f.write(chunk)
         except httpx.RequestError as exc:
-            logger.error(f"An error occurred while downloading backup: {exc}")
+            logger.error(f"An error occurred while downloading backup: {exc}", extra={"is_global": True})
             raise HTTPException(status_code=500, detail="Could not connect to external backup service")
         except httpx.HTTPStatusError as exc:
-            logger.error(f"External backup service returned error: {exc.response.status_code} - {exc.response.text}")
+            logger.error(f"External backup service returned error: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})
             raise HTTPException(status_code=exc.response.status_code, detail=f"External backup service error: {exc.response.text}")

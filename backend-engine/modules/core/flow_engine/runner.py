@@ -30,14 +30,14 @@ class StepRunner:
             
             # Log the current page state
             if self.logger:
-                self.logger.debug(f"Current page identified as: {page_id}")
+                self.logger.debug(f"Current page identified as: {page_id}", extra={"account_id": self.account.id})
             
             # Check if there's a handler for this unexpected page
             handler = self.state_registry.get_handler(page_id)
             
             if handler:
                 if self.logger:
-                    self.logger.warning(f"Unexpected page detected: {page_id}. Running handler...")
+                    self.logger.warning(f"Unexpected page detected: {page_id}. Running handler...", extra={"account_id": self.account.id})
                 
                 action = handler.handle(page)
                 
@@ -48,16 +48,16 @@ class StepRunner:
                     )
                 elif action == "continue":
                     if self.logger:
-                        self.logger.info(f"Handler for {page_id} completed. Continuing flow...")
+                        self.logger.info(f"Handler for {page_id} completed. Continuing flow...", extra={"account_id": self.account.id})
                     return None  # Continue with current step
                 elif action == "retry":
                     if self.logger:
-                        self.logger.info(f"Handler for {page_id} requests retry")
+                        self.logger.info(f"Handler for {page_id} requests retry", extra={"account_id": self.account.id})
                     return StepResult(status=StepStatus.RETRY, message=f"Retry requested by {page_id} handler")
                     
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error during page state check: {e}", exc_info=True)
+                self.logger.error(f"Error during page state check: {e}", exc_info=True, extra={"account_id": self.account.id})
         
         return None
 
@@ -96,7 +96,8 @@ class StepRunner:
                 if self.logger:
                     self.logger.info(
                         f"[Step {step_index}] Executing {current_step.__class__.__name__} "
-                        f"(Attempt {attempt}/{current_step.max_retries})"
+                        f"(Attempt {attempt}/{current_step.max_retries})",
+                        extra={"account_id": self.account.id}
                     )
 
                 try:
@@ -111,14 +112,17 @@ class StepRunner:
                     trace_entry["exception_type"] = type(e).__name__
                     
                     if self.logger:
-                        self.logger.exception(f"[Step {step_index}] Exception in {current_step.__class__.__name__}: {e}")
+                        self.logger.exception(
+                            f"[Step {step_index}] Exception in {current_step.__class__.__name__}: {e}",
+                            extra={"account_id": self.account.id}
+                        )
                 
                 self.execution_trace.append(trace_entry)
 
                 # Handle StepResult
                 if result.status == StepStatus.SUCCESS:
                     if self.logger:
-                        self.logger.info(f"[Step {step_index}] ✓ SUCCESS: {result.message or ''}")
+                        self.logger.info(f"[Step {step_index}] ✓ SUCCESS: {result.message or ''}", extra={"account_id": self.account.id})
                     next_step = result.payload
                     break
 
@@ -126,7 +130,8 @@ class StepRunner:
                     if self.logger:
                         self.logger.warning(
                             f"[Step {step_index}] ↻ RETRY ({attempt}/{current_step.max_retries}): "
-                            f"{result.message or ''}"
+                            f"{result.message or ''}",
+                            extra={"account_id": self.account.id}
                         )
                     if attempt < current_step.max_retries:
                         page.wait_for_timeout(1000)  # Brief pause before retry
@@ -134,13 +139,13 @@ class StepRunner:
 
                 elif result.status == StepStatus.SKIP:
                     if self.logger:
-                        self.logger.info(f"[Step {step_index}] ⊘ SKIP: {result.message or ''}")
+                        self.logger.info(f"[Step {step_index}] ⊘ SKIP: {result.message or ''}", extra={"account_id": self.account.id})
                     next_step = result.payload
                     break
 
                 elif result.status == StepStatus.FAILURE:
                     if self.logger:
-                        self.logger.error(f"[Step {step_index}] ✗ FAILURE: {result.message or ''}")
+                        self.logger.error(f"[Step {step_index}] ✗ FAILURE: {result.message or ''}", extra={"account_id": self.account.id})
                     self._log_execution_trace()
                     return result
             
@@ -148,7 +153,7 @@ class StepRunner:
                 # Max retries exceeded
                 error_msg = f"Max retries ({current_step.max_retries}) exceeded for {current_step.__class__.__name__}"
                 if self.logger:
-                    self.logger.error(f"[Step {step_index}] {error_msg}")
+                    self.logger.error(f"[Step {step_index}] {error_msg}", extra={"account_id": self.account.id})
                 self._log_execution_trace()
                 return StepResult(status=StepStatus.FAILURE, message=error_msg)
             
@@ -157,22 +162,19 @@ class StepRunner:
 
         # All steps completed successfully
         if self.logger:
-            self.logger.info("✓ Flow completed successfully")
+            self.logger.info("✓ Flow completed successfully", extra={"account_id": self.account.id})
         return StepResult(status=StepStatus.SUCCESS, message="Flow completed successfully")
     
     def _log_execution_trace(self):
         """Log the complete execution trace for debugging."""
         if self.logger and self.execution_trace:
-            self.logger.info("=" * 60)
-            self.logger.info("EXECUTION TRACE")
-            self.logger.info("=" * 60)
             for entry in self.execution_trace:
                 self.logger.info(
                     f"Step {entry['step_index']}: {entry['step_name']} "
-                    f"(Attempt {entry['attempt']}) -> {entry['status']}"
+                    f"(Attempt {entry['attempt']}) -> {entry['status']}",
+                    extra={"account_id": self.account.id}
                 )
                 if entry.get('message'):
-                    self.logger.info(f"  Message: {entry['message']}")
+                    self.logger.info(f"  Message: {entry['message']}", extra={"account_id": self.account.id})
                 if entry.get('url'):
-                    self.logger.info(f"  URL: {entry['url']}")
-            self.logger.info("=" * 60)
+                    self.logger.info(f"  URL: {entry['url']}", extra={"account_id": self.account.id})

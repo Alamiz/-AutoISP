@@ -5,11 +5,7 @@ from core.utils.browser_utils import navigate_to
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages"""
-    
-    def __init__(self, human_action: HumanAction = None, logger=None):
-        super().__init__(logger)
-        self.human_action = human_action
-    
+
     def handle(self, page: Page) -> HandlerAction:
         try:
             navigate_to(page, "https://lightmailer-bs.gmx.net/")

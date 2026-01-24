@@ -26,22 +26,19 @@ class ImportContacts(HumanAction):
     web.de Desktop Import Contacts using SequentialFlow
     """
     
-    def __init__(self, account_id, email, password, proxy_config=None, user_agent_type="desktop", vcf_file_path=None, job_id=None):
+    def __init__(self, account, user_agent_type="desktop", vcf_file_path=None, job_id=None):
         super().__init__()
-        self.account_id = account_id
-        self.email = email
-        self.password = password
-        self.proxy_config = proxy_config
+        self.account = account
         self.user_agent_type = user_agent_type
         self.vcf_file_path = vcf_file_path
         self.job_id = job_id
         self.logger = logging.getLogger("autoisp")
-        self.profile = self.email.split('@')[0]
+        self.profile = self.account.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
-            proxy_config=proxy_config,
+            account=self.account,
             user_agent_type=user_agent_type,
             headless=False
         )
@@ -57,7 +54,7 @@ class ImportContacts(HumanAction):
         return registry
 
     def execute(self):
-        self.logger.info(f"Starting Import Contacts for {self.email}")
+        self.logger.info(f"Starting Import Contacts", extra={"account_id": self.account.id})
         
         try:
             self.browser.start()
@@ -68,26 +65,23 @@ class ImportContacts(HumanAction):
             
             # Authenticate first
             gmx_auth = GMXAuthentication(
-                self.account_id,
-                self.email, 
-                self.password, 
-                self.proxy_config,
-                self.user_agent_type,
-                self.job_id
+                account=self.account,
+                user_agent_type=self.user_agent_type,
+                job_id=self.job_id
             )
             gmx_auth.authenticate(page)
 
             # Import contacts using SequentialFlow
             self.import_contacts(page)
             
-            self.logger.info(f"Import contacts successful for {self.email}")
+            self.logger.info("Import contacts successful", extra={"account_id": self.account.id})
             return {"status": "success", "message": "Contacts imported successfully"}
         
         except RequiredActionFailed as e:
-            self.logger.error(f"Import contacts failed for {self.email}: {e}")
+            self.logger.error("Import contacts failed", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         except Exception as e:
-            self.logger.error(f"Unexpected error for {self.email}: {e}")
+            self.logger.error(f"Unexpected error: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         finally:
             if self.job_id:
@@ -110,10 +104,10 @@ class ImportContacts(HumanAction):
             VerifyImportStep(self, self.logger),
         ]
         
-        flow = SequentialFlow(steps, logger=self.logger)
+        flow = SequentialFlow(steps, account=self.account, logger=self.logger)
         result = flow.run(page)
         
         if result.status == StepStatus.FAILURE:
             raise RequiredActionFailed(f"Failed to complete import. Last error: {result.message}")
         
-        self.logger.info("Import contacts completed via SequentialFlow")
+        self.logger.info("Import contacts completed via SequentialFlow", extra={"account_id": self.account.id})

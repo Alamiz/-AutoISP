@@ -3,19 +3,19 @@ from core.flow_engine.state_handler import StateHandler, HandlerAction
 from crud.account import update_account_state
 from core.utils.retry_decorators import retry_action
 from core.humanization.actions import HumanAction
+from core.utils.navigation import navigate_with_retry
 
 class CommonHandler(StateHandler):
     """Base class for common handlers that need account_id"""
-    def __init__(self, account_id: int, logger=None):
-        super().__init__(logger)
-        self.account_id = account_id
+    def __init__(self, automation, logger=None):
+        super().__init__(automation, logger)
 
 class WrongPasswordPageHandler(CommonHandler):
     """Handle wrong password page"""
     def handle(self, page: Page = None) -> HandlerAction:
         if self.logger:
             self.logger.warning("WrongPasswordPageHandler: Wrong password detected")
-        update_account_state(self.account_id, "wrong_password")
+        update_account_state(self.account.id, "wrong_password")
         return "abort"
 
 class WrongEmailPageHandler(CommonHandler):
@@ -23,7 +23,7 @@ class WrongEmailPageHandler(CommonHandler):
     def handle(self, page: Page = None) -> HandlerAction:
         if self.logger:
             self.logger.warning("WrongEmailPageHandler: Wrong email detected")
-        update_account_state(self.account_id, "wrong_username")
+        update_account_state(self.account.id, "wrong_username")
         return "abort"
 
 class LoginNotPossiblePageHandler(CommonHandler):
@@ -31,7 +31,7 @@ class LoginNotPossiblePageHandler(CommonHandler):
     def handle(self, page: Page = None) -> HandlerAction:
         if self.logger:
             self.logger.warning("LoginNotPossiblePageHandler: Login not possible detected")
-        update_account_state(self.account_id, "error")
+        update_account_state(self.account.id, "error")
         return "abort"
 
 class LoginCaptchaHandler(CommonHandler, HumanAction):
@@ -44,8 +44,8 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
 
     PASSWORD_SELECTOR = "input#password"
 
-    def __init__(self, account_id: int, logger=None, job_id=None):
-        CommonHandler.__init__(self, account_id, logger)
+    def __init__(self, automation, logger=None, job_id=None):
+        CommonHandler.__init__(self, automation, logger)
         HumanAction.__init__(self, job_id=job_id)
 
     def handle(self, page: Page = None) -> HandlerAction:
@@ -54,10 +54,11 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
 
         if self.logger:
             self.logger.warning(
-                "LoginCaptchaHandler: Captcha detected. Attempting automatic solve..."
+                "CaptchaHandler: Captcha detected. Attempting automatic solve...",
+                extra={"account_id": self.account.id}
             )
 
-        update_account_state(self.account_id, "captcha")
+        update_account_state(self.account.id, "captcha")
 
         # 1. Try to solve captcha automatically
         solved = False
@@ -65,17 +66,24 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
         try:
             solved = self._try_solve_captcha(page)
         except Exception as e:
-            self.logger.warning("LoginCaptchaHandler: Auto-solve failed. Waiting for user...")
+            self.logger.warning(
+                "CaptchaHandler: Auto-solve failed. Waiting for user...",
+                extra={"account_id": self.account.id}
+            )
 
         if solved:
             if self.logger:
-                self.logger.info("LoginCaptchaHandler: Captcha solved automatically.")
+                self.logger.info(
+                    "CaptchaHandler: Captcha solved automatically.",
+                    extra={"account_id": self.account.id}
+                )
             return "retry"
 
         # 2. Fallback → wait for user
         if self.logger:
             self.logger.warning(
-                "LoginCaptchaHandler: Auto-solve failed. Waiting for user..."
+                "CaptchaHandler: Auto-solve failed. Waiting for user...",
+                extra={"account_id": self.account.id}
             )
 
         return self._wait_for_user_solution(page)
@@ -136,7 +144,8 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
                     if element.is_visible():
                         if self.logger:
                             self.logger.info(
-                                "LoginCaptchaHandler: Captcha solved by user."
+                                "CaptchaHandler: Captcha solved by user.",
+                                extra={"account_id": self.account.id}
                             )
                         return "retry"
 
@@ -144,14 +153,14 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
 
             if self.logger:
                 self.logger.error(
-                    "LoginCaptchaHandler: Timeout waiting for captcha solution."
+                    "CaptchaHandler: Timeout waiting for captcha solution."
                 )
             return "abort"
 
         except Exception as e:
             if self.logger:
                 self.logger.error(
-                    f"LoginCaptchaHandler: Error while waiting for user captcha solve: {e}"
+                    f"CaptchaHandler: Error while waiting for user captcha solve: {e}"
                 )
             return "abort"
 
@@ -161,7 +170,7 @@ class SecuritySuspensionHandler(CommonHandler):
     def handle(self, page: Page = None) -> HandlerAction:
         if self.logger:
             self.logger.warning("SecuritySuspensionHandler: Account suspended")
-        update_account_state(self.account_id, "suspended")
+        update_account_state(self.account.id, "suspended")
         return "abort"
 
 class PhoneVerificationHandler(CommonHandler):
@@ -169,5 +178,19 @@ class PhoneVerificationHandler(CommonHandler):
     def handle(self, page: Page = None) -> HandlerAction:
         if self.logger:
             self.logger.warning("PhoneVerificationHandler: Phone verification required")
-        update_account_state(self.account_id, "phone_verification")
+        update_account_state(self.account.id, "phone_verification")
         return "abort"
+
+class UnknownPageHandler(StateHandler):
+    """Handle unknown pages"""
+
+    def handle(self, page: Page, reset_link: str = None) -> HandlerAction:
+        try:
+            if reset_link:
+                navigate_with_retry(page, reset_link, self.account)
+            else:
+                page.reload()
+            page.wait_for_timeout(5000)
+            return "retry"
+        except Exception as e:
+            return "abort"

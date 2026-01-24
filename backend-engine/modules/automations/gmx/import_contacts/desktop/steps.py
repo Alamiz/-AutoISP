@@ -1,4 +1,3 @@
-from core.utils.retry_decorators import retry_action
 from playwright.sync_api import Page
 from core.flow_engine.step import Step, StepResult, StepStatus
 import random
@@ -7,7 +6,7 @@ import os
 class OpenAddressBookStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Navigating to Address Book")
+            self.logger.info("Navigating to Address Book", extra={"account_id": self.account.id})
             self.automation.human_click(
                 page,
                 selectors=['nav#top-nav button[aria-controls="menu-services"]'],
@@ -28,7 +27,7 @@ class OpenAddressBookStep(Step):
 class OpenImportPanelStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Opening Import Panel")
+            self.logger.info("Opening Import Panel", extra={"account_id": self.account.id})
 
             page.wait_for_load_state("load")
             self.automation.human_click(
@@ -44,11 +43,11 @@ class OpenImportPanelStep(Step):
 class SelectSourceStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Selecting Import Source")
+            self.logger.info("Selecting Import Source", extra={"account_id": self.account.id})
             
             sources = ["file", "gmx"]
             chosen_source = random.choice(sources)
-            self.logger.info(f"Chosen source: {chosen_source}")
+            self.logger.info(f"Chosen source: {chosen_source}", extra={"account_id": self.account.id})
             
             # Save chosen source to automation instance for next step
             self.automation.chosen_source = chosen_source
@@ -73,7 +72,7 @@ class UploadFileStep(Step):
             if not vcf_path or not os.path.exists(vcf_path):
                 return StepResult(status=StepStatus.FAILURE, message=f"VCF file not found at: {vcf_path}")
             
-            self.logger.info(f"Uploading file: {vcf_path}")
+            self.logger.info(f"Uploading file: {vcf_path}", extra={"account_id": self.account.id})
             
             chosen_source = getattr(self.automation, "chosen_source", "file")
             
@@ -99,7 +98,7 @@ class UploadFileStep(Step):
 class UploadContactsStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Clicking Upload Button")
+            self.logger.info("Clicking Upload Button", extra={"account_id": self.account.id})
             self.automation.human_click(
                 page,
                 selectors=['button[data-action="upload"]'],
@@ -113,7 +112,7 @@ class UploadContactsStep(Step):
 class ImportContactsStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Confirming Import")
+            self.logger.info("Confirming Import", extra={"account_id": self.account.id})
             self.automation.human_click(
                 page,
                 selectors=['button[data-action="select"]'],
@@ -127,7 +126,7 @@ class ImportContactsStep(Step):
 class VerifyImportStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Verifying Import Completion")
+            self.logger.info("Verifying Import Completion", extra={"account_id": self.account.id})
             
             success_element = self.automation._find_element_with_humanization(
                 page,

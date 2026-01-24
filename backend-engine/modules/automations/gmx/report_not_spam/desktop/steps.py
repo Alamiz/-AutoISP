@@ -2,13 +2,12 @@ from core.utils.retry_decorators import retry_action
 from playwright.sync_api import Page
 from core.utils.element_finder import deep_find_elements
 from core.flow_engine.step import Step, StepResult, StepStatus
-from core.utils.date_utils import parse_mail_date
 from datetime import datetime
 
 class NavigateToSpamStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Navigating to Spam folder")
+            self.logger.info("Navigating to Spam folder", extra={"account_id": self.account.id})
             self.automation.human_click(
                 page,
                 selectors=['button.sidebar-folder-icon-spam'],
@@ -29,21 +28,22 @@ class ReportSpamEmailsStep(Step):
             current_page = 1
             self.logger.info(
                 f"Processing emails with keyword='{keyword}' "
-                f"between {start_date} and {end_date}"
+                f"between {start_date} and {end_date}", 
+                extra={"account_id": self.account.id}
             )
 
             if not hasattr(self.automation, "reported_email_ids"):
                 self.automation.reported_email_ids = []
 
             while True:
-                self.logger.info(f"Processing page {current_page}")
+                self.logger.info(f"Processing page {current_page}", extra={"account_id": self.account.id})
 
                 email_items = deep_find_elements(
                     page, "list-mail-item.list-mail-item--root"
                 )
 
                 if not email_items:
-                    self.logger.info("No emails found on this page")
+                    self.logger.info("No emails found on this page", extra={"account_id": self.account.id})
                     break
 
                 index = 0
@@ -70,7 +70,8 @@ class ReportSpamEmailsStep(Step):
                         # --- Early stop: first email already older ---
                         if index == 0 and mail_date < start_date:
                             self.logger.info(
-                                "First email older than start_date. Stopping pagination."
+                                "First email older than start_date. Stopping pagination.",
+                                extra={"account_id": self.account.id}
                             )
                             return self._final_result()
 
@@ -96,7 +97,8 @@ class ReportSpamEmailsStep(Step):
                             continue
 
                         self.logger.info(
-                            f"Processing email subject='{subject_text}', date={mail_date}"
+                            f"Processing email subject='{subject_text}', date={mail_date}",
+                            extra={"account_id": self.account.id}
                         )
 
                         # --- Open email ---
@@ -116,7 +118,10 @@ class ReportSpamEmailsStep(Step):
                         continue
 
                     except Exception as e:
-                        self.logger.warning(f"Failed processing email: {e}")
+                        self.logger.warning(
+                            f"Failed processing email: {e}",
+                            extra={"account_id": self.account.id}
+                        )
                         index += 1
                         continue
 
@@ -133,7 +138,10 @@ class ReportSpamEmailsStep(Step):
                         continue
                     break
                 except Exception as e:
-                    self.logger.warning(f"Pagination failed: {e}")
+                    self.logger.warning(
+                        f"Pagination failed: {e}",
+                        extra={"account_id": self.account.id}
+                    )
                     break
 
             return self._final_result()
@@ -149,7 +157,10 @@ class ReportSpamEmailsStep(Step):
         try:
             self.automation.human_behavior.click(item)
         except Exception as e:
-            self.logger.warning(f"Failed to click email item: {e}")
+            self.logger.warning(
+                f"Failed to click email item: {e}",
+                extra={"account_id": self.account.id}
+            )
 
     @retry_action()
     def scroll_content(self, page: Page):
@@ -165,7 +176,10 @@ class ReportSpamEmailsStep(Step):
             )
             self.automation.human_behavior.scroll_into_view(body)
         except Exception as e:
-            self.logger.warning(f"Failed to scroll content: {e}")
+            self.logger.warning(
+                f"Failed to scroll content: {e}",
+                extra={"account_id": self.account.id}
+            )
     
     @retry_action()
     def click_not_spam(self, page: Page):
@@ -179,7 +193,10 @@ class ReportSpamEmailsStep(Step):
                 deep_search=True
             )
         except Exception as e:
-            self.logger.warning(f"Failed to click not spam: {e}")
+            self.logger.warning(
+                f"Failed to click not spam: {e}",
+                extra={"account_id": self.account.id}
+            )
     
     def _final_result(self) -> StepResult:
         if getattr(self.automation, "reported_email_ids", []):
@@ -202,7 +219,8 @@ class OpenReportedEmailsStep(Step):
 
             self.logger.info(
                 f"Opening emails with keyword='{keyword}' "
-                f"between {start_dt} and {end_dt}"
+                f"between {start_dt} and {end_dt}",
+                extra={"account_id": self.account.id}
             )
 
             # Navigate to inbox
@@ -221,14 +239,14 @@ class OpenReportedEmailsStep(Step):
             current_page = 1
 
             while True:
-                self.logger.info(f"Processing page {current_page}")
+                self.logger.info(f"Processing page {current_page}",extra={"account_id": self.account.id})
 
                 email_items = deep_find_elements(
                     page, "list-mail-item.list-mail-item--root"
                 )
 
                 if not email_items:
-                    self.logger.warning("No emails found on this page")
+                    self.logger.warning("No emails found on this page",extra={"account_id": self.account.id})
                     break
 
                 index = 0
@@ -237,20 +255,20 @@ class OpenReportedEmailsStep(Step):
 
                     try:
                         email_id = item.get_attribute("id")
-                        self.logger.info(f"Processing email {email_id}")
+                        self.logger.info(f"Processing email {email_id}",extra={"account_id": self.account.id})
 
                         # --- Extract datetime from date-in-ms ---
                         date_el = item.query_selector(
                             "list-date-label.list-mail-item__date"
                         )
                         if not date_el:
-                            self.logger.warning("No date found on this email")
+                            self.logger.warning("No date found on this email",extra={"account_id": self.account.id})
                             index += 1
                             continue
 
                         ms = date_el.get_attribute("date-in-ms")
                         if not ms:
-                            self.logger.warning("No date-in-ms found on this email")
+                            self.logger.warning("No date-in-ms found on this email",extra={"account_id": self.account.id})
                             index += 1
                             continue
 
@@ -260,23 +278,17 @@ class OpenReportedEmailsStep(Step):
 
                         # --- Early stop: everything else is older ---
                         if index == 0 and mail_dt < start_dt:
-                            self.logger.info(
-                                "First email older than start_datetime. Stopping."
-                            )
+                            self.logger.info("First email older than start_datetime. Stopping.",extra={"account_id": self.account.id})
                             return self._final(found_any)
 
                         # --- Range filter ---
                         if mail_dt > end_dt:
-                            self.logger.warning(
-                                f"mail date: {mail_dt} is newer than end_datetime: {end_dt}, skipping"
-                            )
+                            self.logger.warning(f"mail date: {mail_dt} is newer than end_datetime: {end_dt}, skipping",extra={"account_id": self.account.id})
                             index += 1
                             continue
 
                         if mail_dt < start_dt:
-                            self.logger.warning(
-                                f"mail date: {mail_dt} is older than start_datetime: {start_dt}, stopping"
-                            )
+                            self.logger.warning(f"mail date: {mail_dt} is older than start_datetime: {start_dt}, stopping",extra={"account_id": self.account.id})
                             return self._final(found_any)
 
                         # --- Subject ---
@@ -284,7 +296,7 @@ class OpenReportedEmailsStep(Step):
                             "div.list-mail-item__subject"
                         )
                         if not subject_el:
-                            self.logger.warning("No subject found on this email")
+                            self.logger.warning("No subject found on this email", extra={"account_id": self.account.id})
                             index += 1
                             continue
 
@@ -295,9 +307,7 @@ class OpenReportedEmailsStep(Step):
                             continue
 
                         found_any = True
-                        self.logger.info(
-                            f"Opening email '{subject_text}' @ {mail_dt}"
-                        )
+                        self.logger.info(f"Opening email '{subject_text}' @ {mail_dt}",extra={"account_id": self.account.id})
 
                         # --- Actions ---
                         self._click_email_item(item, page)
@@ -317,9 +327,7 @@ class OpenReportedEmailsStep(Step):
                         continue
 
                     except Exception as e:
-                        self.logger.warning(
-                            f"Failed processing email: {e}"
-                        )
+                        self.logger.warning(f"Failed processing email: {e}", extra={"account_id": self.account.id})
                         index += 1
                         continue
 
@@ -357,9 +365,7 @@ class OpenReportedEmailsStep(Step):
             )
             page.wait_for_timeout(2000)
         except Exception as e:
-            self.logger.warning(
-                f"Failed to navigate to inbox: {e}"
-            )
+            self.logger.warning(f"Failed to navigate to inbox: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
     def _fill_search_input(self, page, keyword):
@@ -371,9 +377,7 @@ class OpenReportedEmailsStep(Step):
             if search_input:
                 search_input[0].fill(keyword)
         except Exception as e:
-            self.logger.warning(
-                f"Failed to fill search input: {e}"
-            )
+            self.logger.warning(f"Failed to fill search input: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
     def open_search_options(self, page):
@@ -384,9 +388,7 @@ class OpenReportedEmailsStep(Step):
                 deep_search=True
             )
         except Exception as e:
-            self.logger.warning(
-                f"Failed to open search options: {e}"
-            )
+            self.logger.warning(f"Failed to open search options: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
     def select_inbox_and_submit(self, page):
@@ -410,9 +412,7 @@ class OpenReportedEmailsStep(Step):
                 deep_search=True
             )
         except Exception as e:
-            self.logger.warning(
-                f"Failed to select inbox and submit search: {e}"
-            )
+            self.logger.warning(f"Failed to select inbox and submit search: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
     def _click_email_item(self, item, page):
@@ -420,9 +420,7 @@ class OpenReportedEmailsStep(Step):
             self.automation.human_behavior.click(item)
             page.wait_for_timeout(2000)
         except Exception as e:
-            self.logger.warning(
-                f"Click inside email failed: {e}"
-            )
+            self.logger.warning(f"Click inside email failed: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
     def _scroll_content(self, page):
@@ -440,9 +438,7 @@ class OpenReportedEmailsStep(Step):
 
             return frame
         except Exception as e:
-            self.logger.warning(
-                f"Scroll content failed: {e}"
-            )
+            self.logger.warning(f"Scroll content failed: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
     def _add_to_favorites(self, page):
@@ -472,9 +468,7 @@ class OpenReportedEmailsStep(Step):
                         self.automation.human_behavior.click(imgs[0])
                         page.wait_for_timeout(3000)
         except Exception as e:
-            self.logger.warning(
-                f"Click inside email failed: {e}"
-            )
+            self.logger.warning(f"Click inside email failed: {e}", extra={"account_id": self.account.id})
 
     def _final(self, found: bool) -> StepResult:
         if found:

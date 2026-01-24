@@ -27,10 +27,10 @@ def _fetch_accounts_from_external_api(provider: str = None):
             response.raise_for_status()  # Raise an exception for bad status codes
             return response.json()
     except httpx.RequestError as exc:
-        logger.error(f"An error occurred while requesting external accounts: {exc}")
+        logger.error(f"An error occurred while requesting external accounts: {exc}", extra={"is_global": True})
         raise HTTPException(status_code=500, detail="Could not connect to external account service")
     except httpx.HTTPStatusError as exc:
-        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
+        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
 
 def _fetch_account_by_id_from_external_api(account_id: str):
@@ -41,12 +41,12 @@ def _fetch_account_by_id_from_external_api(account_id: str):
             response.raise_for_status()
             return response.json()
     except httpx.RequestError as exc:
-        logger.error(f"An error occurred while requesting external account {account_id}: {exc}")
+        logger.error(f"An error occurred while requesting external account {account_id}: {exc}", extra={"is_global": True})
         raise HTTPException(status_code=500, detail="Could not connect to external account service")
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 404:
             raise HTTPException(status_code=404, detail=f"Account with ID {account_id} not found in external service")
-        logger.error(f"External account service returned error for ID {account_id}: {exc.response.status_code} - {exc.response.text}")
+        logger.error(f"External account service returned error for ID {account_id}: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
 
 import time
@@ -114,10 +114,10 @@ def get_account_ids(provider: str = None):
             _set_cache(cache_key, data)
             return data
     except httpx.RequestError as exc:
-        logger.error(f"An error occurred while requesting account IDs: {exc}")
+        logger.error(f"An error occurred while requesting account IDs: {exc}", extra={"is_global": True})
         raise HTTPException(status_code=500, detail="Could not connect to external account service")
     except httpx.HTTPStatusError as exc:
-        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
+        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
 
 def get_accounts_by_ids(
@@ -155,10 +155,10 @@ def get_accounts_by_ids(
             response.raise_for_status()
             return response.json()
     except httpx.RequestError as exc:
-        logger.error(f"An error occurred while requesting accounts by IDs: {exc}")
+        logger.error(f"An error occurred while requesting accounts by IDs: {exc}", extra={"is_global": True})
         raise HTTPException(status_code=500, detail="Could not connect to external account service")
     except httpx.HTTPStatusError as exc:
-        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
+        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")
 
 
@@ -174,8 +174,8 @@ def update_account_state(account_id: str, state: str):
             response.raise_for_status()
             return response.json()
     except httpx.RequestError as exc:
-        logger.error(f"An error occurred while updating account state: {exc}")
+        logger.error(f"An error occurred while updating account state: {exc}", extra={"is_global": True})
         raise HTTPException(status_code=500, detail="Could not connect to external account service")
     except httpx.HTTPStatusError as exc:
-        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}")
+        logger.error(f"External account service returned error: {exc.response.status_code} - {exc.response.text}", extra={"is_global": True})
         raise HTTPException(status_code=exc.response.status_code, detail=f"External account service error: {exc.response.text}")

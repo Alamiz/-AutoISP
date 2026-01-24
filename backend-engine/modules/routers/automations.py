@@ -21,6 +21,8 @@ class AutomationRequest(BaseModel):
     status: Optional[str] = None
 
 
+from modules.core.models import Account
+
 def execute_job(job: Job):
     """
     Job execution callback - called by job_manager when a job starts.
@@ -37,14 +39,19 @@ def execute_job(job: Job):
     error_msg = None
     
     try:
-        result = run_automation(
-            account_id=params["account_id"],
+        # Create Account object
+        account = Account(
+            id=params["account_id"],
             email=params["email"],
             password=params["password"],
-            isp=params["isp"],
+            provider=params["isp"],
+            proxy_settings=params.get("proxy_config"),
+            type=params.get("device_type", "desktop")
+        )
+
+        result = run_automation(
+            account=account,
             automation_name=params["automation_name"],
-            proxy_config=params.get("proxy_config"),
-            device_type=params.get("device_type", "desktop"),
             job_id=job.id,  # Pass job_id for browser registration
             **params.get("extra_params", {})
         )
@@ -220,9 +227,9 @@ def run_sequential_automation(request: AutomationRequest):
             account_ids = request.account_ids or []
 
         for account_id in account_ids:
-            account = get_account_by_id(account_id)
+            account_data = get_account_by_id(account_id)
 
-            if not account:
+            if not account_data:
                 failed_accounts.append(
                     {"account_id": account_id, "reason": "Account not found"}
                 )
@@ -230,7 +237,7 @@ def run_sequential_automation(request: AutomationRequest):
 
             # Extract password from credentials
             password = None
-            credentials = account.get("credentials", {})
+            credentials = account_data.get("credentials", {})
             if credentials and "password" in credentials:
                 password = credentials["password"]
 
@@ -244,15 +251,21 @@ def run_sequential_automation(request: AutomationRequest):
             executed_at = datetime.utcnow().isoformat()
 
             try:
+                # Create Account object
+                account = Account(
+                    id=account_id,
+                    email=account_data.get("email"),
+                    password=password,
+                    provider=account_data.get("provider"),
+                    proxy_settings=account_data.get("proxy_settings"),
+                    type=account_data.get("type", "desktop"),
+                    credentials=credentials
+                )
+
                 # Run automation directly (synchronously)
                 result = run_automation(
-                    account_id=account_id,
-                    email=account.get("email"),
-                    password=password,
-                    isp=account.get("provider"),
+                    account=account,
                     automation_name=request.automation_id,
-                    proxy_config=account.get("proxy_settings"),
-                    device_type=account.get("type", "desktop"),
                     **request.parameters
                 )
 

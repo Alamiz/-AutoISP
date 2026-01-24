@@ -5,6 +5,7 @@ import sys
 import logging
 from typing import Optional, List, Dict
 import psutil
+from core.models import Account
 
 STEALTH_INIT_SCRIPT = """
 // Minimal evasions for navigator properties commonly checked
@@ -69,6 +70,7 @@ class PlaywrightBrowserFactory:
     def __init__(
         self,
         profile_dir: str,
+        account: Account,
         channel: str = "chrome",
         headless: bool = False,
         executable_path: Optional[str] = None,
@@ -76,7 +78,6 @@ class PlaywrightBrowserFactory:
         use_stealth: bool = True,
         start_maximized: bool = True,
         slow_mo: Optional[int] = None,
-        proxy_config: Optional[Dict] = None,
         user_agent_type: str = "desktop",  # "desktop" or "mobile"
         job_id: Optional[str] = None,
     ):
@@ -90,7 +91,8 @@ class PlaywrightBrowserFactory:
         self.use_stealth = use_stealth
         self.start_maximized = start_maximized
         self.slow_mo = slow_mo
-        self.proxy_config = proxy_config
+        self.proxy_config = account.proxy_settings
+        self.account = account
         self.user_agent_type = user_agent_type
         self.job_id = job_id
 
@@ -266,29 +268,29 @@ class PlaywrightBrowserFactory:
             self._pw = None
         
         self.kill_chrome_for_profile(self.profile_path)
-        self.logger.info("Chrome processes killed for profile")
+        self.logger.info("Chrome processes killed for profile", extra={"account_id": self.account.id, "is_global":True})
 
     def force_close(self):
         """Forcefully close browser - kills all pages and browser."""
         self._opened = False
-        self.logger.info("Force closing browser...")
+        self.logger.info("Force closing browser...", extra={"account_id": self.account.id, "is_global":True})
         
         # Close all pages first to interrupt any running operations
         if self._context:
             try:
                 pages = self._context.pages
-                self.logger.info(f"Closing {len(pages)} pages...")
+                self.logger.info(f"Closing {len(pages)} pages...", extra={"account_id": self.account.id, "is_global":True})
                 for page in pages:
                     try:
                         page.close()
                     except Exception as e:
                         pass
             except Exception as e:
-                self.logger.warning(f"Error accessing pages: {e}")
+                self.logger.warning(f"Error accessing pages: {e}", extra={"account_id": self.account.id, "is_global":True})
             
             try:
                 self._context.close()
-                self.logger.info("Browser context closed")
+                self.logger.info("Browser context closed", extra={"account_id": self.account.id, "is_global":True})
             except Exception as e:
                 pass
             self._context = None
@@ -297,10 +299,10 @@ class PlaywrightBrowserFactory:
         if self._pw:
             try:
                 self._pw.stop()
-                self.logger.info("Playwright stopped")
+                self.logger.info("Playwright stopped", extra={"account_id": self.account.id, "is_global":True})
             except Exception as e:
                 pass
             self._pw = None
         
         self.kill_chrome_for_profile(self.profile_path)
-        self.logger.info("Chrome processes killed for profile")
+        self.logger.info("Chrome processes killed for profile", extra={"account_id": self.account.id, "is_global":True})
