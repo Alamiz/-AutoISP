@@ -1,0 +1,236 @@
+import os
+import sys
+import logging
+import argparse
+import importlib
+from typing import List, Dict, Any
+
+# Ensure the light-engine directory is in the path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+# Add modules directory to path to support 'from automations...' imports
+modules_path = os.path.join(current_dir, "modules")
+if modules_path not in sys.path:
+    sys.path.insert(0, modules_path)
+
+from modules.core.models import Account
+
+# Static Paths
+DATA_DIR = os.path.join(current_dir, "data")
+ACCOUNTS_FILE = os.path.join(DATA_DIR, "accounts.txt")
+PROXIES_FILE = os.path.join(DATA_DIR, "proxies.txt")
+
+# Configure Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("light_engine")
+
+def read_accounts() -> List[Dict[str, str]]:
+    accounts = []
+    if not os.path.exists(ACCOUNTS_FILE):
+        logger.error(f"Accounts file not found: {ACCOUNTS_FILE}")
+        return accounts
+
+    with open(ACCOUNTS_FILE, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split(":")
+            if len(parts) >= 2:
+                accounts.append({
+                    "email": parts[0],
+                    "password": parts[1]
+                })
+            else:
+                logger.warning(f"Invalid account line: {line}")
+    return accounts
+
+def read_proxies() -> List[str]:
+    proxies = []
+    if not os.path.exists(PROXIES_FILE):
+        logger.warning(f"Proxies file not found: {PROXIES_FILE}")
+        return proxies
+
+    with open(PROXIES_FILE, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                proxies.append(line)
+    return proxies
+
+def run_automation(account_data: Dict[str, str], proxy: str, provider: str, automation_name: str, account_type: str):
+    account_id = account_data["email"].replace("@", "_").replace(".", "_")
+    
+    proxy_settings = None
+    if proxy:
+        # Support format: username:password@ip:port
+        try:
+            if "@" in proxy:
+                creds, server = proxy.split("@")
+                username, password = creds.split(":")
+                host, port = server.split(":")
+                proxy_settings = {
+                    "protocol": "http",
+                    "host": host,
+                    "port": int(port),
+                    "username": username,
+                    "password": password
+                }
+            else:
+                # Fallback to simple host:port or URL
+                from urllib.parse import urlparse
+                if "://" not in proxy:
+                    proxy = "http://" + proxy
+                parsed = urlparse(proxy)
+                proxy_settings = {
+                    "protocol": parsed.scheme or "http",
+                    "host": parsed.hostname,
+                    "port": parsed.port or 80,
+                }
+                if parsed.username:
+                    proxy_settings["username"] = parsed.username
+                if parsed.password:
+                    proxy_settings["password"] = parsed.password
+        except Exception as e:
+            logger.error(f"Failed to parse proxy {proxy}: {e}")
+            proxy_settings = {"server": proxy} # Fallback
+
+    account = Account(
+        id=account_id,
+        email=account_data["email"],
+        password=account_data["password"],
+        provider=provider,
+        proxy_settings=proxy_settings,
+        type=account_type,
+        credentials={"password": account_data["password"]}
+    )
+
+    logger.info(f"Starting {automation_name} for {account.email} using proxy: {proxy or 'None'}")
+
+    try:
+        # Import the automation's loader.py
+        loader_module_path = f"modules.automations.{provider}.{automation_name}.loader"
+        loader = importlib.import_module(loader_module_path)
+
+        if not hasattr(loader, "run"):
+            raise AttributeError(f"{loader_module_path} missing 'run(account, job_id, **kwargs)' function")
+
+        result = loader.run(account=account)
+        logger.info(f"Finished {automation_name} for {account.email}. Result: {result}")
+        return result
+
+    except Exception as e:
+        logger.error(f"Failed to run automation {automation_name} for {account.email}: {e}")
+        return {"status": "failed", "message": str(e)}
+
+def main():
+    parser = argparse.ArgumentParser(description="Light Automation Engine")
+    parser.add_argument("--provider", help="ISP provider (e.g., webde, gmx)")
+    parser.add_argument("--automation", help="Automation name (e.g., authenticate)")
+    parser.add_argument("--type", default="desktop", choices=["desktop", "mobile"], help="Account type")
+    
+    args = parser.parse_args()
+
+    # Interactive prompts if arguments are missing
+    provider = args.provider
+    if not provider:
+        # Try to list available providers
+        automations_dir = os.path.join(current_dir, "modules", "automations")
+        available_providers = []
+        if os.path.exists(automations_dir):
+            available_providers = [d for d in os.listdir(automations_dir) 
+                                 if os.path.isdir(os.path.join(automations_dir, d)) and not d.startswith("__")]
+        
+        if available_providers:
+            print("\nAvailable providers:")
+            for i, p in enumerate(available_providers, 1):
+                print(f"  {i}. {p}")
+            
+            choice = input(f"\nSelect provider (1-{len(available_providers)}): ").strip()
+            try:
+                idx = int(choice) - 1
+                if 0 <= idx < len(available_providers):
+                    provider = available_providers[idx]
+                else:
+                    provider = choice # Fallback to literal if number is out of range
+            except ValueError:
+                provider = choice # Fallback to literal if not a number
+        else:
+            provider = input("Enter ISP provider (e.g., webde, gmx): ").strip()
+
+    automation = args.automation
+    if not automation:
+        # Try to list available automations for the selected provider
+        provider_dir = os.path.join(current_dir, "modules", "automations", provider)
+        available_automations = []
+        if os.path.exists(provider_dir):
+            available_automations = [d for d in os.listdir(provider_dir) 
+                                   if os.path.isdir(os.path.join(provider_dir, d)) and not d.startswith("__")]
+        
+        if available_automations:
+            print(f"\nAvailable automations for {provider}:")
+            for i, a in enumerate(available_automations, 1):
+                print(f"  {i}. {a}")
+            
+            choice = input(f"\nSelect automation (1-{len(available_automations)}): ").strip()
+            try:
+                idx = int(choice) - 1
+                if 0 <= idx < len(available_automations):
+                    automation = available_automations[idx]
+                else:
+                    automation = choice # Fallback to literal if number is out of range
+            except ValueError:
+                automation = choice # Fallback to literal if not a number
+        else:
+            automation = input("Enter automation name (e.g., authenticate): ").strip()
+
+    if not provider or not automation:
+        logger.error("Provider and automation name are required.")
+        return
+
+    # Ensure data directory exists
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+        logger.info(f"Created data directory: {DATA_DIR}")
+
+    if not os.path.exists(ACCOUNTS_FILE):
+        with open(ACCOUNTS_FILE, "w") as f:
+            f.write("# email:password\n")
+        logger.info(f"Created empty accounts file: {ACCOUNTS_FILE}")
+
+    if not os.path.exists(PROXIES_FILE):
+        with open(PROXIES_FILE, "w") as f:
+            f.write("# http://user:pass@host:port\n")
+        logger.info(f"Created empty proxies file: {PROXIES_FILE}")
+
+    accounts = read_accounts()
+    proxies = read_proxies()
+
+    if not accounts:
+        logger.error("No accounts found to process. Please add them to data/accounts.txt")
+        return
+
+    logger.info(f"Found {len(accounts)} accounts and {len(proxies)} proxies.")
+
+    for i, account_data in enumerate(accounts):
+        # Round-robin proxy distribution
+        proxy = proxies[i % len(proxies)] if proxies else None
+        
+        logger.info(f"[{i+1}/{len(accounts)}] Processing {account_data['email']}")
+        run_automation(
+            account_data=account_data,
+            proxy=proxy,
+            provider=provider,
+            automation_name=automation,
+            account_type=args.type
+        )
+
+if __name__ == "__main__":
+    main()
