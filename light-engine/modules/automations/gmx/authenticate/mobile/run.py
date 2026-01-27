@@ -7,7 +7,7 @@ from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import StatefulFlow
 from core.flow_engine.state_handler import StateHandlerRegistry
-from core.flow_engine.step import StepStatus
+from modules.core.flow_state import FlowResult
 from .handlers import (
     RegisterPageHandler,
     LoginPageHandler,
@@ -149,7 +149,7 @@ class GMXAuthentication(HumanAction):
         
         result = flow.run(page)
         
-        if result.status == StepStatus.FAILURE:
+        if result.status == FlowResult.FAILED:
             raise RequiredActionFailed(f"Failed to reach folder list. Last error: {result.message}")
         
         self.logger.info("Authentication completed via StatefulFlow", extra={"account_id": self.account.id})

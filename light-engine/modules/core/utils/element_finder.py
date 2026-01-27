@@ -1,6 +1,7 @@
 from playwright.sync_api import Page, Frame, ElementHandle
 from typing import List
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -121,132 +122,78 @@ def get_iframe_elements(page: Page, iframe_selector: str, element_selector: str)
         return []
 
 
-import time
-from playwright.sync_api import Page, Frame, ElementHandle, TimeoutError
-
-def deep_find_elements(root, css_selector: str, timeout_ms: int = 30000):
+def deep_find_elements(root, css_selector: str, timeout_ms: int = 15000):
     """
-    Recursively search for elements across:
-        pass
-    - Page
-    - Frame
-    - Iframes
-    - Shadow DOM
-
-    Supports Page, Frame, or ElementHandle as root.
-    Continues searching until timeout is reached or elements are found.
-    
-    Args:
-        root: Page, Frame, or ElementHandle to search from
-        css_selector: CSS selector to search for
-        timeout_ms: Maximum time to search in milliseconds (default: 30000)
-    
-    Returns:
-        List of found ElementHandles
+    Optimized element finder - skips inaccessible frames intelligently.
     """
-    results = []
+    from playwright.sync_api import Page, Error as PlaywrightError
+
     start_time = time.time()
+    if timeout_ms is None:
+        timeout_ms = 15000
     timeout_seconds = timeout_ms / 1000
+    poll_interval = 0.5
+
+    page = root if isinstance(root, Page) else root.page
     
-    logger.debug(f"deep_find_elements: Searching for '{css_selector}' with timeout {timeout_ms}ms")
+    logger.info(f"Searching for '{css_selector}' (timeout: {timeout_ms}ms)")
+    poll_count = 0
+    checked_frames = set()  # Track which frame URLs we've successfully checked
 
-    def is_timed_out():
-        return (time.time() - start_time) > timeout_seconds
-
-    def search_context(context):
-        nonlocal results
+    while (time.time() - start_time) < timeout_seconds:
+        poll_count += 1
         
-        if is_timed_out():
-            return
-
-        # 1) Normal DOM search
-        try:
-            els = context.query_selector_all(css_selector)
-            if els:
-                logger.debug(f"deep_find_elements: Found {len(els)} elements in current context")
-                results.extend(els)
-        except Exception as e:
-            logger.debug(f"deep_find_elements: Error in normal DOM search: {e}")
-
-        if is_timed_out():
-            return
-
-        # 2) Shadow DOM search (Page / Frame only)
-        if isinstance(context, (Page, Frame)):
+        accessible_count = 0
+        found_new_frames = False
+        
+        for frame in page.frames:
+            frame_url = frame.url
+            
             try:
-                shadow_js = """
-                    (selector) => {
-                        const results = [];
-
-                        function scan(node) {
-                            if (!node) return;
-
-                            if (node.shadowRoot) {
-                                results.push(...node.shadowRoot.querySelectorAll(selector));
-                                node.shadowRoot.querySelectorAll("*").forEach(scan);
-                            }
-                        }
-
-                        document.querySelectorAll("*").forEach(scan);
-                        return results;
-                    }
-                """
-                handle = context.evaluate_handle(shadow_js, css_selector)
-                length = context.evaluate("x => x.length", handle)
-
-                if length > 0:
-                    logger.debug(f"deep_find_elements: Found {length} elements in Shadow DOM")
-
-                for i in range(length):
-                    if is_timed_out():
-                        return
-                    el = handle.get_property(str(i)).as_element()
-                    if el:
-                        results.append(el)
-            except Exception as e:
-                logger.debug(f"deep_find_elements: Error in Shadow DOM search: {e}")
-
-        if is_timed_out():
-            return
-
-        # 3) Recurse into iframes (Page / Frame only)
-        if isinstance(context, (Page, Frame)):
-            try:
-                iframe_elements = context.query_selector_all("iframe")
-                if iframe_elements:
-                    logger.debug(f"deep_find_elements: Found {len(iframe_elements)} iframes, recursing...")
-                for iframe in iframe_elements:
-                    if is_timed_out():
-                        return
-                    frame = iframe.content_frame()
-                    if frame:
-                        search_context(frame)
-            except Exception as e:
-                logger.debug(f"deep_find_elements: Error recursing into iframes: {e}")
-
-    # ---- Main search loop ----
-    poll_interval = 0.5  # Check every 500ms
-    
-    while not is_timed_out():
-        results = []  # Reset results for each iteration
+                # Skip if frame is detached
+                if frame.is_detached():
+                    continue
+                
+                # Quick accessibility test - try to get frame name
+                try:
+                    _ = frame.name  # Just accessing name will fail if frame is inaccessible
+                except:
+                    continue  # Frame not accessible, skip silently
+                
+                # Mark this frame as checked
+                if frame_url not in checked_frames:
+                    checked_frames.add(frame_url)
+                    found_new_frames = True
+                
+                accessible_count += 1
+                
+                # Try regular selector
+                visible = frame.locator(css_selector).locator("visible=true")
+                if visible.count() > 0:
+                    logger.info(f"✓ Found {visible.count()} visible elements after {poll_count} polls")
+                    return visible.all()
+                
+                # Try shadow selector
+                shadow_visible = frame.locator(f"pierce/{css_selector}").locator("visible=true")
+                if shadow_visible.count() > 0:
+                    logger.info(f"✓ Found {shadow_visible.count()} shadow elements after {poll_count} polls")
+                    return shadow_visible.all()
+                    
+            except PlaywrightError:
+                continue  # Skip inaccessible frames
+            except Exception:
+                continue
         
-        if isinstance(root, Page):
-            search_context(root.main_frame)
-        else:
-            search_context(root)
+        elapsed = time.time() - start_time
         
-        # If we found elements, return them
-        if results:
-            logger.info(f"deep_find_elements: Found {len(results)} elements for selector '{css_selector}'")
-            return results
+        # Log progress
+        if found_new_frames or poll_count % 10 == 0:
+            logger.debug(f"Poll #{poll_count}: {accessible_count} accessible frames checked ({elapsed:.1f}s)")
         
-        # If timed out, break
-        if is_timed_out():
-            logger.warning(f"deep_find_elements: Timeout reached for selector '{css_selector}'")
+        if (time.time() - start_time) >= timeout_seconds:
             break
             
-        # Wait before next poll (but don't exceed timeout)
-        remaining_time = timeout_seconds - (time.time() - start_time)
-        time.sleep(min(poll_interval, max(0, remaining_time)))
-    
-    return results
+        time.sleep(min(poll_interval, max(0, timeout_seconds - elapsed)))
+
+    logger.warning(f"Element not found after {poll_count} polls ({timeout_seconds}s, checked {len(checked_frames)} unique frames)")
+    return []

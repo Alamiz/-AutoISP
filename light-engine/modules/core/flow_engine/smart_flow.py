@@ -1,8 +1,9 @@
 from typing import List, Optional, Callable
 from playwright.sync_api import Page
-from .step import Step, StepResult, StepStatus
+from .step import Step, StepResult
 from .state_handler import StateHandlerRegistry
 from core.models import Account
+from modules.core.flow_state import FlowResult
 
 class Flow(Step):
     """
@@ -40,13 +41,24 @@ class SequentialFlow(Flow):
                 if self.logger:
                     self.logger.warning(f"SequentialFlow: Unexpected page detected: {page_id}. Running handler...", extra={"account_id": self.account.id})
                 
-                action = handler.handle(page)
+                result = handler.handle(page)
                 
-                if action == "abort":
-                    return StepResult(status=StepStatus.FAILURE, message=f"Flow aborted by {page_id} handler")
-                elif action == "retry":
-                    return StepResult(status=StepStatus.RETRY, message=f"Retry requested by {page_id} handler")
-                # continue -> return None
+                # If handler returns a specific failure state, return it immediately
+                if result in (FlowResult.ABORT, FlowResult.FAILED, FlowResult.LOCKED, 
+                              FlowResult.WRONG_EMAIL, FlowResult.WRONG_PASSWORD, 
+                              FlowResult.SUSPENDED, FlowResult.PHONE_VERIFICATION, FlowResult.CAPTCHA):
+                    return StepResult(status=result, message=f"Flow aborted by {page_id} handler")
+                
+                elif result == FlowResult.RETRY:
+                    return StepResult(status=FlowResult.RETRY, message=f"Retry requested by {page_id} handler")
+                
+                elif result == FlowResult.RESTART:
+                    return StepResult(status=FlowResult.RESTART, message=f"Restart requested by {page_id} handler")
+                
+                elif result == FlowResult.COMPLETED:
+                     return StepResult(status=FlowResult.COMPLETED, message=f"Completed by {page_id} handler")
+
+                # SUCCESS/SKIP -> return None to continue with current step
                     
         except Exception as e:
             if self.logger:
@@ -55,28 +67,26 @@ class SequentialFlow(Flow):
         return None
 
     def run(self, page: Page) -> StepResult:
-        last_result = StepResult(status=StepStatus.SUCCESS)
+        last_result = StepResult(status=FlowResult.SUCCESS)
         
         for i, step in enumerate(self.steps):
             # Check cancellation
             if self.logger and hasattr(step, 'job_id') and step.job_id:
                 pass
 
-            
             step_name = step.__class__.__name__
             
             # Check state before step
             state_result = self._check_page_state(page)
             if state_result:
-                if state_result.status == StepStatus.FAILURE:
-                    return state_result
-                if state_result.status == StepStatus.RETRY:
-                    pass
-
-                    # If handler says retry, we should probably retry the *current* step?
-                    # But we haven't started it yet.
-                    # So we just continue to execute the step.
-                    # Wait, if handler fixed it (e.g. closed popup), we proceed.
+                if state_result.status != FlowResult.SUCCESS:
+                    # If state check returned a non-success result (ABORT, RETRY, RESTART, COMPLETED, etc.)
+                    # We might need to handle RETRY specially here?
+                    # If RETRY, we should probably retry the *current* step.
+                    if state_result.status == FlowResult.RETRY:
+                        pass # Continue to execute the step
+                    else:
+                        return state_result
 
             # Retry loop for the step
             attempt = 0
@@ -92,17 +102,22 @@ class SequentialFlow(Flow):
                     result = step.run(page)
                     last_result = result
                     
-                    if result.status == StepStatus.SUCCESS:
+                    if result.status == FlowResult.SUCCESS:
                         if self.logger:
                             self.logger.info(f"SequentialFlow: Step {step_name} succeeded", extra={"account_id": self.account.id})
                         break
                     
-                    if result.status == StepStatus.FAILURE:
+                    if result.status == FlowResult.COMPLETED:
                         if self.logger:
-                            self.logger.error(f"SequentialFlow: Step {step_name} failed: {result.message}", extra={"account_id": self.account.id})
+                            self.logger.info(f"SequentialFlow: Step {step_name} completed the flow", extra={"account_id": self.account.id})
                         return result
+
+                    if result.status == FlowResult.SKIP:
+                        if self.logger:
+                            self.logger.info(f"SequentialFlow: Step {step_name} skipped: {result.message}", extra={"account_id": self.account.id})
+                        break
                     
-                    if result.status == StepStatus.RETRY:
+                    if result.status == FlowResult.RETRY:
                         if attempt < max_retries:
                             if self.logger:
                                 self.logger.warning(f"SequentialFlow: Step {step_name} requested retry: {result.message}", extra={"account_id": self.account.id})
@@ -111,23 +126,28 @@ class SequentialFlow(Flow):
                         else:
                             if self.logger:
                                 self.logger.error(f"SequentialFlow: Step {step_name} failed after {max_retries} attempts", extra={"account_id": self.account.id})
-                            return StepResult(status=StepStatus.FAILURE, message=f"Max retries exceeded for {step_name}")
-                        
-                    if result.status == StepStatus.SKIP:
+                            return StepResult(status=FlowResult.FAILED, message=f"Max retries exceeded for {step_name}")
+                    
+                    if result.status == FlowResult.RESTART:
+                         return result
+                    
+                    # Handle failure states
+                    if result.status in (FlowResult.FAILED, FlowResult.ABORT, FlowResult.LOCKED, 
+                                         FlowResult.WRONG_EMAIL, FlowResult.WRONG_PASSWORD,
+                                         FlowResult.SUSPENDED, FlowResult.PHONE_VERIFICATION, FlowResult.CAPTCHA):
                         if self.logger:
-                            self.logger.info(f"SequentialFlow: Step {step_name} skipped: {result.message}", extra={"account_id": self.account.id})
-                        break
+                            self.logger.error(f"SequentialFlow: Step {step_name} failed with status {result.status.name}: {result.message}", extra={"account_id": self.account.id})
+                        return result
 
                 except Exception as e:
                     if self.logger:
                         self.logger.error(f"SequentialFlow: Exception in {step_name}: {e}", extra={"account_id": self.account.id})
-                    return StepResult(status=StepStatus.FAILURE, message=str(e))
+                    return StepResult(status=FlowResult.FAILED, message=str(e))
             else:
-                pass
-
-                 # Loop finished without break -> max retries exceeded (if not handled inside)
+                 # Loop finished without break -> max retries exceeded
+                 return StepResult(status=FlowResult.FAILED, message=f"Max retries exceeded for {step_name}")
                 
-        return StepResult(status=StepStatus.SUCCESS, message="SequentialFlow completed", payload=last_result.payload)
+        return StepResult(status=FlowResult.SUCCESS, message="SequentialFlow completed", payload=last_result.payload)
 
 class StatefulFlow(Flow):
     """
@@ -161,20 +181,31 @@ class StatefulFlow(Flow):
             # Check cancellation
             if self.job_id:
                 pass
-
             
             # 1. Check Goal
             try:
                 if self.goal_checker(page):
                     if self.logger:
                         self.logger.info("StatefulFlow: Goal reached!", extra={"account_id": self.account.id})
-                    return StepResult(status=StepStatus.SUCCESS, message="Goal reached")
+                    return StepResult(status=FlowResult.SUCCESS, message="Goal reached")
             except Exception as e:
                 if self.logger:
                     self.logger.warning(f"StatefulFlow: Goal check failed: {e}", extra={"account_id": self.account.id})
 
             # 2. Identify State
-            page_id = self.state_registry.identify(page)
+            page_id = "unknown"
+            max_id_attempts = 4
+            for attempt in range(1, max_id_attempts + 1):
+                page_id = self.state_registry.identify(page)
+                if page_id != "unknown":
+                    break
+                
+                if attempt < max_id_attempts:
+                    wait_time = attempt * 5 # 5s, 10s
+                    if self.logger:
+                        self.logger.debug(f"StatefulFlow: Identification returned 'unknown'. Retrying in {wait_time}s... (Attempt {attempt}/{max_id_attempts})", extra={"account_id": self.account.id})
+                    page.wait_for_timeout(wait_time * 1000)
+            
             if self.logger:
                 self.logger.debug(f"StatefulFlow: Identified state: {page_id}", extra={"account_id": self.account.id})
             
@@ -184,23 +215,38 @@ class StatefulFlow(Flow):
                 if self.logger:
                     self.logger.info(f"StatefulFlow: Handling state '{page_id}'", extra={"account_id": self.account.id})
                 
-                action = handler.handle(page)
+                result = handler.handle(page)
                 
-                if action == "abort":
-                    return StepResult(status=StepStatus.FAILURE, message=f"Aborted by handler for {page_id}")
-                elif action == "retry":
+                if result == FlowResult.COMPLETED:
+                    return StepResult(status=FlowResult.COMPLETED, message=f"Completed by {page_id}")
+                
+                elif result == FlowResult.SUCCESS:
+                    # Handler succeeded, continue loop
+                    page.wait_for_timeout(1000)
+                    continue
+                    
+                elif result == FlowResult.RETRY:
                     # Handler requests retry (usually means it fixed something and wants to try again)
                     page.wait_for_timeout(1000)
                     continue
-                elif action == "continue":
-                    # Handler processed state, continue loop
-                    page.wait_for_timeout(1000)
+                    
+                elif result == FlowResult.SKIP:
+                    # Skip current handler (maybe not applicable here, but safe to continue)
                     continue
+                    
+                elif result == FlowResult.RESTART:
+                    return StepResult(status=FlowResult.RESTART, message=f"Restart requested by {page_id}")
+                
+                elif result in (FlowResult.ABORT, FlowResult.FAILED, FlowResult.LOCKED, 
+                              FlowResult.WRONG_EMAIL, FlowResult.WRONG_PASSWORD, 
+                              FlowResult.SUSPENDED, FlowResult.PHONE_VERIFICATION, FlowResult.CAPTCHA):
+                    return StepResult(status=result, message=f"Flow terminated by {page_id} handler")
+                    
             else:
                 # No handler for this state
                 if page_id == "unknown":
                      if self.logger:
-                         self.logger.warning("StatefulFlow: Unknown state and no handler. Retrying identification...", extra={"account_id": self.account.id})
+                         self.logger.warning("StatefulFlow: Unknown state after multiple identification attempts.", extra={"account_id": self.account.id})
                      page.wait_for_timeout(2000)
                      continue
                 else:
@@ -210,4 +256,4 @@ class StatefulFlow(Flow):
                     page.wait_for_timeout(2000)
                     continue
                 
-        return StepResult(status=StepStatus.FAILURE, message="Max steps exceeded in StatefulFlow")
+        return StepResult(status=FlowResult.FAILED, message="Max steps exceeded in StatefulFlow")

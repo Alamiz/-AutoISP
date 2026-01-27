@@ -1,7 +1,8 @@
 # core/flow_engine/runner.py
 from typing import Optional
-from .step import Step, StepResult, StepStatus
+from .step import Step, StepResult
 from .state_handler import StateHandlerRegistry
+from modules.core.flow_state import FlowResult
 
 class StepRunner:
     def __init__(self, initial_step: Step, state_registry: Optional[StateHandlerRegistry] = None):
@@ -39,21 +40,21 @@ class StepRunner:
                 if self.logger:
                     self.logger.warning(f"Unexpected page detected: {page_id}. Running handler...", extra={"account_id": self.account.id})
                 
-                action = handler.handle(page)
+                result = handler.handle(page)
                 
-                if action == "abort":
+                if result in (FlowResult.ABORT, FlowResult.FAILED):
                     return StepResult(
-                        status=StepStatus.FAILURE,
+                        status=FlowResult.FAILED,
                         message=f"Flow aborted by {page_id} handler"
                     )
-                elif action == "continue":
+                elif result == FlowResult.SUCCESS:
                     if self.logger:
                         self.logger.info(f"Handler for {page_id} completed. Continuing flow...", extra={"account_id": self.account.id})
                     return None  # Continue with current step
-                elif action == "retry":
+                elif result == FlowResult.RETRY:
                     if self.logger:
                         self.logger.info(f"Handler for {page_id} requests retry", extra={"account_id": self.account.id})
-                    return StepResult(status=StepStatus.RETRY, message=f"Retry requested by {page_id} handler")
+                    return StepResult(status=FlowResult.RETRY, message=f"Retry requested by {page_id} handler")
                     
         except Exception as e:
             if self.logger:
@@ -74,10 +75,10 @@ class StepRunner:
             # Check page state before executing step
             state_result = self._check_page_state(page, current_step)
             if state_result:
-                if state_result.status == StepStatus.FAILURE:
+                if state_result.status == FlowResult.FAILED:
                     self._log_execution_trace()
                     return state_result
-                elif state_result.status == StepStatus.RETRY:
+                elif state_result.status == FlowResult.RETRY:
                     # Handler wants us to retry - don't increment attempt counter
                     page.wait_for_timeout(1000)
                     continue
@@ -102,11 +103,11 @@ class StepRunner:
 
                 try:
                     result: StepResult = current_step.run(page)
-                    trace_entry["status"] = result.status.value
+                    trace_entry["status"] = result.status.name
                     trace_entry["message"] = result.message
                     
                 except Exception as e:
-                    result = StepResult(status=StepStatus.FAILURE, message=str(e))
+                    result = StepResult(status=FlowResult.FAILED, message=str(e))
                     trace_entry["status"] = "exception"
                     trace_entry["message"] = str(e)
                     trace_entry["exception_type"] = type(e).__name__
@@ -120,13 +121,13 @@ class StepRunner:
                 self.execution_trace.append(trace_entry)
 
                 # Handle StepResult
-                if result.status == StepStatus.SUCCESS:
+                if result.status == FlowResult.SUCCESS:
                     if self.logger:
                         self.logger.info(f"[Step {step_index}] ✓ SUCCESS: {result.message or ''}", extra={"account_id": self.account.id})
                     next_step = result.payload
                     break
 
-                elif result.status == StepStatus.RETRY:
+                elif result.status == FlowResult.RETRY:
                     if self.logger:
                         self.logger.warning(
                             f"[Step {step_index}] ↻ RETRY ({attempt}/{current_step.max_retries}): "
@@ -137,13 +138,13 @@ class StepRunner:
                         page.wait_for_timeout(1000)  # Brief pause before retry
                     continue
 
-                elif result.status == StepStatus.SKIP:
+                elif result.status == FlowResult.SKIP:
                     if self.logger:
                         self.logger.info(f"[Step {step_index}] ⊘ SKIP: {result.message or ''}", extra={"account_id": self.account.id})
                     next_step = result.payload
                     break
 
-                elif result.status == StepStatus.FAILURE:
+                elif result.status in (FlowResult.FAILED, FlowResult.ABORT):
                     if self.logger:
                         self.logger.error(f"[Step {step_index}] ✗ FAILURE: {result.message or ''}", extra={"account_id": self.account.id})
                     self._log_execution_trace()
@@ -155,7 +156,7 @@ class StepRunner:
                 if self.logger:
                     self.logger.error(f"[Step {step_index}] {error_msg}", extra={"account_id": self.account.id})
                 self._log_execution_trace()
-                return StepResult(status=StepStatus.FAILURE, message=error_msg)
+                return StepResult(status=FlowResult.FAILED, message=error_msg)
             
             # Move to next step
             current_step = next_step
@@ -163,7 +164,7 @@ class StepRunner:
         # All steps completed successfully
         if self.logger:
             self.logger.info("✓ Flow completed successfully", extra={"account_id": self.account.id})
-        return StepResult(status=StepStatus.SUCCESS, message="Flow completed successfully")
+        return StepResult(status=FlowResult.SUCCESS, message="Flow completed successfully")
     
     def _log_execution_trace(self):
         """Log the complete execution trace for debugging."""

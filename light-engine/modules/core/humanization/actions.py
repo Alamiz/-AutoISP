@@ -28,6 +28,8 @@ class HumanAction(ABC):
         """
         Find element with humanization, optionally using deep search for nested shadow/iframe elements.
         """
+        if timeout is None:
+            timeout = 3000
 
         # Slight random delay before searching
         # if random.random() > 0.6:
@@ -39,7 +41,7 @@ class HumanAction(ABC):
         if deep_search:
             # Use universal deep search to find the element
             for selector in selectors:
-                elements = deep_find_elements(page, selector)
+                elements = deep_find_elements(page, selector, timeout)
                 if elements:
                     element = elements[0]
                     break
@@ -50,7 +52,7 @@ class HumanAction(ABC):
                     element = page.wait_for_selector(selector, timeout=timeout)
                     if element:
                         break
-                except TimeoutError:
+                except Exception:
                     continue
 
         if not element:

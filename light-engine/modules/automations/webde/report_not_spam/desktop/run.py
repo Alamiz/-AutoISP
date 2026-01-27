@@ -8,7 +8,7 @@ from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import SequentialFlow
 from core.flow_engine.state_handler import StateHandlerRegistry
-from core.flow_engine.step import StepStatus
+from modules.core.flow_state import FlowResult
 from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
 from .handlers import UnknownPageHandler
 from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
@@ -118,7 +118,7 @@ class ReportNotSpam(HumanAction):
         flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
         result = flow.run(page)
         
-        if result.status == StepStatus.FAILURE:
+        if result.status == FlowResult.FAILED:
             raise RequiredActionFailed(f"Failed to complete report. Last error: {result.message}")
         
         self.logger.info("Report not spam completed via SequentialFlow", extra={"account_id": self.account.id})

@@ -15,7 +15,7 @@ class LoginPageHandler(StateHandler):
         try:
             # Check if we are already at the password step (e.g. after captcha retry)
             # Use deep_find_elements because it's in an iframe
-            password_elements = deep_find_elements(page, "input#password")
+            password_elements = deep_find_elements(page, "input#password", timeout_ms=2000)
             password_field_visible = any(el.is_visible() for el in password_elements)
 
             if password_field_visible:
@@ -43,7 +43,7 @@ class LoginPageHandler(StateHandler):
             )
             
             # Check for captcha after clicking continue
-            if len(deep_find_elements(page, "div[data-testid='captcha']")) > 0:
+            if len(deep_find_elements(page, "div[data-testid='captcha']", timeout_ms=8000)) > 0:
                 return "continue"
 
             self.automation.human_fill(

@@ -7,7 +7,7 @@ from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import SequentialFlow
 from core.flow_engine.state_handler import StateHandlerRegistry
-from core.flow_engine.step import StepStatus
+from modules.core.flow_state import FlowResult
 from .steps import (
     OpenAddressBookStep,
     OpenImportPanelStep,
@@ -109,7 +109,7 @@ class ImportContacts(HumanAction):
         flow = SequentialFlow(steps, account=self.account, logger=self.logger)
         result = flow.run(page)
         
-        if result.status == StepStatus.FAILURE:
+        if result.status == FlowResult.FAILED:
             raise RequiredActionFailed(f"Failed to complete import. Last error: {result.message}")
         
         self.logger.info("Import contacts completed via SequentialFlow", extra={"account_id": self.account.id})

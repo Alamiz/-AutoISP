@@ -1,19 +1,15 @@
 # core/flow_engine/step.py
-from enum import Enum
 from typing import Optional, Any
+from dataclasses import dataclass
 from playwright.sync_api import Page
+from modules.core.flow_state import FlowResult
 
-class StepStatus(Enum):
-    SUCCESS = "success"
-    RETRY = "retry"
-    SKIP = "skip"
-    FAILURE = "failure"
-
+@dataclass
 class StepResult:
-    def __init__(self, status: StepStatus, payload: Optional[Any] = None, message: Optional[str] = None):
-        self.status = status
-        self.payload = payload
-        self.message = message
+    """Result of a step execution, containing status, optional payload, and message."""
+    status: FlowResult
+    payload: Optional[Any] = None
+    message: Optional[str] = None
 
 class Step:
     """

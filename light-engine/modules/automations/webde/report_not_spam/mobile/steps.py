@@ -1,7 +1,8 @@
 from playwright.sync_api import Page
 from core.humanization.actions import HumanAction
 from core.utils.element_finder import deep_find_elements
-from core.flow_engine.step import Step, StepResult, StepStatus
+from core.flow_engine.step import Step, StepResult
+from modules.core.flow_state import FlowResult
 from core.utils.retry_decorators import retry_action
 from core.utils.date_utils import parse_german_mail_date
 
@@ -24,14 +25,14 @@ class NavigateToSpamStep(Step):
             self.logger.info("Navigating to Spam folder", extra={"account_id": self.account.id})
             self._click_spam_folder(page)
             page.wait_for_timeout(2000)
-            return StepResult(status=StepStatus.SUCCESS)
+            return StepResult(status=FlowResult.SUCCESS)
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to navigate to Spam: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Failed to navigate to Spam: {e}")
 
 class ReportSpamEmailsStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            keyword = getattr(self.automation, "search_text", "").lower()
+            keyword = (getattr(self.automation, "search_text", "") or "").lower()
             start_date = getattr(self.automation, "start_date") 
             end_date = getattr(self.automation, "end_date")     
 
@@ -58,8 +59,8 @@ class ReportSpamEmailsStep(Step):
                         item = email_items[index]
                         
                         # --- Extract date from <list-date-label> ---
-                        date_el = item.query_selector("dd.mail-header__date")
-                        if not date_el:
+                        date_el = item.locator("dd.mail-header__date")
+                        if date_el.count() == 0:
                             self.logger.warning("Date element not found", extra={"account_id": self.account.id})
                             index += 1
                             continue
@@ -93,13 +94,13 @@ class ReportSpamEmailsStep(Step):
                             return self._final_result()
 
                         # --- Keyword check ---
-                        subject_el = item.query_selector("dd.mail-header__subject")
-                        if not subject_el:
+                        subject_el = item.locator("dd.mail-header__subject")
+                        if subject_el.count() == 0:
                             self.logger.warning("Subject element not found", extra={"account_id": self.account.id})
                             index += 1
                             continue
                         
-                        subject_text = subject_el.inner_text().lower()
+                        subject_text = (subject_el.inner_text() or "").lower()
                         if keyword not in subject_text:
                             index += 1
                             continue
@@ -159,7 +160,7 @@ class ReportSpamEmailsStep(Step):
 
         except Exception as e:
             return StepResult(
-                status=StepStatus.RETRY,
+                status=FlowResult.RETRY,
                 message=f"Failed to report emails: {e}"
             )
     
@@ -203,7 +204,8 @@ class ReportSpamEmailsStep(Step):
                 page,
                 selectors=['iframe#bodyIFrame']
             )
-            frame = iframe.content_frame()
+            # iframe is a Locator, we need ElementHandle to call content_frame()
+            frame = iframe.element_handle().content_frame()
             body = self.automation._find_element_with_humanization(
                 frame, ["body"]
             )
@@ -248,12 +250,12 @@ class ReportSpamEmailsStep(Step):
     def _final_result(self) -> StepResult:
         if getattr(self.automation, "reported_email_ids", []):
             return StepResult(
-                status=StepStatus.SUCCESS,
+                status=FlowResult.SUCCESS,
                 message="Emails reported within date range"
             )
 
         return StepResult(
-            status=StepStatus.SKIP,
+            status=FlowResult.SKIP,
             message="No emails found within date range"
         )
 
@@ -261,7 +263,7 @@ class ReportSpamEmailsStep(Step):
 class OpenReportedEmailsStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            keyword = getattr(self.automation, "search_text", "").lower()
+            keyword = (getattr(self.automation, "search_text", "") or "").lower()
             start_dt = getattr(self.automation, "start_date")
             end_dt = getattr(self.automation, "end_date")
 
@@ -296,15 +298,15 @@ class OpenReportedEmailsStep(Step):
 
                         index += 1
                         
-                        email_subject = item.query_selector("dd.mail-header__subject")
+                        email_subject = item.locator("dd.mail-header__subject")
                         
-                        if not email_subject:
+                        if email_subject.count() == 0:
                             continue
                         email_subject = email_subject.text_content().strip().lower()
 
                         # --- Extract date from date element title ---
-                        date_el = item.query_selector("dd.mail-header__date")
-                        if not date_el:
+                        date_el = item.locator("dd.mail-header__date")
+                        if date_el.count() == 0:
                             continue
 
                         date_title = date_el.get_attribute("title")
@@ -394,7 +396,7 @@ class OpenReportedEmailsStep(Step):
 
         except Exception as e:
             return StepResult(
-                status=StepStatus.RETRY,
+                status=FlowResult.RETRY,
                 message=f"Failed to open reported emails: {e}"
             )
 
@@ -415,62 +417,6 @@ class OpenReportedEmailsStep(Step):
         except Exception as e:
             self.logger.warning(
                 f"Failed to navigate to inbox: {e}",
-                extra={"account_id": self.account.id}
-            )
-
-    @retry_action()
-    def _fill_search_input(self, page):
-        try:
-            search_input = deep_find_elements(
-                page,
-                css_selector="input.webmailer-mail-list-search-input__input",
-            )
-            if search_input:
-                search_input[0].fill(keyword)
-        except Exception as e:
-            self.logger.warning(
-                f"Failed to fill search input: {e}",
-                extra={"account_id": self.account.id}
-            )
-    
-    @retry_action()
-    def open_search_options(self, page):
-        try:
-            self.automation.human_click(
-                page,
-                selectors=["button.webmailer-mail-list-search-options__button"],
-                deep_search=True
-            )
-        except Exception as e:
-            self.logger.warning(
-                f"Failed to open search options: {e}",
-                extra={"account_id": self.account.id}
-            )
-    
-    @retry_action()
-    def select_inbox_and_submit(self, page):
-        try:
-            # Select inbox
-            self.automation.human_select(
-                page,
-                selectors=[
-                    "div.webmailer-mail-list-search-options__container select#folderSelect"
-                ],
-                label="Posteingang",
-                deep_search=True
-            )
-
-            # Submit search
-            self.automation.human_click(
-                page,
-                selectors=[
-                    "div.webmailer-mail-list-search-options__container button[type='submit']"
-                ],
-                deep_search=True
-            )
-        except Exception as e:
-            self.logger.warning(
-                f"Failed to select inbox and submit search: {e}",
                 extra={"account_id": self.account.id}
             )
 
@@ -496,7 +442,8 @@ class OpenReportedEmailsStep(Step):
                 page,
                 selectors=["iframe#bodyIFrame"]
             )
-            frame = iframe.content_frame()
+            # iframe is a Locator, we need ElementHandle to call content_frame()
+            frame = iframe.element_handle().content_frame()
             body = self.automation._find_element_with_humanization(
                 frame, ["body"]
             )
@@ -514,20 +461,35 @@ class OpenReportedEmailsStep(Step):
             )
     
     @retry_action()
-    def _add_to_favorites(self):
+    def _add_to_favorites(self, page):
         try:
-            self.automation.human_click(
+            # Find and click the button
+            button = self.automation._find_element_with_humanization(
                 page,
-                selectors=[
-                    "button.detail-favorite-marker__unselected"
-                ],
+                selectors=["button.detail-favorite-marker__unselected"],
                 deep_search=True,
-                timeout=5000
+                timeout=2000
             )
-            self.logger.info("Added to favorites", extra={"account_id": self.account.id})
-        except Exception:
-            pass
-    
+            button.click()
+            
+            # Wait a moment for the DOM to update
+            page.wait_for_timeout(500)
+            
+            # Verify the button now has the selected class
+            selected_button = self.automation._find_element_with_humanization(
+                page,
+                selectors=["button.detail-favorite-marker__selected"],
+                deep_search=True,
+                timeout=2000
+            )
+            
+            if not selected_button:
+                raise Exception("Failed to verify favorite was added - selected class not found")
+                
+        except Exception as e:
+            self.logger.warning(f"Failed to add to favorites: {e}", extra={"account_id": self.account.id})
+            raise  # Re-raise to trigger retry
+
     @retry_action()
     def _click_link_or_image(self, frame, page):
         try:
@@ -573,10 +535,10 @@ class OpenReportedEmailsStep(Step):
     def _final(self, found: bool) -> StepResult:
         if found:
             return StepResult(
-                status=StepStatus.SUCCESS,
+                status=FlowResult.SUCCESS,
                 message="All matching emails in datetime range processed."
             )
         return StepResult(
-            status=StepStatus.SKIP,
+            status=FlowResult.SKIP,
             message="No matching emails found in datetime range."
         )

@@ -7,7 +7,7 @@ from core.humanization.actions import HumanAction
 from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import SequentialFlow
 from core.flow_engine.state_handler import StateHandlerRegistry
-from core.flow_engine.step import StepStatus
+from modules.core.flow_state import FlowResult
 from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
 from .handlers import UnknownPageHandler
 from core.pages_signatures.gmx.mobile import PAGE_SIGNATURES
@@ -82,7 +82,7 @@ class ReportNotSpam(HumanAction):
             flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
             result = flow.run(page)
             
-            if result.status == StepStatus.FAILURE:
+            if result.status == FlowResult.FAILED:
                 return {"status": "failed", "message": result.message, "retry_recommended": True}
 
             return {

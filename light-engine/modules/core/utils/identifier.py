@@ -2,76 +2,13 @@ from playwright.sync_api import Page
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from typing import Optional
-import re
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Import the flattening function
 from .element_finder import flatten_page_to_html
-
-
-def is_page_english(html_content):
-    """
-    Determines if a web page is in English by checking multiple indicators.
-    
-    Args:
-        html_content (str): The HTML content of the page to analyze
-        
-    Returns:
-        bool: True if page appears to be in English, False otherwise
-    """
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # 1. Check HTML lang attribute
-    html_tag = soup.find('html')
-    if html_tag and html_tag.has_attr('lang'):
-        lang_attr = html_tag['lang'].lower()
-        if lang_attr.startswith('en'):
-            return True
-        elif not lang_attr.startswith('en'):
-            return False
-    
-    # 2. Check meta http-equiv language
-    meta_lang = soup.find('meta', attrs={'http-equiv': 'content-language'})
-    if meta_lang and meta_lang.has_attr('content'):
-        if meta_lang['content'].lower().startswith('en'):
-            return True
-        elif not meta_lang['content'].lower().startswith('en'):
-            return False
-    
-    # 3. Check og:locale meta tag (used by Facebook/OpenGraph)
-    og_locale = soup.find('meta', property='og:locale')
-    if og_locale and og_locale.has_attr('content'):
-        if og_locale['content'].lower().startswith('en'):
-            return True
-        elif not og_locale['content'].lower().startswith('en'):
-            return False
-    
-    # 4. Analyze visible text for English words
-    visible_text = soup.get_text()
-    english_word_count = 0
-    total_word_count = 0
-    
-    # Common English words to look for
-    common_english_words = {'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'I'}
-    
-    words = re.findall(r'\b\w+\b', visible_text.lower())
-    for word in words:
-        if word in common_english_words:
-            english_word_count += 1
-        total_word_count += 1
-    
-    # If we have enough text to analyze and most words are English
-    if total_word_count > 20 and (english_word_count / total_word_count) > 0.3:
-        return True
-    
-    # 5. Check for English in title
-    title = soup.find('title')
-    if title:
-        title_text = title.get_text().lower()
-        if any(word in title_text for word in common_english_words):
-            return True
-    
-    # If none of the above indicators confirm English, assume it's not English
-    return False
 
 
 def has_required_sublink(current_url: str, required_sublink: str) -> bool:
@@ -95,7 +32,6 @@ def identify_page(page: Page, current_url: Optional[str] = None, signatures=None
     Optimized page identification using flattened HTML snapshot.
     
     This function:
-        pass
     1. Takes a fresh snapshot of the entire page (main DOM + iframes + shadow DOM)
     2. Flattens everything into a single HTML string
     3. Uses BeautifulSoup for ALL checks (fast!)
@@ -109,46 +45,84 @@ def identify_page(page: Page, current_url: Optional[str] = None, signatures=None
         Identified page name or "unknown"
     """
     
+    total_start = time.time()
+    
     if signatures is None:
         raise ValueError("Signatures must be provided for the current platform")
     
-    # Take a FRESH snapshot: flatten entire page into single HTML
-    # This includes: main DOM + all iframes + all shadow DOM content
-    flattened_html = flatten_page_to_html(page)
+    logger.info("=" * 60)
+    logger.info("Starting page identification")
+    logger.info("=" * 60)
     
-    # Parse once with BeautifulSoup
+    # ========================================
+    # STEP 1: Build HTML ONCE (expensive operation)
+    # ========================================
+    step_start = time.time()
+    flattened_html = flatten_page_to_html(page)
+    flatten_time = time.time() - step_start
+    logger.info(f"✓ Flattened HTML: {flatten_time*1000:.2f}ms ({len(flattened_html):,} chars)")
+    
+    # ========================================
+    # STEP 2: Parse with BeautifulSoup ONCE
+    # ========================================
+    step_start = time.time()
     soup = BeautifulSoup(flattened_html, 'html.parser')
+    parse_time = time.time() - step_start
+    logger.info(f"✓ Parsed with BeautifulSoup: {parse_time*1000:.2f}ms")
+    
+    # ========================================
+    # STEP 3: Setup selector caching
+    # ========================================
+    selector_cache = {}
+    
+    def get_elements(css_selector):
+        """Cache selector results"""
+        if css_selector not in selector_cache:
+            selector_cache[css_selector] = soup.select(css_selector)
+        return selector_cache[css_selector]
+    
+    # ========================================
+    # STEP 4: Score all pages
+    # ========================================
+    logger.info(f"Checking {len(signatures)} page signatures...")
     
     page_scores = {}
+    signature_times = {}
+    total_checks = 0
+    cache_hits = 0
 
     for page_name, config in signatures.items():
-        # Required sublink check (cheap)
+        sig_start = time.time()
+        
+        # Required sublink check (cheap, do first)
         if "required_sublink" in config:
             if not has_required_sublink(current_url, config["required_sublink"]):
+                logger.debug(f"  {page_name}: Skipped (sublink mismatch)")
                 continue
 
         total_possible = 0
         matched_score = 0
+        checks_performed = 0
 
         for check in config["checks"]:
             weight = check.get("weight", 1)
             should_exist = check.get("should_exist", True)
             min_count = check.get("min_count", 1)
             contains_text = check.get("contains_text")
-            requires_english = check.get("require_english", False)
-
-            if requires_english and not is_page_english(flattened_html):
-                continue
 
             element_exists = False
+            total_checks += 1
 
             try:
-                # ALL checks now use BeautifulSoup on the flattened HTML
-                # No need for deep_search flag anymore - everything is flattened!
+                # Use cached selector results
+                css_selector = check["css_selector"]
                 
-                # Note: iframe_selector is now ignored since everything is flattened
-                # Just use the css_selector directly
-                elements = soup.select(check["css_selector"])
+                # Track cache hits
+                was_cached = css_selector in selector_cache
+                elements = get_elements(css_selector)
+                if was_cached:
+                    cache_hits += 1
+                
                 element_exists = len(elements) >= min_count
 
                 # Text validation
@@ -159,8 +133,11 @@ def identify_page(page: Page, current_url: Optional[str] = None, signatures=None
                     )
 
             except Exception as e:
+                logger.debug(f"  {page_name}: Check failed - {e}")
                 continue
 
+            checks_performed += 1
+            
             # Scoring logic
             total_possible += weight
 
@@ -175,18 +152,62 @@ def identify_page(page: Page, current_url: Optional[str] = None, signatures=None
                 else:
                     matched_score -= weight
 
+        sig_time = time.time() - sig_start
+        signature_times[page_name] = sig_time
+        
         if total_possible > 0:
-            page_scores[page_name] = max(0, matched_score) / total_possible
+            score = max(0, matched_score) / total_possible
+            page_scores[page_name] = score
+            
+            logger.debug(f"  {page_name}: {score:.2%} ({checks_performed} checks, {sig_time*1000:.2f}ms)")
 
-            # Stop search if perfect score (page found!)
+            # Early exit: perfect score found
             if matched_score / total_possible == 1:
+                logger.info(f"✓ Perfect match found: {page_name}")
                 break
         else:
             page_scores[page_name] = 0
 
+    # ========================================
+    # STEP 5: Results
+    # ========================================
+    total_time = time.time() - total_start
+    
+    logger.info("-" * 60)
+    logger.info("Performance Summary:")
+    logger.info(f"  HTML Flattening:     {flatten_time*1000:>8.2f}ms")
+    logger.info(f"  BeautifulSoup Parse: {parse_time*1000:>8.2f}ms")
+    logger.info(f"  Signature Checks:    {sum(signature_times.values())*1000:>8.2f}ms")
+    logger.info(f"  Total Time:          {total_time*1000:>8.2f}ms")
+    logger.info("-" * 60)
+    logger.info(f"Cache Stats:")
+    logger.info(f"  Total selector queries: {total_checks}")
+    logger.info(f"  Cache hits:             {cache_hits} ({cache_hits/total_checks*100:.1f}%)" if total_checks > 0 else "  No queries")
+    logger.info(f"  Unique selectors:       {len(selector_cache)}")
+    logger.info("-" * 60)
+    
     # Return best match
     if not page_scores:
+        logger.warning("No matching pages found")
+        logger.info("=" * 60)
         return "unknown"
 
     best_page, score = max(page_scores.items(), key=lambda x: x[1])
-    return best_page if score >= 0.7 else "unknown"
+    
+    # Show top 3 matches
+    top_matches = sorted(page_scores.items(), key=lambda x: x[1], reverse=True)[:3]
+    logger.info("Top matches:")
+    for idx, (name, sc) in enumerate(top_matches, 1):
+        logger.info(f"  {idx}. {name}: {sc:.2%}")
+    
+    logger.info("-" * 60)
+    
+    if score >= 0.7:
+        logger.info(f"✓ Identified page: {best_page} (confidence: {score:.2%})")
+    else:
+        logger.warning(f"Low confidence match: {best_page} ({score:.2%}) - returning 'unknown'")
+        best_page = "unknown"
+    
+    logger.info("=" * 60)
+    
+    return best_page

@@ -8,7 +8,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src^="https://alligator.navigator.web.de"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Login iframe exists",
                 "weight": 2.0,
                 "should_exist": True
@@ -19,7 +18,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Email input field inside login iframe",
                 "weight": 4.0,
                 "should_exist": True
@@ -29,7 +27,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'a[data-component="button"][href^="https://web.de/email/tarifvergleich"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -38,7 +35,6 @@ PAGE_SIGNATURES = {
                 "name": "Error message",
                 "css_selector": 'p[data-testid="error-email"]',
                 "contains_text": None,
-                "require_english": False,
                 "description": "Wrong username error message",
                 "weight": 4.0,
                 "should_exist": False
@@ -55,7 +51,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Captcha exists",
                 "weight": 4.0,
                 "should_exist": True
@@ -71,7 +66,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src^="https://alligator.navigator.web.de"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Login iframe exists",
                 "weight": 2.0,
                 "should_exist": True
@@ -82,7 +76,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Email input field inside login iframe",
                 "weight": 4.0,
                 "should_exist": True
@@ -92,7 +85,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'a[data-component="button"][href^="https://web.de/email/tarifvergleich"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -102,7 +94,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'p[data-testid="error-email"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Wrong username error message",
                 "weight": 4.0,
                 "should_exist": True
@@ -119,7 +110,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Wrong password error message",
                 "weight": 4.0,
                 "should_exist": True
@@ -135,7 +125,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.mtan-code-input__panel',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Phone number text",
                 "weight": 4.0,
                 "should_exist": True
@@ -151,7 +140,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src^="https://alligator.navigator.web.de"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Login iframe",
                 "weight": 2.0,
                 "should_exist": True
@@ -161,7 +149,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'account-avatar[role="button"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 2.0,
                 "should_exist": True
@@ -172,7 +159,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Button to confirm already authenticated user inside iframe.",
                 "weight": 3.0,
                 "should_exist": True
@@ -183,7 +169,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Logged in user greeting text.",
                 "weight": 3.0,
                 "should_exist": True
@@ -193,7 +178,6 @@ PAGE_SIGNATURES = {
                 "css_selector": "input#username",
                 "deep_search": True,
                 "contains_text": None,
-                "require_english": False,
                 "description": "Email input field inside login iframe",
                 "weight": 2.0,
                 "should_exist": False
@@ -209,7 +193,6 @@ PAGE_SIGNATURES = {
     #             "css_selector": 'iframe.permission-core-iframe',
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 4.0,
     #             "should_exist": True
@@ -225,7 +208,6 @@ PAGE_SIGNATURES = {
     #             "css_selector": 'iframe[src*="web.de/mail/client"]',
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "Inbox iframe",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -236,7 +218,6 @@ PAGE_SIGNATURES = {
     #             "deep_search": True,
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -246,7 +227,6 @@ PAGE_SIGNATURES = {
     #             "css_selector": 'div.nav-header__icons > account-avatar-navigator',
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -256,7 +236,6 @@ PAGE_SIGNATURES = {
     #             "css_selector": 'iframe#thirdPartyFrame_permission_dialog',
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 4.0,
     #             "should_exist": True
@@ -272,7 +251,6 @@ PAGE_SIGNATURES = {
     #             "css_selector": 'iframe[src*="web.de/mail/client"]',
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "Inbox iframe",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -283,7 +261,6 @@ PAGE_SIGNATURES = {
     #             "deep_search": True,
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -293,7 +270,6 @@ PAGE_SIGNATURES = {
     #             "css_selector": 'div.nav-header__icons > account-avatar-navigator',
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -303,7 +279,6 @@ PAGE_SIGNATURES = {
     #             "css_selector": 'iframe#thirdPartyFrame_upp_dialog[src*="navigator.web.de/upp-dialog"]',
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 2.0,
     #             "should_exist": True
@@ -314,7 +289,6 @@ PAGE_SIGNATURES = {
     #             "deep_search": True,
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -325,7 +299,6 @@ PAGE_SIGNATURES = {
     #             "deep_search": True,
     #             "contains_text": None,
     #             "min_count": 1,
-    #             "require_english": False,
     #             "description": "",
     #             "weight": 1.0,
     #             "should_exist": True
@@ -341,7 +314,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -352,7 +324,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -362,7 +333,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -372,7 +342,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe#thirdPartyFrame_upp_dialog',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 2.0,
                 "should_exist": True
@@ -383,7 +352,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 2.0,
                 "should_exist": True
@@ -399,7 +367,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div[type="error"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Security error message.",
                 "weight": 2.0,
                 "should_exist": True
@@ -415,7 +382,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 2.0,
                 "should_exist": True
@@ -426,7 +392,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 2.0,
                 "should_exist": True
@@ -436,7 +401,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div#actions-menu-static > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -447,29 +411,26 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
             },
-            {
-                "name": "Advertising pop-up",
-                "css_selector": 'iframe#thirdPartyFrame_permission_dialog',
-                "contains_text": None,
-                "require_english": False,
-                "description": "",
-                "weight": 4.0,
-                "should_exist": False
-            },
-            {
-                "name": "Smart features pop-up",
-                "css_selector": 'iframe#thirdPartyFrame_upp_dialog',
-                "contains_text": None,
-                "require_english": False,
-                "description": "",
-                "weight": 4.0,
-                "should_exist": False
-            },
+            # {
+            #     "name": "Advertising pop-up",
+            #     "css_selector": 'iframe#thirdPartyFrame_permission_dialog',
+            #     "contains_text": None,
+            #     "description": "",
+            #     "weight": 4.0,
+            #     "should_exist": False
+            # },
+            # {
+            #     "name": "Smart features pop-up",
+            #     "css_selector": 'iframe#thirdPartyFrame_upp_dialog',
+            #     "contains_text": None,
+            #     "description": "",
+            #     "weight": 4.0,
+            #     "should_exist": False
+            # },
         ]
     },
     "webde_favorites": {
@@ -481,7 +442,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -492,7 +452,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -502,7 +461,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -513,7 +471,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -529,7 +486,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -540,7 +496,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -550,7 +505,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -561,7 +515,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -577,7 +530,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -588,7 +540,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -598,7 +549,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -609,7 +559,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -625,7 +574,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -636,7 +584,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -646,7 +593,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -657,7 +603,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -673,7 +618,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -684,7 +628,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -694,7 +637,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -705,7 +647,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -721,7 +662,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -732,7 +672,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -742,7 +681,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -753,7 +691,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -769,7 +706,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -780,7 +716,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -790,7 +725,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -801,7 +735,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -817,7 +750,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -828,7 +760,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -838,7 +769,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -849,7 +779,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -865,7 +794,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -876,7 +804,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -886,7 +813,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -897,7 +823,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -913,7 +838,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -924,7 +848,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -934,7 +857,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -945,7 +867,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -961,7 +882,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="web.de/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -972,7 +892,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -982,7 +901,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -993,7 +911,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True

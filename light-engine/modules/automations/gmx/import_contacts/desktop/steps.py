@@ -1,5 +1,6 @@
 from playwright.sync_api import Page
-from core.flow_engine.step import Step, StepResult, StepStatus
+from core.flow_engine.step import Step, StepResult
+from modules.core.flow_state import FlowResult
 import random
 import os
 
@@ -20,9 +21,9 @@ class OpenAddressBookStep(Step):
                 deep_search=False
             )
             page.wait_for_timeout(3000)
-            return StepResult(status=StepStatus.SUCCESS, message="Navigated to Address Book")
+            return StepResult(status=FlowResult.SUCCESS, message="Navigated to Address Book")
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to navigate to Address Book: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Failed to navigate to Address Book: {e}")
 
 class OpenImportPanelStep(Step):
     def run(self, page: Page) -> StepResult:
@@ -36,9 +37,9 @@ class OpenImportPanelStep(Step):
                 deep_search=True
             )
             page.wait_for_timeout(2000)
-            return StepResult(status=StepStatus.SUCCESS, message="Opened Import Panel")
+            return StepResult(status=FlowResult.SUCCESS, message="Opened Import Panel")
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to open Import Panel: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Failed to open Import Panel: {e}")
 
 class SelectSourceStep(Step):
     def run(self, page: Page) -> StepResult:
@@ -61,16 +62,16 @@ class SelectSourceStep(Step):
             )
             page.wait_for_timeout(1000)
             
-            return StepResult(status=StepStatus.SUCCESS, message=f"Selected source: {chosen_source}")
+            return StepResult(status=FlowResult.SUCCESS, message=f"Selected source: {chosen_source}")
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to select source: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Failed to select source: {e}")
 
 class UploadFileStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
             vcf_path = getattr(self.automation, "vcf_file_path", None)
             if not vcf_path or not os.path.exists(vcf_path):
-                return StepResult(status=StepStatus.FAILURE, message=f"VCF file not found at: {vcf_path}")
+                return StepResult(status=FlowResult.FAILURE, message=f"VCF file not found at: {vcf_path}")
             
             self.logger.info(f"Uploading file: {vcf_path}", extra={"account_id": self.account.id})
             
@@ -86,14 +87,14 @@ class UploadFileStep(Step):
             )
             
             if not file_input:
-                return StepResult(status=StepStatus.RETRY, message=f"File input not found: {input_selector}")
+                return StepResult(status=FlowResult.RETRY, message=f"File input not found: {input_selector}")
                 
             file_input.set_input_files(vcf_path)
             page.wait_for_timeout(2000)
             
-            return StepResult(status=StepStatus.SUCCESS, message="File uploaded")
+            return StepResult(status=FlowResult.SUCCESS, message="File uploaded")
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to upload file: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Failed to upload file: {e}")
 
 class UploadContactsStep(Step):
     def run(self, page: Page) -> StepResult:
@@ -105,9 +106,9 @@ class UploadContactsStep(Step):
                 deep_search=True
             )
             page.wait_for_timeout(3000) # Wait for upload to process
-            return StepResult(status=StepStatus.SUCCESS, message="Clicked Upload")
+            return StepResult(status=FlowResult.SUCCESS, message="Clicked Upload")
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to click upload: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Failed to click upload: {e}")
 
 class ImportContactsStep(Step):
     def run(self, page: Page) -> StepResult:
@@ -119,9 +120,9 @@ class ImportContactsStep(Step):
                 deep_search=True
             )
             page.wait_for_timeout(3000)
-            return StepResult(status=StepStatus.SUCCESS, message="Confirmed Import")
+            return StepResult(status=FlowResult.SUCCESS, message="Confirmed Import")
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Failed to confirm import: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Failed to confirm import: {e}")
 
 class VerifyImportStep(Step):
     def run(self, page: Page) -> StepResult:
@@ -136,7 +137,7 @@ class VerifyImportStep(Step):
             )
             
             if success_element:
-                return StepResult(status=StepStatus.SUCCESS, message="Import verified successfully")
+                return StepResult(status=FlowResult.SUCCESS, message="Import verified successfully")
             
             # Fallback check if the exact selector provided by user works
             user_selector = 'div[class="status hide complete"] > div[class="content box ok"]'
@@ -148,9 +149,9 @@ class VerifyImportStep(Step):
             )
             
             if success_element_exact:
-                 return StepResult(status=StepStatus.SUCCESS, message="Import verified successfully (exact selector)")
+                 return StepResult(status=FlowResult.SUCCESS, message="Import verified successfully (exact selector)")
 
-            return StepResult(status=StepStatus.FAILURE, message="Success message not found")
+            return StepResult(status=FlowResult.FAILURE, message="Success message not found")
             
         except Exception as e:
-            return StepResult(status=StepStatus.RETRY, message=f"Verification failed: {e}")
+            return StepResult(status=FlowResult.RETRY, message=f"Verification failed: {e}")

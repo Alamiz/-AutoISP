@@ -8,7 +8,7 @@ from core.utils.identifier import identify_page
 from core.flow_engine.smart_flow import StatefulFlow
 from core.utils.navigation import navigate_with_retry
 from core.flow_engine.state_handler import StateHandlerRegistry
-from core.flow_engine.step import StepStatus
+from modules.core.flow_state import FlowResult
 from .handlers import (
     LoginPageHandler,
     LoggedInPageHandler,
@@ -175,7 +175,7 @@ class GMXAuthentication(HumanAction):
         
         result = flow.run(page)
         
-        if result.status == StepStatus.FAILURE:
+        if result.status == FlowResult.FAILED:
             raise RequiredActionFailed(
                 f"Failed to reach inbox. Last error: {result.message}"
             )

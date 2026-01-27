@@ -8,7 +8,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Login iframe exists",
                 "weight": 2.0,
                 "should_exist": True
@@ -19,7 +18,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Email input field inside login iframe",
                 "weight": 4.0,
                 "should_exist": True
@@ -29,7 +27,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'a[data-component="button"][href^="https://www.gmx.net/mail/tarifvergleich"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -46,7 +43,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Captcha exists",
                 "weight": 4.0,
                 "should_exist": True
@@ -62,7 +58,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Login iframe exists",
                 "weight": 2.0,
                 "should_exist": True
@@ -73,7 +68,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Email input field inside login iframe",
                 "weight": 4.0,
                 "should_exist": True
@@ -83,7 +77,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'a[data-component="button"][href^="https://www.gmx.net/mail/tarifvergleich"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -93,7 +86,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'p[data-testid="error-email"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Wrong username error message",
                 "weight": 4.0,
                 "should_exist": True
@@ -110,7 +102,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Wrong password error message",
                 "weight": 4.0,
                 "should_exist": True
@@ -126,7 +117,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.mtan-code-input__panel',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Phone number text",
                 "weight": 4.0,
                 "should_exist": True
@@ -142,7 +132,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Login iframe",
                 "weight": 3.0,
                 "should_exist": True
@@ -152,7 +141,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'account-avatar-homepage[role="button"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -162,7 +150,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'appa-account-avatar div.appa-user-icon',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -174,7 +161,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Button to confirm already authenticated user inside iframe.",
                 "weight": 3.0,
                 "should_exist": True
@@ -186,7 +172,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Logged in user greeting text.",
                 "weight": 3.0,
                 "should_exist": True
@@ -197,7 +182,6 @@ PAGE_SIGNATURES = {
                 # "iframe_selector": 'iframe[src^="https://alligator.navigator.gmx.net"]',
                 "deep_search": True,
                 "contains_text": None,
-                "require_english": False,
                 "description": "Email input field inside login iframe",
                 "weight": 2.0,
                 "should_exist": False
@@ -213,7 +197,6 @@ PAGE_SIGNATURES = {
             #     "css_selector": 'iframe[src*="gmx.net/mail/client"]',
             #     "contains_text": None,
             #     "min_count": 1,
-            #     "require_english": False,
             #     "description": "Inbox iframe",
             #     "weight": 1.0,
             #     "should_exist": True
@@ -224,7 +207,6 @@ PAGE_SIGNATURES = {
             #     "deep_search": True,
             #     "contains_text": None,
             #     "min_count": 1,
-            #     "require_english": False,
             #     "description": "",
             #     "weight": 1.0,
             #     "should_exist": True
@@ -234,7 +216,6 @@ PAGE_SIGNATURES = {
             #     "css_selector": 'div.nav-header__icons > account-avatar-navigator',
             #     "contains_text": None,
             #     "min_count": 1,
-            #     "require_english": False,
             #     "description": "",
             #     "weight": 1.0,
             #     "should_exist": True
@@ -244,7 +225,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe.permission-core-iframe',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -260,7 +240,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -271,7 +250,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -281,7 +259,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -291,7 +268,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe#thirdPartyFrame_permission_dialog',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -307,7 +283,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -318,7 +293,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -328,7 +302,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -338,7 +311,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe#thirdPartyFrame_upp_dialog[src*="navigator.gmx.net/upp-dialog"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 2.0,
                 "should_exist": True
@@ -349,7 +321,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -360,7 +331,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -376,7 +346,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -388,7 +357,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -398,7 +366,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -408,7 +375,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe#thirdPartyFrame_upp_dialog',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 2.0,
                 "should_exist": True
@@ -419,7 +385,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 2.0,
                 "should_exist": True
@@ -435,7 +400,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div[type="error"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Security error message.",
                 "weight": 2.0,
                 "should_exist": True
@@ -451,7 +415,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -463,7 +426,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -473,7 +435,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -485,7 +446,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -494,7 +454,6 @@ PAGE_SIGNATURES = {
                 "name": "Advertising pop-up",
                 "css_selector": 'iframe#thirdPartyFrame_permission_dialog',
                 "contains_text": None,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": False
@@ -503,7 +462,6 @@ PAGE_SIGNATURES = {
                 "name": "Smart features pop-up",
                 "css_selector": 'iframe#thirdPartyFrame_upp_dialog',
                 "contains_text": None,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": False
@@ -519,7 +477,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -531,7 +488,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -541,7 +497,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -553,7 +508,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -569,7 +523,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -581,7 +534,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -591,7 +543,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -603,7 +554,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -619,7 +569,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -631,7 +580,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -641,7 +589,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -653,7 +600,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -669,7 +615,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -681,7 +626,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -691,7 +635,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -703,7 +646,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -719,7 +661,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -731,7 +672,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -741,7 +681,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -753,7 +692,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -769,7 +707,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -781,7 +718,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -791,7 +727,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -803,7 +738,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -819,7 +753,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -831,7 +764,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -841,7 +773,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -853,7 +784,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -869,7 +799,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -881,7 +810,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -891,7 +819,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -902,7 +829,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -918,7 +844,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -930,7 +855,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -940,7 +864,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -952,7 +875,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -968,7 +890,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -980,7 +901,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -990,7 +910,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -1002,7 +921,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True
@@ -1018,7 +936,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'iframe[src*="gmx.net/mail/client"]',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "Inbox iframe",
                 "weight": 1.0,
                 "should_exist": True
@@ -1030,7 +947,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -1040,7 +956,6 @@ PAGE_SIGNATURES = {
                 "css_selector": 'div.nav-header__icons > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 1.0,
                 "should_exist": True
@@ -1052,7 +967,6 @@ PAGE_SIGNATURES = {
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "require_english": False,
                 "description": "",
                 "weight": 4.0,
                 "should_exist": True

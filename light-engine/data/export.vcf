@@ -1,0 +1,34 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Viktoria Lackkopf
+N:Lackkopf;Viktoria;;;
+EMAIL;TYPE=HOME:info@campbellteam.org
+END:VCARD
+
+BEGIN:VCARD
+VERSION:3.0
+FN:Rosa Eichenertz
+N:Eichenertz;Rosa;;;
+EMAIL;TYPE=HOME:info@siterandom.com
+END:VCARD
+
+BEGIN:VCARD
+VERSION:3.0
+FN:Jasmin Fischstatter
+N:Fischstatter;Jasmin;;;
+EMAIL;TYPE=HOME:info@siemreappizza.com
+END:VCARD
+
+BEGIN:VCARD
+VERSION:3.0
+FN:Marieke Eichenertz
+N:Eichenertz;Marieke;;;
+EMAIL;TYPE=HOME:info@aetnamedicaire.com
+END:VCARD
+
+BEGIN:VCARD
+VERSION:3.0
+FN:Christin Guggenleben
+N:Guggenleben;Christin;;;
+EMAIL;TYPE=HOME:info@namlife.org
+END:VCARD
