@@ -401,4 +401,7 @@ def main():
 
 if __name__ == "__main__":
     multiprocessing.freeze_support() # For Windows support
+    python_path = r"C:\Python314\python.exe"
+    if os.path.exists(python_path):
+        multiprocessing.set_executable(python_path)
     main()
