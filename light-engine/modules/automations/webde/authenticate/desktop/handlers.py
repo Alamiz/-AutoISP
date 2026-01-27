@@ -118,7 +118,7 @@ class SmartFeaturesPopupHandler(StateHandler):
             self.logger.info("SmartFeaturesPopupHandler: Accepting", extra={"account_id": self.account.id})
             
             self.automation.human_click(
-                page, selectors=['button[data-component-path="acceptall-button"]'], deep_search=True
+                page, selectors=['button[data-component-path="accept-button"]'], deep_search=True
             )
             page.wait_for_timeout(1500)
             page.reload()

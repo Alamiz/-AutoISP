@@ -184,21 +184,21 @@ PAGE_SIGNATURES = {
             }
         ]
     },
-    # "webde_inbox_ads_preferences_popup_1_core": {
-    #     "description": "Webde email ads preferences popup (core).",
-    #     "required_sublink": "web.de",
-    #     "checks": [
-    #         {
-    #             "name": "Advertising core pop-up",
-    #             "css_selector": 'iframe.permission-core-iframe',
-    #             "contains_text": None,
-    #             "min_count": 1,
-    #             "description": "",
-    #             "weight": 4.0,
-    #             "should_exist": True
-    #         },
-    #     ]
-    # },
+    "webde_inbox_ads_preferences_popup_1_core": {
+        "description": "Webde email ads preferences popup (core).",
+        "required_sublink": "web.de/consent-management",
+        "checks": [
+            {
+                "name": "Advertising core pop-up",
+                "css_selector": 'iframe.permission-core-iframe',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "",
+                "weight": 4.0,
+                "should_exist": True
+            },
+        ]
+    },
     # "webde_inbox_ads_preferences_popup_1": {
     #     "description": "Webde email ads preferences popup.",
     #     "required_sublink": "web.de/mail",
@@ -330,7 +330,7 @@ PAGE_SIGNATURES = {
             },
             {
                 "name": "User avatar",
-                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+                "css_selector": 'div#actions-menu-static > account-avatar-navigator',
                 "contains_text": None,
                 "min_count": 1,
                 "description": "",
@@ -347,8 +347,8 @@ PAGE_SIGNATURES = {
                 "should_exist": True
             },
             {
-                "name": "Smart features container iframe",
-                "css_selector": 'iframe[src*="spl.web.de/smart-inbox/twoinone"]',
+                "name": "Accept button",
+                "css_selector": 'button[data-component-path="accept-button"]',
                 "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
@@ -356,6 +356,16 @@ PAGE_SIGNATURES = {
                 "weight": 2.0,
                 "should_exist": True
             },
+            {
+                "name": "Deny button",
+                "css_selector": 'button[data-component-path="deny-button"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "description": "",
+                "weight": 2.0,
+                "should_exist": True
+            }
         ]
     },
     "webde_security_suspension": {

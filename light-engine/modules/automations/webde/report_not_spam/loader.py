@@ -10,6 +10,7 @@ def run(account, job_id=None, **kwargs):
     search_text = kwargs.get("keyword")
     start_date = kwargs.get("start_date")
     end_date = kwargs.get("end_date")
+    log_dir = kwargs.get("log_dir")
     
     automation = automation_class(
         account=account,
@@ -17,7 +18,8 @@ def run(account, job_id=None, **kwargs):
         search_text=search_text,
         start_date=start_date,
         end_date=end_date,
-        job_id=job_id
+        job_id=job_id,
+        log_dir=log_dir
     )
 
     return automation.execute()

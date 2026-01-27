@@ -59,8 +59,8 @@ class ReportSpamEmailsStep(Step):
                         item = email_items[index]
                         
                         # --- Extract date from <list-date-label> ---
-                        date_el = item.locator("dd.mail-header__date")
-                        if date_el.count() == 0:
+                        date_el = item.query_selector("dd.mail-header__date")
+                        if not date_el:
                             self.logger.warning("Date element not found", extra={"account_id": self.account.id})
                             index += 1
                             continue
@@ -94,8 +94,8 @@ class ReportSpamEmailsStep(Step):
                             return self._final_result()
 
                         # --- Keyword check ---
-                        subject_el = item.locator("dd.mail-header__subject")
-                        if subject_el.count() == 0:
+                        subject_el = item.query_selector("dd.mail-header__subject")
+                        if not subject_el:
                             self.logger.warning("Subject element not found", extra={"account_id": self.account.id})
                             index += 1
                             continue
@@ -298,15 +298,15 @@ class OpenReportedEmailsStep(Step):
 
                         index += 1
                         
-                        email_subject = item.locator("dd.mail-header__subject")
+                        email_subject = item.query_selector("dd.mail-header__subject")
                         
-                        if email_subject.count() == 0:
+                        if not email_subject:
                             continue
                         email_subject = email_subject.text_content().strip().lower()
 
                         # --- Extract date from date element title ---
-                        date_el = item.locator("dd.mail-header__date")
-                        if date_el.count() == 0:
+                        date_el = item.query_selector("dd.mail-header__date")
+                        if not date_el:
                             continue
 
                         date_title = date_el.get_attribute("title")
@@ -442,8 +442,8 @@ class OpenReportedEmailsStep(Step):
                 page,
                 selectors=["iframe#bodyIFrame"]
             )
-            # iframe is a Locator, we need ElementHandle to call content_frame()
-            frame = iframe.element_handle().content_frame()
+            # iframe is an ElementHandle, call content_frame() directly
+            frame = iframe.content_frame()
             body = self.automation._find_element_with_humanization(
                 frame, ["body"]
             )

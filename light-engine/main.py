@@ -5,6 +5,8 @@ import argparse
 import importlib
 import concurrent.futures
 import multiprocessing
+import random
+from datetime import datetime
 from typing import List, Dict, Any
 
 # Ensure the light-engine directory is in the path
@@ -22,6 +24,7 @@ from modules.core.flow_state import FlowResult
 
 # Static Paths
 DATA_DIR = os.path.join(current_dir, "data")
+OUTPUT_DIR = os.path.join(current_dir, "output")
 ACCOUNTS_FILE = os.path.join(DATA_DIR, "accounts.txt")
 PROXIES_FILE = os.path.join(DATA_DIR, "proxies.txt")
 
@@ -38,12 +41,14 @@ logger = logging.getLogger("light_engine")
 # Module-level worker state (shared across processes via initializer)
 _worker_lock = None
 _worker_status_counts = None
+_worker_run_output_dir = None
 
-def init_worker(lock, status_counts):
+def init_worker(lock, status_counts, run_output_dir):
     """Initialize worker process with shared state."""
-    global _worker_lock, _worker_status_counts
+    global _worker_lock, _worker_status_counts, _worker_run_output_dir
     _worker_lock = lock
     _worker_status_counts = status_counts
+    _worker_run_output_dir = run_output_dir
 
 def read_accounts() -> List[Dict[str, str]]:
     accounts = []
@@ -84,9 +89,24 @@ def process_account_worker(account_data: Dict[str, str], proxy: str, provider: s
     Worker function to process a single account.
     This runs in a separate process.
     """
-    global _worker_lock, _worker_status_counts
+    global _worker_lock, _worker_status_counts, _worker_run_output_dir
     
     print(f"[{index}] Starting account: {account_data['email']}")
+    
+    # Create account-specific log directory
+    email = account_data['email']
+    email_folder_name = email.replace("@", "_").replace(".", "_")
+    account_log_dir = os.path.join(_worker_run_output_dir, "accounts", email_folder_name)
+    os.makedirs(account_log_dir, exist_ok=True)
+    
+    # Setup file handler for this account - add to 'autoisp' logger used by automations
+    autoisp_logger = logging.getLogger("autoisp")
+    autoisp_logger.setLevel(logging.DEBUG)
+    log_file_path = os.path.join(account_log_dir, "log.txt")
+    file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    autoisp_logger.addHandler(file_handler)
     
     status = "FAILED"
     try:
@@ -96,6 +116,7 @@ def process_account_worker(account_data: Dict[str, str], proxy: str, provider: s
             provider=provider,
             automation_name=automation_name,
             account_type=account_type,
+            log_dir=account_log_dir,
             **kwargs
         )
         
@@ -110,13 +131,7 @@ def process_account_worker(account_data: Dict[str, str], proxy: str, provider: s
         # Handle specific statuses by saving to files
         if status in ("COMPLETED", "SUCCESS", "FAILED", "ABORT", "SUSPENDED", "WRONG_EMAIL", "WRONG_PASSWORD", "PHONE_VERIFICATION", "CAPTCHA", "LOCKED", "ADD_PROTECTION"):
             filename = f"{status.lower()}_accounts.txt"
-            filepath = os.path.join(DATA_DIR, filename)
-            
-            # Use a lock if we were writing to the same file from multiple processes?
-            # Since we are in a worker, we should probably use the shared lock if we want to be safe,
-            # but appending to files in OS is often atomic enough for simple lines, 
-            # OR we can just rely on the fact that collisions are rare or acceptable here.
-            # BETTER: Use the shared lock.
+            filepath = os.path.join(_worker_run_output_dir, filename)
             
             if _worker_lock:
                 with _worker_lock:
@@ -126,11 +141,15 @@ def process_account_worker(account_data: Dict[str, str], proxy: str, provider: s
                  with open(filepath, "a") as f:
                         f.write(f"{account_data['email']}:{account_data['password']}\n")
             
-            logger.warning(f"Account {account_data['email']} marked as {status}")
+            autoisp_logger.info(f"Account marked as {status}")
 
     except Exception as e:
-        logger.error(f"Worker error for {account_data['email']}: {e}")
+        autoisp_logger.error(f"Worker error: {e}")
         status = "ERROR"
+    finally:
+        # Clean up file handler
+        file_handler.close()
+        autoisp_logger.removeHandler(file_handler)
         
     # Update shared status counts
     if _worker_status_counts is not None and _worker_lock is not None:
@@ -210,7 +229,7 @@ def main():
     parser.add_argument("--provider", help="ISP provider (e.g., webde, gmx)")
     parser.add_argument("--automation", help="Automation name (e.g., authenticate)")
     parser.add_argument("--type", default="desktop", choices=["desktop", "mobile"], help="Account type")
-    parser.add_argument("--workers", type=int, default=5, help="Number of concurrent workers")
+    parser.add_argument("--workers", type=int, default=20, help="Number of concurrent workers")
     
     args = parser.parse_args()
 
@@ -317,6 +336,23 @@ def main():
         }
         logger.info(f"ReportNotSpam config: keyword='{search_text}', days={days_back} ({start_date} to {end_date})")
 
+    # Prompt for desktop/mobile percentage
+    desktop_pct_str = input("Enter desktop percentage (0-100, default 100): ").strip()
+    try:
+        desktop_pct = int(desktop_pct_str) if desktop_pct_str else 100
+        desktop_pct = max(0, min(100, desktop_pct))  # Clamp to 0-100
+    except ValueError:
+        logger.warning(f"Invalid percentage '{desktop_pct_str}', defaulting to 100")
+        desktop_pct = 100
+    logger.info(f"Desktop/Mobile split: {desktop_pct}% desktop, {100-desktop_pct}% mobile")
+
+    # Create run output directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_output_dir = os.path.join(OUTPUT_DIR, f"automation_run_{timestamp}")
+    accounts_dir = os.path.join(run_output_dir, "accounts")
+    os.makedirs(accounts_dir, exist_ok=True)
+    logger.info(f"Run output directory: {run_output_dir}")
+
     # Multiprocessing Setup
     manager = multiprocessing.Manager()
     lock = manager.Lock()
@@ -326,7 +362,8 @@ def main():
         automation_name=f"{provider}_{automation}",
         total_accounts=len(accounts),
         status_counts=status_counts,
-        lock=lock
+        lock=lock,
+        output_dir=run_output_dir
     )
     
     print(f"Starting execution (multithreaded - {args.workers} workers)...")
@@ -334,12 +371,15 @@ def main():
     with concurrent.futures.ProcessPoolExecutor(
         max_workers=args.workers,
         initializer=init_worker,
-        initargs=(lock, status_counts)
+        initargs=(lock, status_counts, run_output_dir)
     ) as executor:
         futures = []
         for i, account_data in enumerate(accounts):
             # Round-robin proxy distribution
             proxy = proxies[i % len(proxies)] if proxies else None
+            
+            # Randomly assign desktop or mobile based on percentage
+            account_type = "desktop" if random.randint(1, 100) <= desktop_pct else "mobile"
             
             futures.append(executor.submit(
                 process_account_worker,
@@ -347,7 +387,7 @@ def main():
                 proxy=proxy,
                 provider=provider,
                 automation_name=automation,
-                account_type=args.type,
+                account_type=account_type,
                 index=i+1,
                 **automation_kwargs
             ))

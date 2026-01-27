@@ -109,9 +109,10 @@ class AutomationMetadata:
         duration_seconds = self.end_time - self.start_time
         duration_str = self._format_duration(duration_seconds)
         
-        # Generate filename with timestamp
-        timestamp = self.start_datetime.strftime("%Y%m%d_%H%M%S")
-        filename = f"automation_run_{timestamp}.txt"
+        # Filename is always metadata.txt in the run directory
+        filename = "metadata.txt"
+        if isinstance(self.output_dir, str):
+            self.output_dir = Path(self.output_dir)
         filepath = self.output_dir / filename
         
         # Ensure output directory exists

@@ -1,4 +1,5 @@
 import logging
+import os
 from playwright.sync_api import Page
 from automations.gmx.authenticate.mobile.run import GMXAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
@@ -19,13 +20,14 @@ class ReportNotSpam(HumanAction):
     gmx Mobile Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, account, user_agent_type="mobile", search_text=None, max_flow_retries=3, start_date=None, end_date=None, job_id=None):
+    def __init__(self, account, user_agent_type="mobile", search_text=None, max_flow_retries=3, start_date=None, end_date=None, job_id=None, log_dir=None):
         super().__init__()
         self.account = account
         self.user_agent_type = user_agent_type
         self.search_text = search_text
         self.max_flow_retries = max_flow_retries
         self.job_id = job_id
+        self.log_dir = log_dir
         self.logger = logging.getLogger("autoisp")
         self.profile = self.account.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
@@ -100,6 +102,8 @@ class ReportNotSpam(HumanAction):
         
         flow_attempt = 0
         last_result = None
+        page = None
+        status = "failed"
         
         try:
             self.browser.start()
@@ -136,6 +140,7 @@ class ReportNotSpam(HumanAction):
                 
                 if result["status"] == "success":
                     self.logger.info(f"Flow completed successfully on attempt {flow_attempt}", extra={"account_id": self.account.id})
+                    status = "success"
                     return result
                 
                 if not result.get("retry_recommended", False):
@@ -163,6 +168,15 @@ class ReportNotSpam(HumanAction):
             self.logger.error(f"Critical error in automation: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": f"Critical error: {str(e)}"}
         finally:
+            # Take screenshot before closing
+            if page and self.log_dir:
+                try:
+                    screenshot_path = os.path.join(self.log_dir, f"screenshot_{status}.png")
+                    page.screenshot(path=screenshot_path)
+                    self.logger.info(f"Screenshot saved to {screenshot_path}")
+                except Exception as e:
+                    self.logger.error(f"Failed to take screenshot: {e}")
+            
             if self.job_id:
                 pass
                 # from modules.core.job_manager import job_manager

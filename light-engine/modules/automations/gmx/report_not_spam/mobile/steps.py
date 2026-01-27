@@ -60,8 +60,8 @@ class ReportSpamEmailsStep(Step):
                         
                         # self.logger.info(f"Processing email {index + 1}/{len(email_items)}")
                         # --- Extract date from <list-date-label> ---
-                        date_el = item.locator("dd.mail-header__date")
-                        if date_el.count() == 0:
+                        date_el = item.query_selector("dd.mail-header__date")
+                        if not date_el:
                             self.logger.warning("Date element not found", extra={"account_id": self.account.id})
                             index += 1
                             continue
@@ -89,8 +89,8 @@ class ReportSpamEmailsStep(Step):
                             return self._final_result()
 
                         # --- Keyword check ---
-                        subject_el = item.locator("dd.mail-header__subject")
-                        if subject_el.count() == 0:
+                        subject_el = item.query_selector("dd.mail-header__subject")
+                        if not subject_el:
                             self.logger.warning("Subject element not found", extra={"account_id": self.account.id})
                             index += 1
                             continue
@@ -169,19 +169,6 @@ class ReportSpamEmailsStep(Step):
             self.logger.info("Marked email unread", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Failed to mark email unread: {e}", extra={"account_id": self.account.id})
-    
-    @retry_action()
-    def scroll_content(self, page: Page):
-        try:
-            iframe = self.automation._find_element_with_humanization(
-                page,
-                selectors=['iframe#bodyIFrame']
-            )
-            frame = iframe.content_frame()
-            body = self.automation._find_element_with_humanization(
-                frame, ["body"]
-            )
-            self.automation.human_behavior.scroll_into_view(body)
             self.logger.info("Scrolled content", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Failed to scroll content: {e}", extra={"account_id": self.account.id})
@@ -255,15 +242,15 @@ class OpenReportedEmailsStep(Step):
 
                         index += 1
                         
-                        email_subject = item.locator("dd.mail-header__subject")
+                        email_subject = item.query_selector("dd.mail-header__subject")
                         
-                        if email_subject.count() == 0:
+                        if not email_subject:
                             continue
                         email_subject = email_subject.text_content().strip().lower()
 
                         # --- Extract date from date element title ---
-                        date_el = item.locator("dd.mail-header__date")
-                        if date_el.count() == 0:
+                        date_el = item.query_selector("dd.mail-header__date")
+                        if not date_el:
                             continue
 
                         date_title = date_el.get_attribute("title")
