@@ -3,6 +3,8 @@ import sys
 import logging
 import argparse
 import importlib
+import concurrent.futures
+import multiprocessing
 from typing import List, Dict, Any
 
 # Ensure the light-engine directory is in the path
@@ -15,6 +17,8 @@ if modules_path not in sys.path:
     sys.path.insert(0, modules_path)
 
 from modules.core.models import Account
+from modules.core.automation_metadata import AutomationMetadata
+from modules.core.flow_state import FlowResult
 
 # Static Paths
 DATA_DIR = os.path.join(current_dir, "data")
@@ -23,13 +27,23 @@ PROXIES_FILE = os.path.join(DATA_DIR, "proxies.txt")
 
 # Configure Logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger("light_engine")
+
+# Module-level worker state (shared across processes via initializer)
+_worker_lock = None
+_worker_status_counts = None
+
+def init_worker(lock, status_counts):
+    """Initialize worker process with shared state."""
+    global _worker_lock, _worker_status_counts
+    _worker_lock = lock
+    _worker_status_counts = status_counts
 
 def read_accounts() -> List[Dict[str, str]]:
     accounts = []
@@ -65,7 +79,68 @@ def read_proxies() -> List[str]:
                 proxies.append(line)
     return proxies
 
-def run_automation(account_data: Dict[str, str], proxy: str, provider: str, automation_name: str, account_type: str):
+def process_account_worker(account_data: Dict[str, str], proxy: str, provider: str, automation_name: str, account_type: str, index: int, **kwargs) -> str:
+    """
+    Worker function to process a single account.
+    This runs in a separate process.
+    """
+    global _worker_lock, _worker_status_counts
+    
+    print(f"[{index}] Starting account: {account_data['email']}")
+    
+    status = "FAILED"
+    try:
+        result = run_automation(
+            account_data=account_data,
+            proxy=proxy,
+            provider=provider,
+            automation_name=automation_name,
+            account_type=account_type,
+            **kwargs
+        )
+        
+        # Determine status from result
+        if isinstance(result, dict):
+            status = result.get("status", "FAILED").upper()
+        elif isinstance(result, FlowResult):
+            status = result.name
+        elif isinstance(result, str):
+            status = result.upper()
+            
+        # Handle specific statuses by saving to files
+        if status in ("COMPLETED", "SUCCESS", "FAILED", "ABORT", "SUSPENDED", "WRONG_EMAIL", "WRONG_PASSWORD", "PHONE_VERIFICATION", "CAPTCHA", "LOCKED", "ADD_PROTECTION"):
+            filename = f"{status.lower()}_accounts.txt"
+            filepath = os.path.join(DATA_DIR, filename)
+            
+            # Use a lock if we were writing to the same file from multiple processes?
+            # Since we are in a worker, we should probably use the shared lock if we want to be safe,
+            # but appending to files in OS is often atomic enough for simple lines, 
+            # OR we can just rely on the fact that collisions are rare or acceptable here.
+            # BETTER: Use the shared lock.
+            
+            if _worker_lock:
+                with _worker_lock:
+                    with open(filepath, "a") as f:
+                        f.write(f"{account_data['email']}:{account_data['password']}\n")
+            else:
+                 with open(filepath, "a") as f:
+                        f.write(f"{account_data['email']}:{account_data['password']}\n")
+            
+            logger.warning(f"Account {account_data['email']} marked as {status}")
+
+    except Exception as e:
+        logger.error(f"Worker error for {account_data['email']}: {e}")
+        status = "ERROR"
+        
+    # Update shared status counts
+    if _worker_status_counts is not None and _worker_lock is not None:
+        with _worker_lock:
+            current = _worker_status_counts.get(status, 0)
+            _worker_status_counts[status] = current + 1
+            
+    return status
+
+def run_automation(account_data: Dict[str, str], proxy: str, provider: str, automation_name: str, account_type: str, **kwargs):
     account_id = account_data["email"].replace("@", "_").replace(".", "_")
     
     proxy_settings = None
@@ -122,7 +197,7 @@ def run_automation(account_data: Dict[str, str], proxy: str, provider: str, auto
         if not hasattr(loader, "run"):
             raise AttributeError(f"{loader_module_path} missing 'run(account, job_id, **kwargs)' function")
 
-        result = loader.run(account=account)
+        result = loader.run(account=account, **kwargs)
         logger.info(f"Finished {automation_name} for {account.email}. Result: {result}")
         return result
 
@@ -135,6 +210,7 @@ def main():
     parser.add_argument("--provider", help="ISP provider (e.g., webde, gmx)")
     parser.add_argument("--automation", help="Automation name (e.g., authenticate)")
     parser.add_argument("--type", default="desktop", choices=["desktop", "mobile"], help="Account type")
+    parser.add_argument("--workers", type=int, default=5, help="Number of concurrent workers")
     
     args = parser.parse_args()
 
@@ -219,18 +295,70 @@ def main():
 
     logger.info(f"Found {len(accounts)} accounts and {len(proxies)} proxies.")
 
-    for i, account_data in enumerate(accounts):
-        # Round-robin proxy distribution
-        proxy = proxies[i % len(proxies)] if proxies else None
+    automation_kwargs = {}
+    if automation == "report_not_spam":
+        search_text = input("Enter search keyword (optional, press Enter to skip): ").strip()
+        days_str = input("Enter how many days back to search (default 7): ").strip()
         
-        logger.info(f"[{i+1}/{len(accounts)}] Processing {account_data['email']}")
-        run_automation(
-            account_data=account_data,
-            proxy=proxy,
-            provider=provider,
-            automation_name=automation,
-            account_type=args.type
-        )
+        try:
+            days_back = int(days_str) if days_str else 7
+        except ValueError:
+            logger.warning(f"Invalid days value '{days_str}', defaulting to 7")
+            days_back = 7
+            
+        from datetime import datetime, timedelta
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=days_back)
+        
+        automation_kwargs = {
+            "keyword": search_text if search_text else None,
+            "start_date": start_date.strftime("%Y-%m-%d"),
+            "end_date": end_date.strftime("%Y-%m-%d")
+        }
+        logger.info(f"ReportNotSpam config: keyword='{search_text}', days={days_back} ({start_date} to {end_date})")
+
+    # Multiprocessing Setup
+    manager = multiprocessing.Manager()
+    lock = manager.Lock()
+    status_counts, _ = AutomationMetadata.create_shared_state(manager)
+    
+    metadata = AutomationMetadata(
+        automation_name=f"{provider}_{automation}",
+        total_accounts=len(accounts),
+        status_counts=status_counts,
+        lock=lock
+    )
+    
+    print(f"Starting execution (multithreaded - {args.workers} workers)...")
+    
+    with concurrent.futures.ProcessPoolExecutor(
+        max_workers=args.workers,
+        initializer=init_worker,
+        initargs=(lock, status_counts)
+    ) as executor:
+        futures = []
+        for i, account_data in enumerate(accounts):
+            # Round-robin proxy distribution
+            proxy = proxies[i % len(proxies)] if proxies else None
+            
+            futures.append(executor.submit(
+                process_account_worker,
+                account_data=account_data,
+                proxy=proxy,
+                provider=provider,
+                automation_name=automation,
+                account_type=args.type,
+                index=i+1,
+                **automation_kwargs
+            ))
+        
+        # Wait for all futures to complete
+        concurrent.futures.wait(futures)
+        
+    # Finalize metadata and write report
+    metadata_file = metadata.finalize()
+    print(f"\nAll accounts processed. Report saved to: {metadata_file}")
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support() # For Windows support
     main()
