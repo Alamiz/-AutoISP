@@ -22,7 +22,8 @@ from automations.common_handlers import (
     WrongEmailPageHandler,
     LoginCaptchaHandler,
     SecuritySuspensionHandler,
-    PhoneVerificationHandler
+    PhoneVerificationHandler,
+    InboxHandler
 )
 from core.pages_signatures.webde.mobile import PAGE_SIGNATURES
 # from crud.account import update_account_state
@@ -72,6 +73,7 @@ class WebDEAuthentication(HumanAction):
         registry.register("webde_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
         registry.register("webde_security_suspension", SecuritySuspensionHandler(self, self.logger))
         registry.register("webde_phone_verification", PhoneVerificationHandler(self, self.logger))
+        registry.register("webde_inbox", InboxHandler(self, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         
         return registry
@@ -82,7 +84,7 @@ class WebDEAuthentication(HumanAction):
             page_id = identify_page(page, page.url, self.signatures)
             is_goal = page_id in self.GOAL_STATES
             if is_goal:
-                self.logger.info(f"Goal state reached: {page_id}", extra={"account_id": self.account.id})
+                self.logger.debug(f"Goal state reached: {page_id}", extra={"account_id": self.account.id})
             return is_goal
         except Exception as e:
             self.logger.warning(f"Error checking goal: {e}", extra={"account_id": self.account.id})
@@ -153,7 +155,7 @@ class WebDEAuthentication(HumanAction):
         # Update account state to active on success
         # update_account_state(self.account.id, "active")
 
-        self.logger.info("Authentication completed via StatefulFlow", extra={"account_id": self.account.id})
+        self.logger.info("Authentication completed", extra={"account_id": self.account.id})
 
 
 def main(account, device_type="mobile"):

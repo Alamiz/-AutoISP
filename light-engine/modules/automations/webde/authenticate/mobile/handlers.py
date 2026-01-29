@@ -2,6 +2,7 @@
 """
 State handlers for web.de Mobile Authentication using StatefulFlow.
 """
+import time
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.humanization.actions import HumanAction
@@ -13,17 +14,22 @@ class RegisterPageHandler(StateHandler):
     """Handle web.de mobile register page - click login button"""
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("RegisterPageHandler: Clicking login button", extra={"account_id": self.account.id})
+            self.logger.info("Clicking login button", extra={"account_id": self.account.id})
             
+            start_time = time.perf_counter()
             self.automation.human_click(
                 page,
                 selectors=['form.login-link.login-mobile > button[type="submit"]'],
             )
+            
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Login button clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            
             page.wait_for_timeout(2000)
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"RegisterPageHandler: Failed - {e}", extra={"account_id": self.account.id})
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 
@@ -34,8 +40,9 @@ class LoginPageHandler(StateHandler):
         try:
             # Check if we are already at the password step (e.g. after captcha retry)
             if page.is_visible('form input#password'):
-                self.logger.info("LoginPageHandler: Password field visible, skipping email entry", extra={"account_id": self.account.id})
+                self.logger.info("Password field visible, skipping email entry", extra={"account_id": self.account.id})
                 
+                start_time = time.perf_counter()
                 self.automation.human_fill(
                     page,
                     selectors=['form input#password'],
@@ -47,12 +54,15 @@ class LoginPageHandler(StateHandler):
                     selectors=['button[type="submit"][data-testid="button-next"]'],
                 )
                 
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Credentials submitted (password only): {duration:.2f} seconds", extra={"account_id": self.account.id})
+                
                 page.wait_for_timeout(3_000)
-                self.logger.info("LoginPageHandler: Credentials submitted (password only)", extra={"account_id": self.account.id})
                 return "continue"
 
-            self.logger.info("LoginPageHandler: Entering credentials", extra={"account_id": self.account.id})
+            self.logger.info("Entering credentials", extra={"account_id": self.account.id})
             
+            start_time = time.perf_counter()
             # Fill email
             self.automation.human_fill(
                 page,
@@ -65,12 +75,19 @@ class LoginPageHandler(StateHandler):
                 page,
                 selectors=['form button[type="submit"]'],
             )
+            
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Email submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
 
             # Check if captcha is present
+            start_time = time.perf_counter()
             captcha_elements = deep_find_elements(page, 'div[data-testid="captcha-container"]')
             if captcha_elements:
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Captcha check took: {duration:.2f} seconds", extra={"account_id": self.account.id})
                 return "continue"
             
+            start_time = time.perf_counter()
             # Fill password
             self.automation.human_fill(
                 page,
@@ -84,13 +101,14 @@ class LoginPageHandler(StateHandler):
                 selectors=['button[type="submit"][data-testid="button-next"]'],
             )
             
-            page.wait_for_timeout(3_000)
-            self.logger.info("LoginPageHandler: Credentials submitted", extra={"account_id": self.account.id})
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Credentials submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
+            page.wait_for_timeout(3_000)
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"LoginPageHandler: Failed - {e}", extra={"account_id": self.account.id})
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 class LoggedInPageHandler(StateHandler):
@@ -98,8 +116,9 @@ class LoggedInPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("LoggedInPageHandler: Clicking profile and continue", extra={"account_id": self.account.id})
+            self.logger.info("Clicking profile and continue", extra={"account_id": self.account.id})
             
+            start_time = time.perf_counter()
             # Click profile avatar
             self.automation.human_click(
                 page,
@@ -113,11 +132,15 @@ class LoggedInPageHandler(StateHandler):
                 selectors=['div#appa-account-flyout > section.account-avatar__flyout-content > section.appa-account-avatar__buttons > button:nth-of-type(2)'],
                 deep_search=True
             )
+            
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Profile and continue clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            
             page.wait_for_timeout(2000)
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"LoggedInPageHandler: Failed - {e}", extra={"account_id": self.account.id})
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 
@@ -126,18 +149,23 @@ class AdsPreferencesPopup1Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("AdsPreferencesPopup1Handler: Accepting", extra={"account_id": self.account.id})
+            self.logger.info("Accepting ads preferences popup", extra={"account_id": self.account.id})
             
+            start_time = time.perf_counter()
             self.automation.human_click(
                 page,
                 selectors=["button#save-all-pur"],
                 deep_search=True
             )
+            
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Ads preferences popup accepted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            
             page.wait_for_timeout(1500)
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"AdsPreferencesPopup1Handler: Failed - {e}", extra={"account_id": self.account.id})
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 
@@ -146,18 +174,23 @@ class AdsPreferencesPopup2Handler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.info("AdsPreferencesPopup2Handler: Denying", extra={"account_id": self.account.id})
+            self.logger.info("Denying ads preferences popup", extra={"account_id": self.account.id})
             
+            start_time = time.perf_counter()
             self.automation.human_click(
                 page,
                 selectors=["button#deny"],
                 deep_search=True
             )
+            
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Ads preferences popup denied: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            
             page.wait_for_timeout(1500)
             return "continue"
             
         except Exception as e:
-            self.logger.error(f"AdsPreferencesPopup2Handler: Failed - {e}", extra={"account_id": self.account.id})
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
 class UnknownPageHandler(StateHandler):
@@ -165,12 +198,12 @@ class UnknownPageHandler(StateHandler):
     
     def handle(self, page: Page) -> HandlerAction:
         try:
-            self.logger.warning("UnknownPageHandler: Redirecting to web.de mobile", extra={"account_id": self.account.id})
+            self.logger.warning("Redirecting to web.de mobile", extra={"account_id": self.account.id})
             
             navigate_to(page, "https://lightmailer-bs.web.de/")
             self.automation.human_behavior.read_delay()
             return "retry"
             
         except Exception as e:
-            self.logger.error(f"UnknownPageHandler: Failed - {e}", extra={"account_id": self.account.id})
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return "retry"

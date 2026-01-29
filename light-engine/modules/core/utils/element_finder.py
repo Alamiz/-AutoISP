@@ -136,7 +136,7 @@ def deep_find_elements(root, css_selector: str, timeout_ms: int = 15000):
 
     page = root if isinstance(root, Page) else root.page
     
-    logger.info(f"Searching for '{css_selector}' (timeout: {timeout_ms}ms)")
+    logger.debug(f"Searching for '{css_selector}' (timeout: {timeout_ms}ms)")
     poll_count = 0
     checked_frames = set()  # Track which frame URLs we've successfully checked
 
@@ -170,13 +170,13 @@ def deep_find_elements(root, css_selector: str, timeout_ms: int = 15000):
                 # Try regular selector
                 visible = frame.locator(css_selector).locator("visible=true")
                 if visible.count() > 0:
-                    logger.info(f"✓ Found {visible.count()} visible elements after {poll_count} polls")
+                    logger.debug(f"✓ Found {visible.count()} visible elements after {poll_count} polls")
                     return visible.all()
                 
                 # Try shadow selector
                 shadow_visible = frame.locator(f"pierce/{css_selector}").locator("visible=true")
                 if shadow_visible.count() > 0:
-                    logger.info(f"✓ Found {shadow_visible.count()} shadow elements after {poll_count} polls")
+                    logger.debug(f"✓ Found {shadow_visible.count()} shadow elements after {poll_count} polls")
                     return shadow_visible.all()
                     
             except PlaywrightError:
@@ -195,5 +195,5 @@ def deep_find_elements(root, css_selector: str, timeout_ms: int = 15000):
             
         time.sleep(min(poll_interval, max(0, timeout_seconds - elapsed)))
 
-    logger.warning(f"Element not found after {poll_count} polls ({timeout_seconds}s, checked {len(checked_frames)} unique frames)")
+    logger.debug(f"Element not found after {poll_count} polls ({timeout_seconds}s, checked {len(checked_frames)} unique frames)")
     return []

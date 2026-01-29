@@ -30,7 +30,7 @@ PROXIES_FILE = os.path.join(DATA_DIR, "proxies.txt")
 
 # Configure Logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)
@@ -101,10 +101,10 @@ def process_account_worker(account_data: Dict[str, str], proxy: str, provider: s
     
     # Setup file handler for this account - add to 'autoisp' logger used by automations
     autoisp_logger = logging.getLogger("autoisp")
-    autoisp_logger.setLevel(logging.DEBUG)
+    autoisp_logger.setLevel(logging.INFO)
     log_file_path = os.path.join(account_log_dir, "log.txt")
     file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     autoisp_logger.addHandler(file_handler)
     

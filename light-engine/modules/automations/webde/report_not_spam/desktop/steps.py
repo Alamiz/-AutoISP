@@ -1,3 +1,4 @@
+import time
 from core.utils.retry_decorators import retry_action
 from playwright.sync_api import Page
 from core.utils.element_finder import deep_find_elements
@@ -9,12 +10,15 @@ from datetime import datetime
 class NavigateToSpamStep(Step):
     def run(self, page: Page) -> StepResult:
         try:
-            self.logger.info("Navigating to Spam folder", extra={"account_id": self.account.id})
+            start_time = time.perf_counter()
             self.automation.human_click(
                 page,
                 selectors=['button.sidebar-folder-icon-spam'],
                 deep_search=True
             )
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Navigated to Spam folder: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            
             page.wait_for_timeout(2000)
             return StepResult(status=FlowResult.SUCCESS, message="Navigated to Spam folder")
         except Exception as e:
@@ -51,6 +55,7 @@ class ReportSpamEmailsStep(Step):
                 index = 0
 
                 while index < len(email_items):
+                    start_process = time.perf_counter()
                     item = email_items[index]
 
                     try:
@@ -90,13 +95,12 @@ class ReportSpamEmailsStep(Step):
                             continue
 
                         subject_text = (subject_el.inner_text() or "").lower()
-
                         if keyword not in subject_text:
                             index += 1
                             continue
 
                         self.logger.info(
-                            f"Processing email subject='{subject_text}', date={mail_date}",
+                            f"Processing email subject='{subject_text[:15]}', date={mail_date}",
                             extra={"account_id": self.account.id}
                         )
 
@@ -113,6 +117,10 @@ class ReportSpamEmailsStep(Step):
                         email_items = deep_find_elements(
                             page, "list-mail-item.list-mail-item--root"
                         )
+                        
+                        duration = time.perf_counter() - start_process
+                        self.logger.info(f"Email processed in {duration:.2f} seconds \n\n", extra={"account_id": self.account.id})
+
                         index = 0
                         continue
 
@@ -154,7 +162,10 @@ class ReportSpamEmailsStep(Step):
     @retry_action()
     def click_email_item(self, item):
         try:
+            start_time = time.perf_counter()
             self.automation.human_behavior.click(item)
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Email item clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(
                 f"Failed to click email item: {e}",
@@ -164,6 +175,7 @@ class ReportSpamEmailsStep(Step):
     @retry_action()
     def scroll_content(self, page: Page):
         try:
+            start_time = time.perf_counter()
             iframe = self.automation._find_element_with_humanization(
                 page,
                 selectors=['iframe[name="detail-body-iframe"]'],
@@ -175,6 +187,8 @@ class ReportSpamEmailsStep(Step):
                 frame, ["body"]
             )
             self.automation.human_behavior.scroll_into_view(body)
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Content scrolled: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(
                 f"Failed to scroll content: {e}",
@@ -184,6 +198,7 @@ class ReportSpamEmailsStep(Step):
     @retry_action()
     def click_not_spam(self, page: Page):
         try:
+            start_time = time.perf_counter()
             self.automation.human_click(
                 page,
                 selectors=[
@@ -192,6 +207,8 @@ class ReportSpamEmailsStep(Step):
                 ],
                 deep_search=True
             )
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Not spam clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(
                 f"Failed to click not spam: {e}",
@@ -251,11 +268,14 @@ class OpenReportedEmailsStep(Step):
 
                 index = 0
                 while index < len(email_items):
+                    start_process = time.perf_counter()
                     item = email_items[index]
 
                     try:
-                        email_id = item.get_attribute("id")
-                        self.logger.info(f"Processing email {email_id}", extra={"account_id": self.account.id})
+                        fav_button = item.locator("list-favorite-marker.list-mail-item__fav[selected]")
+                        if fav_button.count() > 0:
+                            index += 1
+                            continue
 
                         # --- Extract datetime from date-in-ms ---
                         date_el = item.locator("list-date-label.list-mail-item__date")
@@ -303,7 +323,8 @@ class OpenReportedEmailsStep(Step):
                             continue
 
                         found_any = True
-                        self.logger.info(f"Opening email '{subject_text}' @ {mail_dt}", extra={"account_id": self.account.id})
+
+                        self.logger.info(f"Processing email {subject_text[:10]}... @ {mail_dt}", extra={"account_id": self.account.id})
 
                         # --- Actions ---
                         self._click_email_item(item, page)
@@ -315,6 +336,9 @@ class OpenReportedEmailsStep(Step):
                         self._scroll_to_top(frame)
 
                         self._click_link_or_image(frame, page)
+
+                        duration = time.perf_counter() - start_process
+                        self.logger.info(f"Email processed in {duration:.2f} seconds \n\n", extra={"account_id": self.account.id})
 
                         # Re-query for safety (DOM not reordered)
                         email_items = deep_find_elements(
@@ -356,41 +380,50 @@ class OpenReportedEmailsStep(Step):
     @retry_action()
     def _navigate_to_inbox(self, page):
         try:
+            start_time = time.perf_counter()
             self.automation.human_click(
                 page,
                 selectors=["button.sidebar-folder-icon-inbox"],
                 deep_search=True
             )
-            page.wait_for_timeout(2000)
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Navigated to inbox: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Failed to navigate to inbox: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
     def _fill_search_input(self, page, keyword):
         try:
+            start_time = time.perf_counter()
             search_input = deep_find_elements(
                 page,
                 css_selector="input.webmailer-mail-list-search-input__input",
             )
             if search_input:
                 search_input[0].fill(keyword)
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Search input filled: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Failed to fill search input: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
     def open_search_options(self, page):
         try:
+            start_time = time.perf_counter()
             self.automation.human_click(
                 page,
                 selectors=["button.webmailer-mail-list-search-options__button"],
                 deep_search=True
             )
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Search options opened: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Failed to open search options: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
     def select_inbox_and_submit(self, page):
         try:
+            start_time = time.perf_counter()
             # Select inbox
             self.automation.human_select(
                 page,
@@ -409,13 +442,20 @@ class OpenReportedEmailsStep(Step):
                 ],
                 deep_search=True
             )
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Inbox selected and search submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+
+            page.wait_for_timeout(2000)
         except Exception as e:
             self.logger.warning(f"Failed to select inbox and submit search: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
     def _click_email_item(self, item, page):
         try:
+            start_time = time.perf_counter()
             self.automation.human_behavior.click(item)
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Email item clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
             page.wait_for_timeout(2000)
         except Exception as e:
             self.logger.warning(f"Click inside email failed: {e}", extra={"account_id": self.account.id})
@@ -423,6 +463,7 @@ class OpenReportedEmailsStep(Step):
     @retry_action()
     def _scroll_content(self, page):
         try:
+            start_time = time.perf_counter()
             iframe = self.automation._find_element_with_humanization(
                 page,
                 selectors=["iframe[name='detail-body-iframe']"],
@@ -434,6 +475,8 @@ class OpenReportedEmailsStep(Step):
                 frame, ["body"]
             )
             self.automation.human_behavior.scroll_into_view(body)
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Content scrolled: {duration:.2f} seconds", extra={"account_id": self.account.id})
 
             return frame
         except Exception as e:
@@ -441,17 +484,21 @@ class OpenReportedEmailsStep(Step):
     
     def _scroll_to_top(self, frame):
         try:
+            start_time = time.perf_counter()
             body = self.automation._find_element_with_humanization(
                 frame, ["body"]
             )
             # Scroll the body to top
             body.evaluate("element => element.scrollTop = 0")
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Scrolled to top: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Scroll to top failed: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
     def _add_to_favorites(self, page):
         try:
+            start_time = time.perf_counter()
             # Find and click the button
             button = self.automation._find_element_with_humanization(
                 page,
@@ -474,6 +521,9 @@ class OpenReportedEmailsStep(Step):
             
             if not selected_button:
                 raise Exception("Failed to verify favorite was added - selected class not found")
+            
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Added to favorites: {duration:.2f} seconds", extra={"account_id": self.account.id})
                 
         except Exception as e:
             self.logger.warning(f"Failed to add to favorites: {e}", extra={"account_id": self.account.id})
@@ -482,6 +532,7 @@ class OpenReportedEmailsStep(Step):
     @retry_action()
     def _click_link_or_image(self, frame, page):
         try:
+            start_time = time.perf_counter()
             if frame:
                 # frame is a Frame object, query_selector_all is fine
                 links = frame.query_selector_all("a")
@@ -493,6 +544,8 @@ class OpenReportedEmailsStep(Step):
                     if imgs:
                         self.automation.human_behavior.click(imgs[0])
                         page.wait_for_timeout(3000)
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Link or image clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Click inside email failed: {e}", extra={"account_id": self.account.id})
 

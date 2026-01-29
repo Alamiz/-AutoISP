@@ -10,6 +10,11 @@ class CommonHandler(StateHandler):
     def __init__(self, automation, logger=None):
         super().__init__(automation, logger)
 
+class InboxHandler(CommonHandler):
+    """Handle inbox page"""
+    def handle(self, page: Page = None) -> HandlerAction:
+        return "success"
+
 class WrongPasswordPageHandler(CommonHandler):
     """Handle wrong password page"""
     def handle(self, page: Page = None) -> HandlerAction:

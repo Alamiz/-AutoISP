@@ -87,7 +87,7 @@ class GMXAuthentication(HumanAction):
             page_id = identify_page(page, page.url, self.signatures)
             is_goal = page_id in self.GOAL_STATES
             if is_goal:
-                self.logger.info(f"Goal state reached: {page_id}", extra={"account_id": self.account.id})
+                self.logger.debug(f"Goal state reached: {page_id}", extra={"account_id": self.account.id})
             return is_goal
         except Exception as e:
             self.logger.warning(f"Error checking goal: {e}", extra={"account_id": self.account.id})

@@ -94,7 +94,7 @@ class ReportSpamEmailsStep(Step):
                             continue
 
                         self.logger.info(
-                            f"Processing email subject='{subject_text}', date={mail_date}",
+                            f"Processing email subject='{subject_text[:15]}', date={mail_date}",
                             extra={"account_id": self.account.id}
                         )
 
