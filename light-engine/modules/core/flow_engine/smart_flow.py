@@ -27,14 +27,40 @@ class SequentialFlow(Flow):
         """
         Check if we're on an unexpected page and handle it.
         Returns StepResult if page was handled and flow should abort/retry, None if page is expected.
+        Retries identification multiple times if page is unknown.
         """
         if not self.state_registry:
             return None
             
         try:
-            page_id = self.state_registry.identify(page)
+            # Retry identification for unknown pages (similar to StatefulFlow)
+            page_id = "unknown"
+            max_id_attempts = 4
             
-            # Check if there's a handler for this unexpected page
+            for attempt in range(1, max_id_attempts + 1):
+                page_id = self.state_registry.identify(page)
+                if page_id != "unknown":
+                    break
+                
+                if attempt < max_id_attempts:
+                    wait_time = attempt * 5  # 5s, 10s, 15s
+                    if self.logger:
+                        self.logger.debug(
+                            f"Page identification returned 'unknown'. Retrying in {wait_time}s... (Attempt {attempt}/{max_id_attempts})",
+                            extra={"account_id": self.account.id if self.account else None}
+                        )
+                    page.wait_for_timeout(wait_time * 1000)
+            
+            # If still unknown after retries, log warning but continue
+            if page_id == "unknown":
+                if self.logger:
+                    self.logger.warning(
+                        "Page still unknown after multiple identification attempts. Continuing with step...",
+                        extra={"account_id": self.account.id if self.account else None}
+                    )
+                return None
+            
+            # Check if there's a handler for this page
             handler = self.state_registry.get_handler(page_id)
             
             if handler:
@@ -62,7 +88,7 @@ class SequentialFlow(Flow):
                     
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error during page state check: {e}", extra={"account_id": self.account.id})
+                self.logger.error(f"Error during page state check: {e}", extra={"account_id": self.account.id if self.account else None})
         
         return None
 

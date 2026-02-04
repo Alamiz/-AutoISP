@@ -1,4 +1,57 @@
 PAGE_SIGNATURES = {
+    "gmx_onboarding_page": {
+        "description": "GMX onboarding page.",
+        "required_sublink": "gmx.net",
+        "checks": [
+            {
+                "name": "Onboarding dialog",
+                "css_selector": 'div[data-notification-type="onboarding"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Onboarding dialog exists",
+                "weight": 10.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_login_page_v2": {
+        "description": "GMX Login page v2 (split).",
+        "required_sublink": "auth.gmx.net",
+        "checks": [
+            {
+                "name": "Check email input",
+                "css_selector": 'input[name="username"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Email input field exists",
+                "weight": 5.0,
+                "should_exist": True
+            },
+            {
+                "name": "Captcha Container",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "description": "Captcha container don't exists",
+                "weight": 5.0,
+                "should_exist": False
+            },
+        ]
+    },
+    "gmx_login_captcha_page_v2": {
+        "description": "GMX Login captcha page v2.",
+        "required_sublink": "auth.gmx.net",
+        "checks": [
+            {
+                "name": "Captcha Container",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Captcha container exists",
+                "weight": 5.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_login_page": {
         "description": "GMX Login page.",
         "required_sublink": "www.gmx.net",
@@ -31,6 +84,14 @@ PAGE_SIGNATURES = {
                 "weight": 1.0,
                 "should_exist": True
             },
+            {
+                "name": "Onboarding dialog",
+                "css_selector": 'div[data-notification-type="onboarding"]',
+                "contains_text": None,
+                "description": "Onboarding dialog exists",
+                "weight": 10.0,
+                "should_exist": False
+            },
         ]
     },
     "gmx_login_captcha_page": {
@@ -46,6 +107,14 @@ PAGE_SIGNATURES = {
                 "description": "Captcha exists",
                 "weight": 4.0,
                 "should_exist": True
+            },
+            {
+                "name": "Onboarding dialog",
+                "css_selector": 'div[data-notification-type="onboarding"]',
+                "contains_text": None,
+                "description": "Onboarding dialog exists",
+                "weight": 10.0,
+                "should_exist": False
             },
         ]
     },
@@ -89,6 +158,14 @@ PAGE_SIGNATURES = {
                 "description": "Wrong username error message",
                 "weight": 4.0,
                 "should_exist": True
+            },
+            {
+                "name": "Onboarding dialog",
+                "css_selector": 'div[data-notification-type="onboarding"]',
+                "contains_text": None,
+                "description": "Onboarding dialog exists",
+                "weight": 10.0,
+                "should_exist": False
             },
         ]
     },
@@ -185,7 +262,15 @@ PAGE_SIGNATURES = {
                 "description": "Email input field inside login iframe",
                 "weight": 2.0,
                 "should_exist": False
-            }
+            },
+            {
+                "name": "Onboarding dialog",
+                "css_selector": 'div[data-notification-type="onboarding"]',
+                "contains_text": None,
+                "description": "Onboarding dialog exists",
+                "weight": 10.0,
+                "should_exist": False
+            },
         ]
     },
     "gmx_inbox_ads_preferences_popup_1_core": {
@@ -229,114 +314,122 @@ PAGE_SIGNATURES = {
                 "weight": 4.0,
                 "should_exist": True
             },
-        ]
-    },
-    "gmx_inbox_ads_preferences_popup_1": {
-        "description": "GMX email ads preferences popup.",
-        "required_sublink": "navigator.gmx.net/mail",
-        "checks": [
             {
-                "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+                "name": "Onboarding dialog",
+                "css_selector": 'div[data-notification-type="onboarding"]',
                 "contains_text": None,
-                "min_count": 1,
-                "description": "Inbox iframe",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "Emails sidebar",
-                "css_selector": 'webmailer-mail-sidebar#sidebar',
-                "deep_search": True,
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "User avatar",
-                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "Advertising pop-up",
-                "css_selector": 'iframe#thirdPartyFrame_permission_dialog',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 4.0,
-                "should_exist": True
+                "description": "Onboarding dialog exists",
+                "weight": 10.0,
+                "should_exist": False
             },
         ]
     },
-    "gmx_inbox_ads_preferences_popup_2": {
-        "description": "GMX email ads preferences popup.",
-        "required_sublink": "navigator.gmx.net/mail",
-        "checks": [
-            {
-                "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="gmx.net/mail/client"]',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "Inbox iframe",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "Emails sidebar",
-                "css_selector": 'webmailer-mail-sidebar#sidebar',
-                "deep_search": True,
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "User avatar",
-                "css_selector": 'div.nav-header__icons > account-avatar-navigator',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "Advertising pop-up",
-                "css_selector": 'iframe#thirdPartyFrame_upp_dialog[src*="navigator.gmx.net/upp-dialog"]',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 2.0,
-                "should_exist": True
-            },
-            {
-                "name": "Advertising popup deny button",
-                "css_selector": 'button#deny',
-                "deep_search": True,
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "Advertising popup accept button",
-                "css_selector": 'button#cta',
-                "deep_search": True,
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 1.0,
-                "should_exist": True
-            },
-        ]
-    },
+    # "gmx_inbox_ads_preferences_popup_1": {
+    #     "description": "GMX email ads preferences popup.",
+    #     "required_sublink": "navigator.gmx.net/mail",
+    #     "checks": [
+    #         {
+    #             "name": "Check inbox iframe",
+    #             "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "Inbox iframe",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Emails sidebar",
+    #             "css_selector": 'webmailer-mail-sidebar#sidebar',
+    #             "deep_search": True,
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "User avatar",
+    #             "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Advertising pop-up",
+    #             "css_selector": 'iframe#thirdPartyFrame_permission_dialog',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 4.0,
+    #             "should_exist": True
+    #         },
+    #     ]
+    # },
+    # "gmx_inbox_ads_preferences_popup_2": {
+    #     "description": "GMX email ads preferences popup.",
+    #     "required_sublink": "navigator.gmx.net/mail",
+    #     "checks": [
+    #         {
+    #             "name": "Check inbox iframe",
+    #             "css_selector": 'iframe[src*="gmx.net/mail/client"]',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "Inbox iframe",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Emails sidebar",
+    #             "css_selector": 'webmailer-mail-sidebar#sidebar',
+    #             "deep_search": True,
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "User avatar",
+    #             "css_selector": 'div.nav-header__icons > account-avatar-navigator',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Advertising pop-up",
+    #             "css_selector": 'iframe#thirdPartyFrame_upp_dialog[src*="navigator.gmx.net/upp-dialog"]',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 2.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Advertising popup deny button",
+    #             "css_selector": 'button#deny',
+    #             "deep_search": True,
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Advertising popup accept button",
+    #             "css_selector": 'button#cta',
+    #             "deep_search": True,
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 1.0,
+    #             "should_exist": True
+    #         },
+    #     ]
+    # },
     "gmx_inbox_smart_features_popup": {
         "description": "GMX email smart features popup.",
         "required_sublink": "navigator.gmx.net/mail",
@@ -465,6 +558,57 @@ PAGE_SIGNATURES = {
                 "description": "",
                 "weight": 4.0,
                 "should_exist": False
+            },
+        ]
+    },
+    "gmx_account_settings": {
+        "description": "GMX account settings page.",
+        "required_sublink": "gmx.net/ciss",
+        "checks": [
+            {
+                "name": "My account button",
+                "css_selector": 'li[data-icon="my-account"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "My account button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Personal data button",
+                "css_selector": 'li[data-icon="personal-data"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Personal data button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Security button",
+                "css_selector": 'li[data-icon="security"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Security button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Contracts button",
+                "css_selector": 'li[data-icon="contracts"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Contracts button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Permissions button",
+                "css_selector": 'li[data-icon="permissions"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Permissions button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
             },
         ]
     },

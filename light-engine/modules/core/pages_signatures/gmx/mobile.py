@@ -1,4 +1,57 @@
 PAGE_SIGNATURES = {
+    "gmx_onboarding_page": {
+        "description": "GMX onboarding page.",
+        "required_sublink": "gmx.net",
+        "checks": [
+            {
+                "name": "Onboarding dialog",
+                "css_selector": 'div[data-notification-type="onboarding"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Onboarding dialog exists",
+                "weight": 10.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_login_page_v2": {
+        "description": "GMX Login page v2 (split).",
+        "required_sublink": "auth.gmx.net",
+        "checks": [
+            {
+                "name": "Check email input",
+                "css_selector": 'input[name="username"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Email input field exists",
+                "weight": 5.0,
+                "should_exist": True
+            },
+            {
+                "name": "Captcha Container",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "description": "Captcha container don't exists",
+                "weight": 5.0,
+                "should_exist": False
+            },
+        ]
+    },
+    "gmx_login_captcha_page_v2": {
+        "description": "GMX Login captcha page v2.",
+        "required_sublink": "auth.gmx.net",
+        "checks": [
+            {
+                "name": "Captcha Container",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Captcha container exists",
+                "weight": 5.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_register_page": {
         "description": "GMX Register page.",
         "required_sublink": "www.gmx.net",
@@ -283,56 +336,56 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "gmx_inbox_ads_preferences_popup_1": {
-        "description": "GMX email ads preferences popup (core).",
-        "required_sublink": "gmx.net",
-        "checks": [
-            {
-                "name": "Advertising core pop-up",
-                "css_selector": 'iframe.permission-core-iframe',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 4.0,
-                "should_exist": True
-            },
-        ]
-    },
-    "gmx_inbox_ads_preferences_popup_2": {
-        "description": "GMX email ads preferences popup.",
-        "required_sublink": "gmx.net",
-        "checks": [
-            {
-                "name": "Check inbox iframe",
-                "css_selector": 'iframe[src*="permission"]',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "Inbox iframe",
-                "weight": 2.0,
-                "should_exist": True
-            },
-            {
-                "name": "Advertising popup deny button",
-                "css_selector": 'button#deny',
-                "deep_search": True,
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 2.0,
-                "should_exist": True
-            },
-            {
-                "name": "Advertising popup accept button",
-                "css_selector": 'button#cta',
-                "deep_search": True,
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 2.0,
-                "should_exist": True
-            },
-        ]
-    },
+    # "gmx_inbox_ads_preferences_popup_1": {
+    #     "description": "GMX email ads preferences popup (core).",
+    #     "required_sublink": "gmx.net",
+    #     "checks": [
+    #         {
+    #             "name": "Advertising core pop-up",
+    #             "css_selector": 'iframe.permission-core-iframe',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 4.0,
+    #             "should_exist": True
+    #         },
+    #     ]
+    # },
+    # "gmx_inbox_ads_preferences_popup_2": {
+    #     "description": "GMX email ads preferences popup.",
+    #     "required_sublink": "gmx.net",
+    #     "checks": [
+    #         {
+    #             "name": "Check inbox iframe",
+    #             "css_selector": 'iframe[src*="permission"]',
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "Inbox iframe",
+    #             "weight": 2.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Advertising popup deny button",
+    #             "css_selector": 'button#deny',
+    #             "deep_search": True,
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 2.0,
+    #             "should_exist": True
+    #         },
+    #         {
+    #             "name": "Advertising popup accept button",
+    #             "css_selector": 'button#cta',
+    #             "deep_search": True,
+    #             "contains_text": None,
+    #             "min_count": 1,
+    #             "description": "",
+    #             "weight": 2.0,
+    #             "should_exist": True
+    #         },
+    #     ]
+    # },
     "gmx_inbox_smart_features_popup": {
         "description": "GMX email smart features popup.",
         "required_sublink": "gmx.net",

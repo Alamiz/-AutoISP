@@ -7,6 +7,128 @@ from core.flow_engine.state_handler import StateHandler, HandlerAction
 from core.utils.element_finder import deep_find_elements
 from core.utils.browser_utils import navigate_to
 
+class OnboardingPageHandler(StateHandler):
+    """Handle GMX onboarding page"""
+    
+    def handle(self, page: Page) -> HandlerAction:
+        try:
+            self.logger.info("Clicking deny", extra={"account_id": self.account.id})
+            start_time = time.perf_counter()
+            self.automation.human_click(
+                page,
+                selectors=["button[data-importance='secondary']"],
+                deep_search=False
+            )
+
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Deny clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            
+            page.wait_for_timeout(1500)
+            return "continue"
+            
+        except Exception as e:
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
+            return "retry"
+
+class LoginPageV2Handler(StateHandler):
+    """Handle GMX login page v2 - split email and password entry"""
+    
+    def handle(self, page: Page) -> HandlerAction:
+        try:
+            # Check if we are already at the password step
+            password_field_visible = False
+            try:
+                page.wait_for_selector('input[name="password"]', state="visible", timeout=2000)
+                password_field_visible = True
+            except:
+                pass
+
+            if password_field_visible:
+                self.logger.info("Password field visible, skipping email entry", extra={"account_id": self.account.id})
+                
+                start_time = time.perf_counter()
+                self.automation.human_fill(
+                    page,
+                    selectors=['input[name="password"]'],
+                    text=self.account.password,
+                    deep_search=False
+                )
+                
+                self.automation.human_click(
+                    page,
+                    selectors=['button[type="submit"]'],
+                    deep_search=False
+                )
+                
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Password submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+                return "continue"
+
+            self.logger.info("Entering credentials (V2 flow)", extra={"account_id": self.account.id})
+            
+            start_time = time.perf_counter()
+            # Fill email
+            self.automation.human_fill(
+                page,
+                selectors=['input[name="username"]'],
+                text=self.account.email,
+                deep_search=False
+            )
+            
+            # Click continue
+            self.automation.human_click(
+                page,
+                selectors=['button[type="submit"]'],
+                deep_search=False
+            )
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Email submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+
+            self.logger.info("Checking for captcha", extra={"account_id": self.account.id})
+            # Check for captcha after clicking continue
+            start_time = time.perf_counter()
+            captcha_found = False
+            for selector in ["div[data-testid='captcha']", "div[data-testid='captcha-container']"]:
+                try:
+                    page.wait_for_selector(selector, state="attached", timeout=1000)
+                    captcha_found = True
+                    break
+                except:
+                    continue
+            
+            if captcha_found:
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Captcha detected: {duration:.2f} seconds", extra={"account_id": self.account.id})
+                return "continue"
+            
+            # If no captcha, wait for password field to appear and fill it
+            try:
+                page.wait_for_selector('input[name="password"]', timeout=10000)
+                
+                start_time = time.perf_counter()
+                self.automation.human_fill(
+                    page,
+                    selectors=['input[name="password"]'],
+                    text=self.account.password,
+                    deep_search=False
+                )
+                
+                self.automation.human_click(
+                    page,
+                    selectors=['button[type="submit"]'],
+                    deep_search=False
+                )
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Password submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            except Exception as e:
+                self.logger.info(f"Password field did not appear immediately: {e}. Re-identifying status.", extra={"account_id": self.account.id})
+            
+            return "continue"
+            
+        except Exception as e:
+            self.logger.error(f"Failed LoginPageV2Handler - {e}", extra={"account_id": self.account.id})
+            return "retry"
+
 class RegisterPageHandler(StateHandler):
     """Handle GMX mobile register page - click login button"""
     

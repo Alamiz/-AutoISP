@@ -65,7 +65,7 @@ class UploadFileStep(Step):
         try:
             vcf_path = getattr(self.automation, "vcf_file_path", None)
             if not vcf_path or not os.path.exists(vcf_path):
-                return StepResult(status=FlowResult.FAILURE, message=f"VCF file not found at: {vcf_path}")
+                return StepResult(status=FlowResult.FAILED, message=f"VCF file not found at: {vcf_path}")
             
             self.logger.info(f"Uploading file: {vcf_path}", extra={"account_id": self.account.id})
             
@@ -144,7 +144,7 @@ class VerifyImportStep(Step):
             if success_element_exact:
                 return StepResult(status=FlowResult.SUCCESS, message="Import verified successfully (exact selector)")
 
-            return StepResult(status=FlowResult.FAILURE, message="Success message not found")
+            return StepResult(status=FlowResult.FAILED, message="Success message not found")
             
         except Exception as e:
             return StepResult(status=FlowResult.RETRY, message=f"Verification failed: {e}")

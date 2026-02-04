@@ -1,4 +1,5 @@
 import logging
+import os
 from playwright.sync_api import Page
 from automations.gmx.authenticate.desktop.run import GMXAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
@@ -26,12 +27,13 @@ class ImportContacts(HumanAction):
     web.de Desktop Import Contacts using SequentialFlow
     """
     
-    def __init__(self, account, user_agent_type="desktop", vcf_file_path=None, job_id=None):
+    def __init__(self, account, user_agent_type="desktop", vcf_file_path=None, job_id=None, log_dir=None):
         super().__init__()
         self.account = account
         self.user_agent_type = user_agent_type
         self.vcf_file_path = vcf_file_path
         self.job_id = job_id
+        self.log_dir = log_dir
         self.logger = logging.getLogger("autoisp")
         self.profile = self.account.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
@@ -55,6 +57,8 @@ class ImportContacts(HumanAction):
 
     def execute(self):
         self.logger.info(f"Starting Import Contacts", extra={"account_id": self.account.id})
+        page = None
+        status = "failed"
         
         try:
             self.browser.start()
@@ -76,6 +80,7 @@ class ImportContacts(HumanAction):
             self.import_contacts(page)
             
             self.logger.info("Import contacts successful", extra={"account_id": self.account.id})
+            status = "success"
             return {"status": "success", "message": "Contacts imported successfully"}
         
         except RequiredActionFailed as e:
@@ -85,6 +90,15 @@ class ImportContacts(HumanAction):
             self.logger.error(f"Unexpected error: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         finally:
+            # Take screenshot before closing
+            if page and self.log_dir:
+                try:
+                    screenshot_path = os.path.join(self.log_dir, f"screenshot_{status}.png")
+                    page.screenshot(path=screenshot_path)
+                    self.logger.info(f"Screenshot saved to {screenshot_path}")
+                except Exception as e:
+                    self.logger.error(f"Failed to take screenshot: {e}")
+
             if self.job_id:
                 pass
                 # from modules.core.job_manager import job_manager

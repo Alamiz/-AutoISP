@@ -12,6 +12,9 @@ from core.flow_engine.state_handler import StateHandlerRegistry
 from modules.core.flow_state import FlowResult
 from .steps import NavigateToSpamStep, ReportSpamEmailsStep, OpenReportedEmailsStep
 from .handlers import UnknownPageHandler
+from automations.common_handlers import (
+    SmartFeaturesPopupHandler
+)
 from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
 
 
@@ -65,6 +68,7 @@ class ReportNotSpam(HumanAction):
             signatures=self.signatures,
             logger=self.logger
         )
+        registry.register("webde_inbox_smart_features_popup", SmartFeaturesPopupHandler(self, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         return registry
 

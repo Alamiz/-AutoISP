@@ -6,7 +6,7 @@ import importlib
 import concurrent.futures
 import multiprocessing
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
 # Ensure the light-engine directory is in the path
@@ -325,7 +325,6 @@ def main():
             logger.warning(f"Invalid days value '{days_str}', defaulting to 7")
             days_back = 7
             
-        from datetime import datetime, timedelta
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=days_back)
         
@@ -334,7 +333,28 @@ def main():
             "start_date": start_date.strftime("%Y-%m-%d"),
             "end_date": end_date.strftime("%Y-%m-%d")
         }
-        logger.info(f"ReportNotSpam config: keyword='{search_text}', days={days_back} ({start_date} to {end_date})")
+        msg = f"ReportNotSpam config: keyword='{search_text}', days={days_back} ({start_date} to {end_date})"
+        logger.info(msg)
+    
+    elif automation == "import_contacts":
+        vcf_path = os.path.join(DATA_DIR, "export.vcf")
+        if not os.path.exists(vcf_path):
+            logger.error(f"VCF file not found at: {vcf_path}")
+            print(f"\nError: VCF file not found at: {vcf_path}")
+            return
+
+        automation_kwargs = {"vcf_file": vcf_path}
+        logger.info(f"ImportContacts config: vcf_file='{vcf_path}'")
+
+    elif automation == "open_profile":
+        duration_str = input("Enter duration in minutes (default 10): ").strip()
+        try:
+            duration = int(duration_str) if duration_str else 10
+        except ValueError:
+            logger.warning(f"Invalid duration '{duration_str}', defaulting to 10")
+            duration = 10
+        automation_kwargs = {"duration": duration}
+        logger.info(f"OpenProfile config: duration={duration} minutes")
 
     # Prompt for desktop/mobile percentage
     desktop_pct_str = input("Enter desktop percentage (0-100, default 100): ").strip()

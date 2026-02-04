@@ -13,7 +13,6 @@ from .handlers import (
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
-    SmartFeaturesPopupHandler,
     UnknownPageHandler,
 )
 from automations.common_handlers import (
@@ -22,7 +21,8 @@ from automations.common_handlers import (
     LoginCaptchaHandler,
     SecuritySuspensionHandler,
     PhoneVerificationHandler,
-    InboxHandler
+    InboxHandler,
+    SmartFeaturesPopupHandler
 )
 from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
 from core.utils.browser_utils import navigate_to

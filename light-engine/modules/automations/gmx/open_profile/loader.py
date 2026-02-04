@@ -10,11 +10,14 @@ def run(account, job_id=None, **kwargs):
     # Extract specific parameters
     duration = kwargs.get("duration")
     
-    automation = automation_class(
-        account=account,
-        user_agent_type=account.type,
-        duration=duration,
-        job_id=job_id
-    )
+    automation_args = {
+        "account": account,
+        "user_agent_type": account.type,
+        "job_id": job_id
+    }
+    if duration is not None:
+        automation_args["duration"] = duration
+    
+    automation = automation_class(**automation_args)
 
     return automation.execute()

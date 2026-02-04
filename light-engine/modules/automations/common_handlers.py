@@ -42,12 +42,9 @@ class LoginNotPossiblePageHandler(CommonHandler):
 class LoginCaptchaHandler(CommonHandler, HumanAction):
     """Handle login captcha with auto-solve + fallback to user"""
 
-    CAPTCHA_SELECTOR = [
-        'div[data-testid="captcha-view"] div.cf-checkbox',
-        'div[data-testid="captcha-container"] div.cf-checkbox'
-    ]
+    CAPTCHA_SELECTOR = 'div[data-testid="captcha-view"] div.cf-checkbox, div[data-testid="captcha-container"] div.cf-checkbox'
 
-    PASSWORD_SELECTOR = "input#password"
+    PASSWORD_SELECTOR = "input#password, input[name='password']"
 
     def __init__(self, automation, logger=None, job_id=None):
         CommonHandler.__init__(self, automation, logger)
@@ -116,9 +113,6 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
             timeout=5000
         )
 
-        # Allow to process the interaction
-        page.wait_for_timeout(3000)
-
         # Check if captcha is solved
         return self._is_captcha_solved(page)
 
@@ -185,6 +179,29 @@ class PhoneVerificationHandler(CommonHandler):
             self.logger.warning("PhoneVerificationHandler: Phone verification required")
         # update_account_state(self.account.id, "phone_verification")
         return "abort"
+
+class SmartFeaturesPopupHandler(StateHandler):
+    """Handle smart features popup"""
+    
+    def handle(self, page: Page) -> HandlerAction:
+        try:
+            self.logger.info("Accepting smart features popup", extra={"account_id": self.account.id})
+            
+            start_time = time.perf_counter()
+            self.automation.human_click(
+                page, selectors=['button[data-component-path="accept-button"]'], deep_search=True
+            )
+            
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Smart features popup accepted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            
+            page.wait_for_timeout(1500)
+            page.reload()
+            return "continue"
+            
+        except Exception as e:
+            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
+            return "retry"
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages"""

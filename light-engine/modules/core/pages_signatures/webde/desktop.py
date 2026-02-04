@@ -443,6 +443,57 @@ PAGE_SIGNATURES = {
             # },
         ]
     },
+    "webde_account_settings": {
+        "description": "Webde account settings page.",
+        "required_sublink": "web.de/ciss",
+        "checks": [
+            {
+                "name": "My account button",
+                "css_selector": 'li[data-icon="my-account"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "My account button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Personal data button",
+                "css_selector": 'li[data-icon="personal-data"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Personal data button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Security button",
+                "css_selector": 'li[data-icon="security"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Security button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Contracts button",
+                "css_selector": 'li[data-icon="contracts"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Contracts button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+            {
+                "name": "Permissions button",
+                "css_selector": 'li[data-icon="permissions"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Permissions button in the navigation menu",
+                "weight": 2.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_favorites": {
         "description": "Webde email favorites page.",
         "required_sublink": "web.de/mail",

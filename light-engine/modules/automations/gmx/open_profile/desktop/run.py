@@ -41,7 +41,7 @@ class OpenProfile(HumanAction):
                 # job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             
-            navigate_to(page, "https://www.gmx.net/")
+            navigate_to(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link")
             
             self.logger.info("Profile opened. Waiting for manual interaction...")
             

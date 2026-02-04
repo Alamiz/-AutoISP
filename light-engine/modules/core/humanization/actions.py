@@ -20,7 +20,7 @@ class HumanAction(ABC):
     def _find_element_with_humanization(
         self,
         page: Page,
-        selectors: list[str],
+        selectors: list[str] | str,
         deep_search: bool = False,
         timeout: Optional[int] = 3000,
         wait_visible: bool = True
@@ -28,6 +28,8 @@ class HumanAction(ABC):
         """
         Find element with humanization, optionally using deep search for nested shadow/iframe elements.
         """
+        if isinstance(selectors, str):
+            selectors = [selectors]
         if timeout is None:
             timeout = 3000
 

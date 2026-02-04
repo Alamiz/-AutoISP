@@ -1,5 +1,6 @@
 import logging
 import os
+import datetime
 from playwright.sync_api import Page
 from automations.webde.authenticate.desktop.run import WebDEAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
@@ -10,13 +11,11 @@ from core.flow_engine.smart_flow import SequentialFlow
 from core.flow_engine.state_handler import StateHandlerRegistry
 from modules.core.flow_state import FlowResult
 from .steps import (
-    OpenAddressBookStep,
-    OpenImportPanelStep,
-    SelectSourceStep,
-    UploadFileStep,
-    UploadContactsStep,
-    ImportContactsStep,
-    VerifyImportStep
+    OpenAccountMenuStep,
+    NavigateToAccountSettingsStep,
+    ChangePasswordStep,
+    AddRecoveryEmailStep,
+    SaveSecuredAccountStep,
 )
 from .handlers import UnknownPageHandler
 from automations.common_handlers import (
@@ -25,21 +24,29 @@ from automations.common_handlers import (
 from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
 
 
-class ImportContacts(HumanAction):
+class ChangePasswordAndAddRecovery(HumanAction):
     """
-    web.de Desktop Import Contacts using SequentialFlow
+    web.de Desktop - Change Password and Add Recovery Email automation.
     """
     
-    def __init__(self, account, user_agent_type="desktop", vcf_file_path=None, job_id=None, log_dir=None):
+    def __init__(self, account, user_agent_type="desktop", job_id=None, log_dir=None):
         super().__init__()
         self.account = account
         self.user_agent_type = user_agent_type
-        self.vcf_file_path = vcf_file_path
         self.job_id = job_id
         self.log_dir = log_dir
         self.logger = logging.getLogger("autoisp")
         self.profile = self.account.email.split('@')[0]
         self.signatures = PAGE_SIGNATURES
+        
+        # Will be set during execution
+        self.new_password = None
+        self.recovery_email = None
+        self.output_dir = None
+        
+        # Log path for recovery email and password change
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.recovery_log_path = os.path.join("output", "recovery_and_password", f"processed_{timestamp}.txt")
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
@@ -60,16 +67,16 @@ class ImportContacts(HumanAction):
         return registry
 
     def execute(self):
-        self.logger.info("Starting Import Contacts", extra={"account_id": self.account.id})
+        self.logger.info("Starting Change Password and Add Recovery", extra={"account_id": self.account.id})
         page = None
         status = "failed"
         
+        # Determine output directory from log_dir
+        if self.log_dir:
+            self.output_dir = os.path.dirname(os.path.dirname(self.log_dir))
+        
         try:
             self.browser.start()
-            if self.job_id:
-                pass
-                # from modules.core.job_manager import job_manager
-                # job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             
             # Authenticate first
@@ -80,18 +87,18 @@ class ImportContacts(HumanAction):
             )
             webde_auth.authenticate(page)
 
-            # Import contacts using SequentialFlow
-            self.import_contacts(page)
+            # Change password and add recovery email using SequentialFlow
+            self.change_password_and_add_recovery(page)
             
-            self.logger.info("Import contacts successful", extra={"account_id": self.account.id})
+            self.logger.info("Change password and add recovery successful", extra={"account_id": self.account.id})
             status = "success"
-            return {"status": "success", "message": "Contacts imported successfully"}
+            return {"status": "success", "message": "Password changed and recovery email added"}
         
         except RequiredActionFailed as e:
-            self.logger.error("Import contacts failed", extra={"account_id": self.account.id})
+            self.logger.error("Change password and add recovery failed", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         except Exception as e:
-            self.logger.error(f"Unexpected error: {e}", extra={"account_id": self.account.id})
+            self.logger.error(f"Unexpected error: {e}", exc_info=True, extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
         finally:
             # Take screenshot before closing
@@ -102,32 +109,26 @@ class ImportContacts(HumanAction):
                     self.logger.info(f"Screenshot saved to {screenshot_path}")
                 except Exception as e:
                     self.logger.error(f"Failed to take screenshot: {e}")
-
-            if self.job_id:
-                pass
-                # from modules.core.job_manager import job_manager
-                # job_manager.unregister_browser(self.job_id)
+            
             self.browser.close()
 
-    def import_contacts(self, page: Page):
-        """Import contacts using SequentialFlow."""
+    def change_password_and_add_recovery(self, page: Page):
+        """Change password and add recovery email using SequentialFlow."""
         state_registry = self._setup_state_handlers()
         
-        # Define steps in order
+        # Define steps in order: Recovery first, then Password Change
         steps = [
-            OpenAddressBookStep(self, self.logger),
-            OpenImportPanelStep(self, self.logger),
-            SelectSourceStep(self, self.logger),
-            UploadFileStep(self, self.logger),
-            UploadContactsStep(self, self.logger),
-            ImportContactsStep(self, self.logger),
-            VerifyImportStep(self, self.logger),
+            OpenAccountMenuStep(self, self.logger),
+            NavigateToAccountSettingsStep(self, self.logger),
+            AddRecoveryEmailStep(self, self.logger),
+            ChangePasswordStep(self, self.logger),
+            SaveSecuredAccountStep(self, self.logger),
         ]
         
-        flow = SequentialFlow(steps, account=self.account, logger=self.logger)
+        flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
         result = flow.run(page)
         
         if result.status == FlowResult.FAILED:
-            raise RequiredActionFailed(f"Failed to complete import. Last error: {result.message}")
+            raise RequiredActionFailed(f"Failed to complete automation. Last error: {result.message}")
         
-        self.logger.info("Import contacts completed via SequentialFlow", extra={"account_id": self.account.id})
+        self.logger.info("Change password and add recovery completed via SequentialFlow", extra={"account_id": self.account.id})

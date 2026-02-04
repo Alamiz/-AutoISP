@@ -23,11 +23,14 @@ def run(account, job_id=None, **kwargs):
         except Exception as e:
             print(f"Failed to decode base64 file: {e}")
 
+    log_dir = kwargs.get("log_dir")
+
     automation = automation_class(
         account=account,
         user_agent_type="desktop",
         vcf_file_path=vcf_file_path,
-        job_id=job_id
+        job_id=job_id,
+        log_dir=log_dir
     )
 
     return automation.execute()

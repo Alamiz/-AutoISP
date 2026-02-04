@@ -9,11 +9,13 @@ from core.flow_engine.smart_flow import StatefulFlow
 from core.flow_engine.state_handler import StateHandlerRegistry
 from modules.core.flow_state import FlowResult
 from .handlers import (
+    OnboardingPageHandler,
+    LoginPageV2Handler,
     RegisterPageHandler,
     LoginPageHandler,
     LoggedInPageHandler,
-    AdsPreferencesPopup1Handler,
-    AdsPreferencesPopup2Handler,
+    # AdsPreferencesPopup1Handler,
+    # AdsPreferencesPopup2Handler,
     UnknownPageHandler,
 )
 from automations.common_handlers import (
@@ -60,14 +62,17 @@ class GMXAuthentication(HumanAction):
             logger=self.logger
         )
         
+        registry.register("gmx_onboarding_page", OnboardingPageHandler(self, self.logger))
+        registry.register("gmx_login_page_v2", LoginPageV2Handler(self, self.logger))
         registry.register("gmx_register_page", RegisterPageHandler(self, self.logger))
         registry.register("gmx_login_page", LoginPageHandler(self, self.logger))
         registry.register("gmx_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
         registry.register("gmx_login_wrong_username", WrongEmailPageHandler(self, self.logger))
+        registry.register("gmx_login_captcha_page_v2", LoginCaptchaHandler(self, self.logger, self.job_id))
         registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self, self.logger, self.job_id))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
-        registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
-        registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
+        # registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
+        # registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
         registry.register("gmx_security_suspension", SecuritySuspensionHandler(self, self.logger))
         registry.register("gmx_phone_verification", PhoneVerificationHandler(self, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
@@ -133,7 +138,7 @@ class GMXAuthentication(HumanAction):
 
     def authenticate(self, page: Page):
         """State-based authentication using StatefulFlow."""
-        navigate_to(page, "https://lightmailer-bs.gmx.net/")
+        navigate_to(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link")
         self.human_behavior.read_delay()
         
         state_registry = self._setup_state_handlers()

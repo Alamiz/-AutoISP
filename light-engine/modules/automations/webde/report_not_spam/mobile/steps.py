@@ -210,7 +210,7 @@ class ReportSpamEmailsStep(Step):
                 selectors=['iframe#bodyIFrame']
             )
             # iframe is a Locator, we need ElementHandle to call content_frame()
-            frame = iframe.element_handle().content_frame()
+            frame = iframe.content_frame()
             body = self.automation._find_element_with_humanization(
                 frame, ["body"]
             )

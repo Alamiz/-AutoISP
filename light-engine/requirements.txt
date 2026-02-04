@@ -2,11 +2,6 @@ PySide6
 playwright
 logging
 beautifulsoup4
-fastapi
-uvicorn
 pyinstaller
-httpx
-websockets
-requests
 python-dotenv
 psutil

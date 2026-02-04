@@ -139,30 +139,6 @@ class AdsPreferencesPopup2Handler(StateHandler):
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return "retry"
 
-
-class SmartFeaturesPopupHandler(StateHandler):
-    """Handle smart features popup"""
-    
-    def handle(self, page: Page) -> HandlerAction:
-        try:
-            self.logger.info("Accepting smart features popup", extra={"account_id": self.account.id})
-            
-            start_time = time.perf_counter()
-            self.automation.human_click(
-                page, selectors=['button[data-component-path="accept-button"]'], deep_search=True
-            )
-            
-            duration = time.perf_counter() - start_time
-            self.logger.info(f"Smart features popup accepted: {duration:.2f} seconds", extra={"account_id": self.account.id})
-            
-            page.wait_for_timeout(1500)
-            page.reload()
-            return "continue"
-            
-        except Exception as e:
-            self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
-
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to web.de"""
     

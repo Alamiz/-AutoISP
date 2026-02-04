@@ -10,10 +10,12 @@ from core.utils.navigation import navigate_with_retry
 from core.flow_engine.state_handler import StateHandlerRegistry
 from modules.core.flow_state import FlowResult
 from .handlers import (
+    OnboardingPageHandler,
     LoginPageHandler,
+    LoginPageV2Handler,
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
-    AdsPreferencesPopup2Handler,
+    # AdsPreferencesPopup2Handler,
     SmartFeaturesPopupHandler,
     UnknownPageHandler,
 )
@@ -66,14 +68,17 @@ class GMXAuthentication(HumanAction):
         )
         
         # Register handlers for authentication page states
+        registry.register("gmx_onboarding_page", OnboardingPageHandler(self, self.logger))
         registry.register("gmx_login_page", LoginPageHandler(self, self.logger))
+        registry.register("gmx_login_page_v2", LoginPageV2Handler(self, self.logger))
         registry.register("gmx_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
         registry.register("gmx_login_wrong_username", WrongEmailPageHandler(self, self.logger))
         registry.register("gmx_login_captcha_page", LoginCaptchaHandler(self, self.logger, self.job_id))
+        registry.register("gmx_login_captcha_page_v2", LoginCaptchaHandler(self, self.logger, self.job_id))
         registry.register("gmx_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("gmx_inbox_ads_preferences_popup_1_core", AdsPreferencesPopup1Handler(self, self.logger))
-        registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
-        registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
+        # registry.register("gmx_inbox_ads_preferences_popup_1", AdsPreferencesPopup1Handler(self, self.logger))
+        # registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
         registry.register("gmx_inbox_smart_features_popup", SmartFeaturesPopupHandler(self, self.logger))
         registry.register("gmx_security_suspension", SecuritySuspensionHandler(self, self.logger))
         registry.register("gmx_phone_verification", PhoneVerificationHandler(self, self.logger))
@@ -157,7 +162,7 @@ class GMXAuthentication(HumanAction):
         Automatically handles different page states until reaching goal state.
         """
         # Navigate to GMX with retry on network errors
-        navigate_with_retry(page, "https://www.gmx.net/", max_retries=3, account=self.account, logger=self.logger)
+        navigate_with_retry(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link", max_retries=3, account=self.account, logger=self.logger)
         self.human_behavior.read_delay()
         
         # Setup state handlers
