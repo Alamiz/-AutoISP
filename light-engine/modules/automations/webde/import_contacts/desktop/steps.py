@@ -1,4 +1,3 @@
-from core.utils.retry_decorators import retry_action
 from playwright.sync_api import Page
 from core.flow_engine.step import Step, StepResult
 from modules.core.flow_state import FlowResult
@@ -11,7 +10,14 @@ class OpenAddressBookStep(Step):
             self.logger.info("Navigating to Address Book", extra={"account_id": self.account.id})
             self.automation.human_click(
                 page,
-                selectors=['div#actions-menu-primary a[data-item-name="addressbook"]'],
+                selectors=['nav#top-nav button[aria-controls="menu-services"]'],
+                deep_search=False
+            )
+            page.wait_for_timeout(1000)
+
+            self.automation.human_click(
+                page,
+                selectors=['button[data-item-name="addressbook"]'],
                 deep_search=False
             )
             page.wait_for_timeout(3000)
@@ -133,6 +139,7 @@ class VerifyImportStep(Step):
             if success_element:
                 return StepResult(status=FlowResult.SUCCESS, message="Import verified successfully")
             
+            # Fallback check if the exact selector provided by user works
             user_selector = 'div[class="status hide complete"] > div[class="content box ok"]'
             success_element_exact = self.automation._find_element_with_humanization(
                 page,
