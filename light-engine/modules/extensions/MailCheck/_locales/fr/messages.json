@@ -1,0 +1,698 @@
+{
+   "accordion_close": {
+      "message": "Ouvrir/fermer"
+   },
+   "accordion_close_tt": {
+      "message": "Afficher/masquer les e-mails non lus de ce compte"
+   },
+   "account_details_tt": {
+      "message": "Ouvrir la boîte de réception du compte de messagerie"
+   },
+   "address_invalid_error": {
+      "message": "Veuillez corriger votre adresse e-mail"
+   },
+   "all_unread_emails": {
+      "message": "Tous les e-mails non lus"
+   },
+   "all_unread_emails_tt": {
+      "message": "Afficher tous les e-mails non lus de la boîte de messagerie"
+   },
+   "allowed_value_error": {
+      "message": "La valeur fournie n'est pas dans la liste autorisée"
+   },
+   "alphanumdash_error": {
+      "message": "Le segment contient des caractères qui ne sont pas pris en charge. Seuls les chiffres, les lettres et les symboles - et _ sont autorisés."
+   },
+   "appAuthor": {
+      "message": "1&1 Mail & Media GmbH"
+   },
+   "appDescription": {
+      "message": "Un moyen sûr d'accéder à vos e-mails personnels.",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "appName": {
+      "message": "mail.com MailCheck"
+   },
+   "appShortName": {
+      "message": "MailCheck"
+   },
+   "bad_response_content_error": {
+      "message": "Mauvais contenu de réponse"
+   },
+   "boolean_error": {
+      "message": "Non booléen"
+   },
+   "browserActionTitle": {
+      "message": "Allez sur votre boîte de réception."
+   },
+   "button_disconnected_tt": {
+      "message": "MailCheck - Déconnecté"
+   },
+   "button_new_tt": {
+      "message": "Aucun nouvel e-mail;Un nouvel e-mail;%COUNT% nouveaux e-mails"
+   },
+   "button_unread_tt": {
+      "message": "Aucun e-mail non lu;Un e-mail non lu;%COUNT% e-mails non lus"
+   },
+   "cancel": {
+      "message": "Annuler"
+   },
+   "cannot_contact_server_error": {
+      "message": "Problème de connexion. Serveur temporairement indisponible."
+   },
+   "cannot_find_server_error": {
+      "message": "Impossible de trouver un serveur."
+   },
+   "cannot_login_error": {
+      "message": "Impossible de se connecter au serveur. Potentiel problème de configuration, identifiant ou mot de passe erroné."
+   },
+   "collapse": {
+      "message": "Réduire"
+   },
+   "compose_email": {
+      "message": "Écrire un nouvel e-mail"
+   },
+   "compose_email_tt": {
+      "message": "Rédiger un nouvel e-mail"
+   },
+   "configure_label": {
+      "message": "Configurer..."
+   },
+   "context_menu_options_label": {
+      "message": "Options MailCheck"
+   },
+   "context_menu_search_label": {
+      "message": "Recherche : '%s' "
+   },
+   "copyright": {
+      "message": "© $brand$",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "create_account": {
+      "message": "Obtenez un compte e-mail gratuit"
+   },
+   "delete_email_done": {
+      "message": "L'e-mail a été supprimé"
+   },
+   "delete_email_tt": {
+      "message": "Effacer cet e-mail"
+   },
+   "delete_sound_tt": {
+      "message": "Effacer cet son"
+   },
+   "edit_cancel_label": {
+      "message": "Annuler"
+   },
+   "edit_checking_label": {
+      "message": "Vérification des identifiants..."
+   },
+   "edit_email_label": {
+      "message": "Votre adresse e-mail"
+   },
+   "edit_new_title": {
+      "message": "Ajouter un compte"
+   },
+   "edit_ok_label": {
+      "message": "OK"
+   },
+   "edit_password_label": {
+      "message": "Mot de passe"
+   },
+   "edit_remember_label": {
+      "message": "Se souvenir de moi"
+   },
+   "edit_title": {
+      "message": "Modifier le compte"
+   },
+   "email_checknow_label": {
+      "message": "Consulter les nouveaux e-mails"
+   },
+   "emailaddress": {
+      "message": "E-mail"
+   },
+   "error_access_not_granted": {
+      "message": "Vous n'avez pas accès à ce compte."
+   },
+   "error_accountDisabled": {
+      "message": "Compte désactivé Veuillez essayer de vous connecter à votre compte sur la page d'accueil et suivez les instructions."
+   },
+   "error_badJSON": {
+      "message": "Mauvaise réponse du serveur : impossible de lire le JSON"
+   },
+   "error_clientRejected": {
+      "message": "Veuillez installer une version plus récente de MailCheck et réessayer."
+   },
+   "error_concurrentLogins": {
+      "message": "Trop de connexions simultanées. Pour gérer vos appareils et vos applications, il vous suffit de vous connecter à votre compte sur la page d'accueil et de vous rendre dans les préférences/le centre de clientèle."
+   },
+   "error_csrf_prevented": {
+      "message": "Connexion non réussie. Veuillez réessayer."
+   },
+   "error_domain": {
+      "message": "Nous sommes désolés, ce fournisseur d'e-mail n'est pas supporté actuellement."
+   },
+   "error_email": {
+      "message": "Veuillez entrer une adresse email valide"
+   },
+   "error_exists": {
+      "message": "Ce compte est déjà configuré"
+   },
+   "error_expired": {
+      "message": "Veuillez vous reconnecter"
+   },
+   "error_invalidToken": {
+      "message": "Veuillez vous reconnecter"
+   },
+   "error_loginFailed": {
+      "message": "Mot de passe erroné, adresse e-mail erronée"
+   },
+   "error_noEmailAndPassword": {
+      "message": "Veuillez saisir votre adresse e-mail et votre mot de passe"
+   },
+   "error_noPassword": {
+      "message": "Veuillez saisir votre mot de passe"
+   },
+   "error_noWebmailURL": {
+      "message": "Redirection vers la messagerie Web pas encore possible."
+   },
+   "error_no_emailProvider": {
+      "message": "Le fichier de configuration XML ne contient pas de configuration de boîte e-mail."
+   },
+   "error_noselection": {
+      "message": "Veuillez sélectionner un compte"
+   },
+   "error_notJSON": {
+      "message": "Mauvaise réponse du serveur : pas de JSON"
+   },
+   "error_outlook_limit": {
+      "message": "Un seul compte Outlook est supporté."
+   },
+   "error_password": {
+      "message": "Veuillez saisir de nouveau votre mot de passe"
+   },
+   "error_permissions": {
+      "message": "Autorisations manquantes. Veuillez cliquer sur « Autoriser » dans la fenêtre pop-up."
+   },
+   "error_serverSide": {
+      "message": "Erreur du serveur lors de la vérification des e-mails. Veuillez réessayer plus tard."
+   },
+   "error_syntax": {
+      "message": "Cette adresse e-mail n'est pas au bon format."
+   },
+   "error_uasFailed": {
+      "message": "Nous avons rencontré des problèmes techniques lors de la connexion. Veuillez nous excuser pour ce problème et réessayer plus tard."
+   },
+   "error_unknown": {
+      "message": "Erreur lors de la vérification des e-mails"
+   },
+   "error_wrongPassword": {
+      "message": "Identifiant et mot de passe invalides"
+   },
+   "expand": {
+      "message": "Agrandir"
+   },
+   "forgot_password": {
+      "message": "Vous ne pouvez pas accéder à votre compte ?"
+   },
+   "gmail_noAccount_error": {
+      "message": "Veuillez vous connecter à $1."
+   },
+   "gmail_wrongAccount_error": {
+      "message": "Vous êtes connecté avec un autre compte Google."
+   },
+   "help": {
+      "message": "Aide"
+   },
+   "help_tt": {
+      "message": "Consulter l'aide MailCheck"
+   },
+   "hostname_syntax_error": {
+      "message": "Le domaine du serveur est vide ou contient des caractères non autorisés. Seuls les chiffres, les lettres et les symboles - et . sont autorisés."
+   },
+   "login_email_address_placeholder": {
+      "message": "Adresse e-mail"
+   },
+   "login_info_bullet_0": {
+      "message": "Vos identifiants ne seront utilisés que pour accéder à vos e-mails en utilisant MailCheck."
+   },
+   "login_info_bullet_1": {
+      "message": "Sécurité conforme à la protection de la vie privée allemande."
+   },
+   "login_info_bullet_2": {
+      "message": "Transfert crypté"
+   },
+   "login_info_headline": {
+      "message": "Notes à propos de la sécurité des données"
+   },
+   "login_install_success": {
+      "message": "$1 installé avec succès."
+   },
+   "login_intro": {
+      "message": "Connectez-vous dès maintenant :"
+   },
+   "login_oauth2": {
+      "message": "Cliquez sur « Connexion » pour vous inscrire."
+   },
+   "login_privacy": {
+      "message": "Confidentialité par $brand$",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "login_privacy_details": {
+      "message": "Détails"
+   },
+   "login_privacy_tt": {
+      "message": "Afficher les informations de protection des données"
+   },
+   "login_submit": {
+      "message": "Connexion"
+   },
+   "login_welcome": {
+      "message": "Bienvenue !"
+   },
+   "logout": {
+      "message": "Déconnexion"
+   },
+   "logout_confirm_msg": {
+      "message": "Souhaitez-vous vous déconnecter de MailCheck ?\n\nEn vous déconnectant, les notifications nécessitant d'être connecté seront désactivées (p. ex. nouveaux e-mails).\n\nToutes les fonctionnalités de MailCheck seront réactivées lorsque vous vous reconnecterez.\n\nSi l'ordinateur est souvent utilisé par différentes personnes, nous vous conseillons de vous déconnecter."
+   },
+   "logout_confirm_ok": {
+      "message": "Déconnexion"
+   },
+   "logout_confirm_remember": {
+      "message": "Ne plus montrer ce message"
+   },
+   "logout_confirm_title": {
+      "message": "Déconnexion ?"
+   },
+   "logout_primary_menuitem": {
+      "message": "Déconnexion $1"
+   },
+   "logout_tt": {
+      "message": "Déconnecter tous les comptes"
+   },
+   "mailjump_label": {
+      "message": "Accueil personnalisé lors de la connexion (conseillé)"
+   },
+   "mailto_compose": {
+      "message": "Rédiger un message"
+   },
+   "mailto_copied": {
+      "message": "Copié!"
+   },
+   "mailto_copy_clipboard": {
+      "message": "Copier dans le presse-papier"
+   },
+   "manage_add_label": {
+      "message": "Ajouter..."
+   },
+   "manage_edit_label": {
+      "message": "Modifier..."
+   },
+   "manage_login_label": {
+      "message": "Connexion"
+   },
+   "manage_logout_label": {
+      "message": "Déconnexion"
+   },
+   "manage_remove_label": {
+      "message": "Supprimer"
+   },
+   "manage_title": {
+      "message": "Vos comptes mails"
+   },
+   "mark_read_done": {
+      "message": "L'email a été marqué comme lu"
+   },
+   "mark_read_tt": {
+      "message": "Marquer comme lu"
+   },
+   "message_attachments_multiple": {
+      "message": " - $1 pièces jointes"
+   },
+   "message_attachments_single": {
+      "message": " - Pièces jointes: $1"
+   },
+   "message_tt": {
+      "message": "Lire cet e-mail"
+   },
+   "migrate_outlook_permissions": {
+      "message": "Pour des raisons de sécurité, certains comptes ont été déconnectés. Veuillez vous reconnecter."
+   },
+   "more": {
+      "message": "plus"
+   },
+   "netid_about": {
+      "message": "À propos de netID"
+   },
+   "netid_login_submit": {
+      "message": "Connexion avec netID"
+   },
+   "netid_notification_header": {
+      "message": "$1 est un partenaire de netID"
+   },
+   "netid_notification_message": {
+      "message": "Vous pouvez vous connecter à $1 en toute sécurité avec votre compte $brand$.",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "netid_notification_opt_out": {
+      "message": "Veuillez ne plus montrer"
+   },
+   "no_number_error": {
+      "message": "Ce n'est pas un numéro"
+   },
+   "notification_delete_message": {
+      "message": "Supprimer"
+   },
+   "notification_from": {
+      "message": "De"
+   },
+   "notification_message": {
+      "message": "Vous avez du courrier"
+   },
+   "notifyAlert_label": {
+      "message": "Me prévenir de l'arrivée d'un nouvel e-mail"
+   },
+   "ntp_uninstall_q": {
+      "message": "Vous êtes sur le point de désinstaller $brand$ MailCheck.\nÊtes-vous sûr de vouloir continuer ?",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "number_too_large_error": {
+      "message": "Nombre trop grand"
+   },
+   "number_too_small_error": {
+      "message": "Nombre trop petit"
+   },
+   "ok": {
+      "message": "OK"
+   },
+   "options": {
+      "message": "Options"
+   },
+   "options_cancel_contract_link": {
+      "message": "Cancel Contract"
+   },
+   "options_email": {
+      "message": "E-mail"
+   },
+   "options_email_add": {
+      "message": "Ajouter"
+   },
+   "options_email_add_brand": {
+      "message": "Fourniseur d'e-mail"
+   },
+   "options_email_add_headline": {
+      "message": "Ajouter une adresse e-mail"
+   },
+   "options_email_add_tt": {
+      "message": "Ajouter un compte de messagerie"
+   },
+   "options_email_added_success": {
+      "message": "Vous êtes bien connecté"
+   },
+   "options_email_headline": {
+      "message": "Vos comptes e-mails"
+   },
+   "options_email_login": {
+      "message": "Connexion"
+   },
+   "options_email_login_headline": {
+      "message": "Veuillez saisir votre mot de passe"
+   },
+   "options_email_login_tt": {
+      "message": "Reconnecter le compte de messagerie déconnecté. Recevoir à nouveau les notifications d'e-mails entrants pour ce compte"
+   },
+   "options_email_logout": {
+      "message": "Déconnexion du compte"
+   },
+   "options_email_logout_tt": {
+      "message": "Déconnecter le compte de messagerie connecté. Vous ne recevrez plus de notifications d'e-mails entrants pour ce compte"
+   },
+   "options_email_notifications": {
+      "message": "Notifications"
+   },
+   "options_email_notifications_tt": {
+      "message": "Activer/désactiver l'affichage d'une pop-up de notification à la réception d'un nouvel e-mail"
+   },
+   "options_email_play_sound": {
+      "message": "Jouer un son"
+   },
+   "options_email_play_sound_tt": {
+      "message": "Activer/désactiver l'émission d'un son de notification à la réception d'un nouvel e-mail"
+   },
+   "options_email_preview": {
+      "message": "Aperçu e-mail"
+   },
+   "options_email_preview_tt": {
+      "message": "Afficher un aperçu des e-mails non lus en cliquant sur l'icône enveloppe et utiliser des fonctions étendues de MailCheck (par ex. la suppression d'e-mails)"
+   },
+   "options_email_remove": {
+      "message": "Supprimer le compte"
+   },
+   "options_email_remove_tt": {
+      "message": "Retirer ce compte de messagerie de MailCheck et ne plus recevoir de notifications concernant les e-mails entrants."
+   },
+   "options_email_tt": {
+      "message": "Gérer les comptes de messagerie"
+   },
+   "options_email_unread_mode": {
+      "message": "Voir le nouvel e-mail"
+   },
+   "options_email_unread_mode_tt": {
+      "message": "En cliquant sur l'enveloppe, n'afficher que les e-mails reçus depuis votre dernière consultation de la boîte de messagerie."
+   },
+   "options_feedback": {
+      "message": "Avis"
+   },
+   "options_feedback_add": {
+      "message": "Ajouter un avis"
+   },
+   "options_feedback_headline": {
+      "message": "Aidez-nous à améliorer MailCheck"
+   },
+   "options_feedback_submit": {
+      "message": "Ouvrir la page Avis"
+   },
+   "options_feedback_submit_tt": {
+      "message": "Envoyer un feedback et faire des suggestions d'amélioration de MailCheck"
+   },
+   "options_feedback_tt": {
+      "message": "Envoyer un feedback"
+   },
+   "options_general": {
+      "message": "Général"
+   },
+   "options_general_check_version": {
+      "message": "Vérifier les mises à jour"
+   },
+   "options_general_headline": {
+      "message": "Paramètres généraux"
+   },
+   "options_general_tt": {
+      "message": "Gérer les paramètres généraux"
+   },
+   "options_general_up_to_date": {
+      "message": "Super ! MailCheck est à jour."
+   },
+   "options_general_update_available": {
+      "message": "La mise à jour de MailCheck est en cours"
+   },
+   "options_jugendschutz_link": {
+      "message": "Protection des Jeunes"
+   },
+   "options_login_oauth2": {
+      "message": "Cliquez sur « Ajouter » pour vous inscrire."
+   },
+   "options_mailto_handler": {
+      "message": "Ouvrir des liens e-mail sur des pages Web avec MailCheck - non pris en charge pour les comptes 1&1"
+   },
+   "options_mailto_handler_tt": {
+      "message": "Ouvrir des liens e-mail sur des pages Web avec MailCheck - fonctionne dans les onglets nouvellement ouverts après l'activation"
+   },
+   "options_netid_suggest": {
+      "message": "Afficher les suggestions de connexion à netID"
+   },
+   "options_netid_suggest_tt": {
+      "message": "Afficher les suggestions de connexion à netID"
+   },
+   "options_privacy": {
+      "message": "Protection des données et vie privée"
+   },
+   "options_privacy_link": {
+      "message": "Confidentialité"
+   },
+   "options_privacy_telemetry": {
+      "message": "Collecte de données techniques sans référence personnelle après l'installation de MailCheck afin de pouvoir reconnaître et corriger à temps les problèmes d'installation et d'activation et d'assurer la stabilité et la performance de MailCheck."
+   },
+   "options_privacy_telemetry_more": {
+      "message": "Les informations suivantes sont transmises lorsque le navigateur est appelé : Numéro de version (distribution de la version actuelle), nom de l'addon (MailCheck), variante (AMO, navigateur ou portail), horodatage (date de l'information), date d'installation (date d'installation), langue (utilisée), type de transmission (télémétrie - timing), intervalle de transmission (1 jour, 7 jours, 30 jours), type de logiciel (addon), marque ($brand$), segment (nombre compris entre 1 et 100 pour les tests), nombre de comptes (nombre de comptes de courrier électronique créés), nombre de comptes actifs (nombre de comptes de courrier électronique actifs), nombre de comptes de tiers (nombre de comptes de tiers), dernière transmission réussie (date de la dernière transmission réussie), ID de la campagne (à partir de laquelle le support publicitaire a été installé), recherche par défaut activée (la recherche $brand$ est-elle la recherche par défaut)",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services": {
+      "message": "Produits et services"
+   },
+   "options_products_services_desktop_search_extension": {
+      "message": "$1 Moteur de recherche de bureau"
+   },
+   "options_products_services_details_more": {
+      "message": "Plus d'infos"
+   },
+   "options_products_services_free_download": {
+      "message": "Téléchargement gratuit"
+   },
+   "options_products_services_go_details": {
+      "message": "$brand$ Go! for Google Chrome",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services_go_details_li_0": {
+      "message": "Einfach, übersichtlich - alles da!"
+   },
+   "options_products_services_go_details_li_1": {
+      "message": "Ihre beliebtesten Seiten einfach organisieren"
+   },
+   "options_products_services_go_details_li_2": {
+      "message": "Einfache Einrichtung"
+   },
+   "options_products_services_go_title": {
+      "message": "$brand$ Go!",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services_headline": {
+      "message": "Plus d'offres et de produits"
+   },
+   "options_products_services_premium_details": {
+      "message": "Mehr als E-Mail mit dem Profipostfach"
+   },
+   "options_products_services_premium_title": {
+      "message": "$brand$ Premium",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services_search_extension": {
+      "message": "$1 Extension de la recherche"
+   },
+   "options_search": {
+      "message": "Recherche"
+   },
+   "options_search_close_last_tab": {
+      "message": "Fermer le dernier onglet entraîne l'ouverture d'une page de recherche"
+   },
+   "options_search_close_last_tab_tt": {
+      "message": "Activation/désactivation de l'affichage de la recherche web à la fermeture du dernier onglet. Après désactivation, l'onglet de recherche web peut être fermé par clic droit -> Fermer l'onglet"
+   },
+   "options_search_close_url_not_found": {
+      "message": "Afficher la recherche si l'URL n'est pas trouvée"
+   },
+   "options_search_context_menu": {
+      "message": "Recherche depuis le menu contextuel"
+   },
+   "options_search_context_menu_tt": {
+      "message": "Activation/désactivation du lancement de la recherche web à partir du menu contextuel par clic droit sur un mot sélectionné"
+   },
+   "options_search_from_url_bar": {
+      "message": "Montrer l'icône de recherche dans la barre d'adresse"
+   },
+   "options_search_from_url_bar_tt": {
+      "message": "Afficher la loupe de recherche dans la barre d'adresse et accéder en un clic à la recherche web"
+   },
+   "options_search_headline": {
+      "message": "Optimisez votre recherche"
+   },
+   "options_search_tt": {
+      "message": "Gérer les paramètres de recherche web"
+   },
+   "options_sound_add": {
+      "message": "Ajouter"
+   },
+   "options_sound_add_tt": {
+      "message": "Ajouter un son de notification"
+   },
+   "options_sound_piece": {
+      "message": "Son"
+   },
+   "options_sound_piece_tt": {
+      "message": "Sélectionnez un son de notification"
+   },
+   "options_sound_volume": {
+      "message": "Volume"
+   },
+   "options_sound_volume_tt": {
+      "message": "Régler le volume des sons de notification"
+   },
+   "options_sounds_headline": {
+      "message": "Sons de notification"
+   },
+   "options_tt": {
+      "message": "Configuration MailCheck"
+   },
+   "pageActionTitle": {
+      "message": "Trouver de meilleurs résultats..."
+   },
+   "page_heading": {
+      "message": "$1 Options MailCheck"
+   },
+   "password": {
+      "message": "Mot de passe"
+   },
+   "password_empty_error": {
+      "message": "Veuillez saisir un mot de passe"
+   },
+   "refresh": {
+      "message": "Rafraîchir"
+   },
+   "refresh_tt": {
+      "message": "Rafraîchir la boîte aux lettres"
+   },
+   "remove_confirm": {
+      "message": "Souhaitez-vous vraiment supprimer $1 de MailCheck ? Vous pourrez toujours accéder à ce compte par d'autres moyens."
+   },
+   "remove_title": {
+      "message": "Supprimer le compte sélectionné"
+   },
+   "string_empty_error": {
+      "message": "Vous devez indiquer une valeur pour ce segment"
+   },
+   "url_parsing_error": {
+      "message": "URL non reconnue"
+   },
+   "url_scheme_error": {
+      "message": "Schéma d'URL non autorisé"
+   },
+   "version": {
+      "message": "v$1"
+   }
+}

@@ -1,0 +1,736 @@
+{
+   "accordion_close": {
+      "message": "Open / close"
+   },
+   "accordion_close_tt": {
+      "message": "Show/hide this account's unread emails"
+   },
+   "account_details_tt": {
+      "message": "Open this email account's inbox"
+   },
+   "address_invalid_error": {
+      "message": "Please correct your email address"
+   },
+   "all_unread_emails": {
+      "message": "All unread emails"
+   },
+   "all_unread_emails_tt": {
+      "message": "Show all unread emails in your inbox"
+   },
+   "allowed_value_error": {
+      "message": "Supplied value not in allowed list"
+   },
+   "alphanumdash_error": {
+      "message": "String contains unsupported characters. Only letters, numbers, - and _ are allowed."
+   },
+   "appAuthor": {
+      "message": "1&1 Mail & Media GmbH"
+   },
+   "appDescription": {
+      "message": "The safe way to access your personal mail.",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "appName": {
+      "message": "mail.com MailCheck"
+   },
+   "appShortName": {
+      "message": "MailCheck"
+   },
+   "bad_response_content_error": {
+      "message": "Bad response content"
+   },
+   "boolean_error": {
+      "message": "Not a boolean"
+   },
+   "browserActionTitle": {
+      "message": "Go to your inbox."
+   },
+   "button_disconnected_tt": {
+      "message": "$appShortName$ - Click to sign in",
+      "placeholders": {
+         "appShortName": {
+            "content": "$1"
+         }
+      }
+   },
+   "button_new_tt": {
+      "message": "No new mail;One new email;%COUNT% new emails"
+   },
+   "button_unread_tt": {
+      "message": "No unread mail;One unread email;%COUNT% unread emails"
+   },
+   "cancel": {
+      "message": "Cancel"
+   },
+   "cannot_contact_server_error": {
+      "message": "Connection issue. Server temporarily unavailable."
+   },
+   "cannot_find_server_error": {
+      "message": "Can't find a server"
+   },
+   "cannot_login_error": {
+      "message": "Unable to log in at server. Probably wrong configuration, username or password."
+   },
+   "collapse": {
+      "message": "Collapse"
+   },
+   "compose_email": {
+      "message": "Write new email"
+   },
+   "compose_email_tt": {
+      "message": "Write new email"
+   },
+   "configure_label": {
+      "message": "Configure..."
+   },
+   "context_menu_options_label": {
+      "message": "MailCheck Options"
+   },
+   "context_menu_search_label": {
+      "message": "Search: '%s'"
+   },
+   "copyright": {
+      "message": "© $brand$",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "create_account": {
+      "message": "Get your free email account"
+   },
+   "delete_email_done": {
+      "message": "Email was deleted"
+   },
+   "delete_email_tt": {
+      "message": "Delete email"
+   },
+   "delete_sound_tt": {
+      "message": "Delete sound"
+   },
+   "edit_cancel_label": {
+      "message": "Cancel"
+   },
+   "edit_checking_label": {
+      "message": "Checking login..."
+   },
+   "edit_email_label": {
+      "message": "Your email address"
+   },
+   "edit_new_title": {
+      "message": "Add account"
+   },
+   "edit_ok_label": {
+      "message": "OK"
+   },
+   "edit_password_label": {
+      "message": "Password"
+   },
+   "edit_remember_label": {
+      "message": "Remember me"
+   },
+   "edit_title": {
+      "message": "Edit account"
+   },
+   "email_checknow_label": {
+      "message": "Check for new emails"
+   },
+   "emailaddress": {
+      "message": "Email"
+   },
+   "error_access_not_granted": {
+      "message": "You have not been granted access to this account."
+   },
+   "error_accountDisabled": {
+      "message": "Account disabled. Please try logging into your account on the homepage and follow the hints given there."
+   },
+   "error_badJSON": {
+      "message": "Bad server response: Could not read the JSON"
+   },
+   "error_clientRejected": {
+      "message": "Please install a newer version of MailCheck and try again."
+   },
+   "error_concurrentLogins": {
+      "message": "Too many concurrent logins. You can manage your devices and apps by logging into your account on the homepage and going to preferences / customer center."
+   },
+   "error_csrf_prevented": {
+      "message": "Login not successful. Please try again."
+   },
+   "error_domain": {
+      "message": "We are sorry, this email provider is currently not supported."
+   },
+   "error_email": {
+      "message": "Please enter a valid email address"
+   },
+   "error_exists": {
+      "message": "This account is already configured"
+   },
+   "error_expired": {
+      "message": "Please log in again"
+   },
+   "error_invalidToken": {
+      "message": "Please log in again"
+   },
+   "error_loginFailed": {
+      "message": "Wrong email or password"
+   },
+   "error_noEmailAndPassword": {
+      "message": "Please enter your email address and password"
+   },
+   "error_noPassword": {
+      "message": "Please enter your password"
+   },
+   "error_noWebmailURL": {
+      "message": "Redirection to webmail not yet possible."
+   },
+   "error_no_emailProvider": {
+      "message": "The config file XML does not contain an email account configuration."
+   },
+   "error_noselection": {
+      "message": "Please select an account"
+   },
+   "error_notJSON": {
+      "message": "Bad server response: no JSON"
+   },
+   "error_outlook_limit": {
+      "message": "Only one Outlook account is supported."
+   },
+   "error_password": {
+      "message": "Please enter your password again"
+   },
+   "error_permissions": {
+      "message": "Please click 'Allow' in the browser popup to grant access."
+   },
+   "error_serverSide": {
+      "message": "Server error while checking email. Please try again later."
+   },
+   "error_syntax": {
+      "message": "This email address does not have the right format."
+   },
+   "error_uasFailed": {
+      "message": "We encountered technical problems during login. Please apologize the problems and try to login later again."
+   },
+   "error_unknown": {
+      "message": "Error while checking email"
+   },
+   "error_wrongPassword": {
+      "message": "Invalid credentials"
+   },
+   "expand": {
+      "message": "Expand"
+   },
+   "forgot_password": {
+      "message": "Can't access your account?"
+   },
+   "gmail_noAccount_error": {
+      "message": "Please log in to $1."
+   },
+   "gmail_wrongAccount_error": {
+      "message": "You are logged in with another Google account."
+   },
+   "help": {
+      "message": "Help"
+   },
+   "help_tt": {
+      "message": "Open MailCheck help pages"
+   },
+   "hostname_syntax_error": {
+      "message": "Hostname is empty or contains forbidden characters. Only letters, numbers, - and . are allowed."
+   },
+   "login_email_address_placeholder": {
+      "message": "Email Address"
+   },
+   "login_info_bullet_0": {
+      "message": "Your credentials will solely be used to request your emails using MailCheck"
+   },
+   "login_info_bullet_1": {
+      "message": "Security according to german privacy protection"
+   },
+   "login_info_bullet_2": {
+      "message": "Encrypted transfer"
+   },
+   "login_info_headline": {
+      "message": "Notes about data security"
+   },
+   "login_install_success": {
+      "message": "$1 installed successfully."
+   },
+   "login_intro": {
+      "message": "Please login now:"
+   },
+   "login_oauth2": {
+      "message": "Click \"Login\" to sign in."
+   },
+   "login_privacy": {
+      "message": "Privacy by $brand$",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "login_privacy_details": {
+      "message": "Details"
+   },
+   "login_privacy_tt": {
+      "message": "Display privacy information"
+   },
+   "login_submit": {
+      "message": "Login"
+   },
+   "login_welcome": {
+      "message": "Welcome!"
+   },
+   "logout": {
+      "message": "Logout"
+   },
+   "logout_confirm_msg": {
+      "message": "Do you want to logout from MailCheck?\n\nSigning out will deactivate notifications for the services that require to be signed in (e.g. new mails).\n\nAll features of MailCheck will be active again when you log in again.\n\nIf the computer is often used by different persons, we recommend to proceed with the logout."
+   },
+   "logout_confirm_ok": {
+      "message": "Logout"
+   },
+   "logout_confirm_remember": {
+      "message": "Don’t show this message again"
+   },
+   "logout_confirm_title": {
+      "message": "Logout?"
+   },
+   "logout_primary_menuitem": {
+      "message": "Logout $1"
+   },
+   "logout_tt": {
+      "message": "Log out from all accounts"
+   },
+   "mailjump_label": {
+      "message": "Personal greeting on login (recommended)"
+   },
+   "mailto_compose": {
+      "message": "Compose Message"
+   },
+   "mailto_copied": {
+      "message": "Copied!"
+   },
+   "mailto_copy_clipboard": {
+      "message": "Copy to Clipboard"
+   },
+   "manage_add_label": {
+      "message": "Add..."
+   },
+   "manage_edit_label": {
+      "message": "Edit..."
+   },
+   "manage_login_label": {
+      "message": "Login"
+   },
+   "manage_logout_label": {
+      "message": "Logout"
+   },
+   "manage_remove_label": {
+      "message": "Remove"
+   },
+   "manage_title": {
+      "message": "Your Mail accounts"
+   },
+   "mark_read_done": {
+      "message": "Email was marked as read"
+   },
+   "mark_read_tt": {
+      "message": "Mark as read"
+   },
+   "message_attachments_multiple": {
+      "message": " - $1 attachments"
+   },
+   "message_attachments_single": {
+      "message": " - Attachment: $1"
+   },
+   "message_tt": {
+      "message": "Read email"
+   },
+   "migrate_outlook_permissions": {
+      "message": "For security reasons, some accounts have been logged out.\n Please log in again."
+   },
+   "more": {
+      "message": "mehr"
+   },
+   "netid_about": {
+      "message": "About netID"
+   },
+   "netid_login_submit": {
+      "message": "Login with netID"
+   },
+   "netid_notification_header": {
+      "message": "$1 is a netID Partner"
+   },
+   "netid_notification_message": {
+      "message": "You can securely sign in to $1 with your $brand$ address.",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "netid_notification_opt_out": {
+      "message": "Do not show again"
+   },
+   "no_number_error": {
+      "message": "Not a number"
+   },
+   "notification_delete_message": {
+      "message": "Delete"
+   },
+   "notification_from": {
+      "message": "From"
+   },
+   "notification_message": {
+      "message": "You have mail"
+   },
+   "notifyAlert_label": {
+      "message": "Notify me when new mail arrives"
+   },
+   "ntp_uninstall_q": {
+      "message": "You are about to uninstall $brand$ MailCheck.\nDo you really want to proceed?",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "number_too_large_error": {
+      "message": "Number too large"
+   },
+   "number_too_small_error": {
+      "message": "Number too small"
+   },
+   "ok": {
+      "message": "OK"
+   },
+   "options": {
+      "message": "Options"
+   },
+   "options_cancel_contract_link": {
+      "message": "Cancel Contract"
+   },
+   "options_email": {
+      "message": "Email"
+   },
+   "options_email_add": {
+      "message": "Add account"
+   },
+   "options_email_add_brand": {
+      "message": "Email Provider"
+   },
+   "options_email_add_headline": {
+      "message": "Add an email address"
+   },
+   "options_email_add_tt": {
+      "message": "Add additional email account"
+   },
+   "options_email_added_success": {
+      "message": "You have successfully signed in"
+   },
+   "options_email_headline": {
+      "message": "Your email accounts"
+   },
+   "options_email_login": {
+      "message": "Login"
+   },
+   "options_email_login_headline": {
+      "message": "Please enter your password"
+   },
+   "options_email_login_tt": {
+      "message": "Sign in and receive new email notifications"
+   },
+   "options_email_logout": {
+      "message": "Logout"
+   },
+   "options_email_logout_tt": {
+      "message": "Sign out and stop receiving new email notifications"
+   },
+   "options_email_notifications": {
+      "message": "Notifications"
+   },
+   "options_email_notifications_tt": {
+      "message": "Activate/deactivate notification box for new emails"
+   },
+   "options_email_play_sound": {
+      "message": "Play sound"
+   },
+   "options_email_play_sound_tt": {
+      "message": "Activate/deactivate sound notification for new emails"
+   },
+   "options_email_preview": {
+      "message": "Email Preview"
+   },
+   "options_email_preview_tt": {
+      "message": "Show preview of unread emails when clicking the envelope icon and use advanced MailCheck functions (e.g. delete mails)."
+   },
+   "options_email_remove": {
+      "message": "Remove account"
+   },
+   "options_email_remove_tt": {
+      "message": "Remove this email account from MailCheck and stop receiving notifications for new emails."
+   },
+   "options_email_tt": {
+      "message": "Manage email accounts"
+   },
+   "options_email_unread_mode": {
+      "message": "Show new email"
+   },
+   "options_email_unread_mode_tt": {
+      "message": "Show number of newly arrived emails since last visit"
+   },
+   "options_feedback": {
+      "message": "Feedback"
+   },
+   "options_feedback_add": {
+      "message": "Add Feedback"
+   },
+   "options_feedback_headline": {
+      "message": "Help us improve MailCheck"
+   },
+   "options_feedback_submit": {
+      "message": "Open Feedback Page"
+   },
+   "options_feedback_submit_tt": {
+      "message": "Provide feedback and suggestions to improve MailCheck"
+   },
+   "options_feedback_tt": {
+      "message": "Provide feedback"
+   },
+   "options_general": {
+      "message": "General"
+   },
+   "options_general_check_version": {
+      "message": "Check for update"
+   },
+   "options_general_headline": {
+      "message": "General Settings"
+   },
+   "options_general_tt": {
+      "message": "Manage general settings"
+   },
+   "options_general_up_to_date": {
+      "message": "Great! MailCheck is up-to-date."
+   },
+   "options_general_update_available": {
+      "message": "Mailcheck update is in progress"
+   },
+   "options_jugendschutz_link": {
+      "message": "Youth Protection"
+   },
+   "options_login_oauth2": {
+      "message": "Click \"Add\" to sign in."
+   },
+   "options_mailto_handler": {
+      "message": "Open email links on web pages with MailCheck - not supported for 1&1 accounts"
+   },
+   "options_mailto_handler_tt": {
+      "message": "Open email links on web pages with MailCheck - works in newly opened tabs after activation"
+   },
+   "options_netid_suggest": {
+      "message": "Show netID login suggestions"
+   },
+   "options_netid_suggest_tt": {
+      "message": "Show netID login suggestions"
+   },
+   "options_privacy": {
+      "message": "Data Protection & Privacy"
+   },
+   "options_privacy_link": {
+      "message": "Privacy"
+   },
+   "options_privacy_telemetry": {
+      "message": "Collection of technical data without personal reference after the installation of MailCheck in order to be able to recognize and correct installation and activation problems in good time and to ensure the stability and performance of MailCheck."
+   },
+   "options_privacy_telemetry_more": {
+      "message": "The following information is transmitted when the browser is called up: Version number (distribution of the current version), addon name (\"MailCheck\"), variant (AMO, browser or portal), timestamp (date of information), installation date (date of installation), language (which is used), transmission type (telemetry \"timing\"), transmission interval (1 day, 7 days, 30 days), type of software (\"addon\"), brand (\"$brand$\"), segment (number between 1-100 for tests), number of accounts (number of e-mail accounts set up), number of active accounts (how many email accounts are active), number of third-party accounts (number of third-party accounts), last successful transmission (date of last successful transmission), campaign ID (from which advertising medium was installed), default search activated (is the $brand$ search the default search)",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services": {
+      "message": "Products & Services"
+   },
+   "options_products_services_desktop_search_extension": {
+      "message": "$1 Desktop Search"
+   },
+   "options_products_services_details_more": {
+      "message": "More info"
+   },
+   "options_products_services_free_download": {
+      "message": "Free download"
+   },
+   "options_products_services_go_details": {
+      "message": "$brand$ Go! for Google Chrome",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services_go_details_li_0": {
+      "message": "Einfach, übersichtlich - alles da!"
+   },
+   "options_products_services_go_details_li_1": {
+      "message": "Ihre beliebtesten Seiten einfach organisieren"
+   },
+   "options_products_services_go_details_li_2": {
+      "message": "Einfache Einrichtung"
+   },
+   "options_products_services_go_title": {
+      "message": "$brand$ Go!",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services_headline": {
+      "message": "More products and offers"
+   },
+   "options_products_services_premium_details": {
+      "message": "Mehr als E-Mail mit dem Profipostfach"
+   },
+   "options_products_services_premium_title": {
+      "message": "$brand$ Premium",
+      "placeholders": {
+         "brand": {
+            "content": "mail.com"
+         }
+      }
+   },
+   "options_products_services_search_extension": {
+      "message": "$1 Search Extension"
+   },
+   "options_search": {
+      "message": "Search"
+   },
+   "options_search_close_last_tab": {
+      "message": "Closing last tab opens web search"
+   },
+   "options_search_close_last_tab_tt": {
+      "message": "Activate/deactivate web search invocation upon closing the last tab. After deactivation, the web search tab can be closed by right-clicking and selecting 'close tab'"
+   },
+   "options_search_close_url_not_found": {
+      "message": "Display search if URL is not found"
+   },
+   "options_search_context_menu": {
+      "message": "Search from context menu"
+   },
+   "options_search_context_menu_tt": {
+      "message": "Activate/deactivate the web search option in the context menu"
+   },
+   "options_search_from_url_bar": {
+      "message": "Show search icon in address bar"
+   },
+   "options_search_from_url_bar_tt": {
+      "message": "Display the search icon in the address bar and open the web search with just one click."
+   },
+   "options_search_headline": {
+      "message": "Optimize your search"
+   },
+   "options_search_providers": {
+      "message": "Search Providers"
+   },
+   "options_search_tt": {
+      "message": "Manage web search settings"
+   },
+   "options_sound_add": {
+      "message": "Add sound"
+   },
+   "options_sound_add_tt": {
+      "message": "Add additional sound"
+   },
+   "options_sound_piece": {
+      "message": "Sound"
+   },
+   "options_sound_piece_tt": {
+      "message": "Select a notification sound"
+   },
+   "options_sound_volume": {
+      "message": "Volume"
+   },
+   "options_sound_volume_tt": {
+      "message": "Adjust volume of notification sounds"
+   },
+   "options_sounds_headline": {
+      "message": "Sounds"
+   },
+   "options_tt": {
+      "message": "MailCheck settings"
+   },
+   "pageActionTitle": {
+      "message": "Find better results..."
+   },
+   "page_heading": {
+      "message": "$1 MailCheck Options"
+   },
+   "password": {
+      "message": "Password"
+   },
+   "password_empty_error": {
+      "message": "Please enter a password"
+   },
+   "refresh": {
+      "message": "Refresh"
+   },
+   "refresh_tt": {
+      "message": "Check for new emails"
+   },
+   "remove_confirm": {
+      "message": "Do you really want to remove $1 from MailCheck? You will still be able to access the account by other means."
+   },
+   "remove_title": {
+      "message": "Remove selected account"
+   },
+   "sp_contracs": {
+      "message": "Cancel contracts here"
+   },
+   "sp_doc_title": {
+      "message": "New Tab"
+   },
+   "sp_help": {
+      "message": "Help"
+   },
+   "sp_legal": {
+      "message": "Legal Notice"
+   },
+   "sp_privacy": {
+      "message": "Privacy Policy"
+   },
+   "sp_search_suggestions_disclaimer": {
+      "message": "Search results by $1"
+   },
+   "sp_sustainable": {
+      "message": "Sustainability"
+   },
+   "sp_terms": {
+      "message": "Terms & Conditions"
+   },
+   "sp_uninstall": {
+      "message": "Uninstall"
+   },
+   "sp_uninstall_confirm": {
+      "message": "You are about to uninstall $1. Do you really want to proceed?"
+   },
+   "string_empty_error": {
+      "message": "You must supply a value for this string"
+   },
+   "url_parsing_error": {
+      "message": "URL not recognized"
+   },
+   "url_scheme_error": {
+      "message": "URL scheme not allowed"
+   },
+   "version": {
+      "message": "v$1"
+   }
+}

@@ -1,0 +1,166 @@
+{
+  "gmail": {
+    "domains": [
+      "gmail.com",
+      "googlemail.com"
+    ],
+    "mxTLD": [
+      "google.com",
+      "googlemail.com"
+    ],
+    "name": "Gmail",
+    "permissions": {
+      "origins": [
+        "https://accounts.google.com/*",
+        "https://mail.google.com/*"
+      ]
+    },
+    "provider": "gmail",
+    "subtype": "atom",
+    "type": "gmail"
+  },
+  "gmx": {
+    "authURL": "https://oauth2.gmx.net/authorize",
+    "domains": [
+      "gmx.net",
+      "gmx.de",
+      "gmx.at",
+      "gmx.ch",
+      "gmx.li",
+      "gmx.eu",
+      "gmx.info",
+      "gmx.biz",
+      "gmx.tm",
+      "gmx.org",
+      "imail.de",
+      "gmxpro.de",
+      "gmx.com",
+      "mein.gmx"
+    ],
+    "logoutURL": "https://oauth2.gmx.net/token",
+    "mxTLD": "gmx.net",
+    "name": "GMX",
+    "pacsURL": "https://hsp.gmx.net/http-service-proxy1/service/pacs/ToolbarContext",
+    "permissions": {
+      "origins": [
+        "https://*.gmx.net/*"
+      ]
+    },
+    "provider": "gmx",
+    "statistics": "b4WzC5ukuDzuiSgg+fkrroc/Hr2VPaeVOIXlep9d6gtoG9pmzf0+5fylNoH8h6/hK8txc76e5i6HbFx3RdhFFrNRb5Fdm8h2eVV8TiTZtRwq7+5lvsTKkd8OvcHScNVi5jkS4+u6ewK/fyguiaIs4lFagNEHROH6PD+DvJcaHjF4E5F9Z8uvXUfpU13yy2Zx",
+    "subtype": "oauth2",
+    "tokenURL": "https://oauth2.gmx.net/token",
+    "type": "unitedinternet",
+    "webappLoginProxyURL": "https://dl.gmx.net/backend/post.html",
+    "webappOrigin": "https://bs.navigator.gmx.net",
+    "clientAuthorization": "Basic Z214ZGFjaF9tYWlsY2hlY2tfY2hyb21lOlY3Mm1aVFpaeVhkOWlFSFpuZDlRWmtpQzVYQ2k4M3FreGpBREx4YmZwcw==",
+    "clientId": "gmxdach_mailcheck_chrome"
+  },
+  "gmxcom": {
+    "authURL": "https://oauth2.gmx.com/authorize",
+    "domains": [
+      "gmx.co.uk",
+      "gmx.fr",
+      "gmx.es",
+      "gmx.com",
+      "gmx.us"
+    ],
+    "logoutURL": "https://oauth2.gmx.com/token",
+    "mxTLD": "gmx.com",
+    "name": "GMX.com",
+    "pacsURL": "https://hsp.gmx.com/http-service-proxy1/service/pacs/ToolbarContext",
+    "permissions": {
+      "origins": [
+        "https://*.gmx.com/*"
+      ]
+    },
+    "provider": "gmxcom",
+    "statistics": "W0LxHSQfDJF9LpUcpv233In88Mnl2bt3uPH-qc8WyyDzi4T613ZVezdTQ_yhnox7U3mqhlthxdn3jWcDocSwyFIG-txUJ2f0iBzvE4VeExE5rAZdgNe0cywRxb_RRS_tZqBjILzSKf-1DxzACOuUsBIp8bwpsqKHTMRaMHd_L--ASo8FQYPsEW7NT8hh5iOCn6293Juzpfy-njRFpHr6OYfL5gEiX1s-tdNKt7K6Ti4",
+    "subtype": "oauth2",
+    "tokenURL": "https://oauth2.gmx.com/token",
+    "type": "unitedinternet",
+    "webappLoginProxyURL": "https://dl.gmx.com/backend/post.html",
+    "webappOrigin": "https://navigator-bs.gmx.com",
+    "clientAuthorization": "Basic Z214Y29tX21haWxjaGVja19jaHJvbWU6ZW5NWHdoY2Z6R0I2MEJQSWVtdmJISjNPSmdFUTl2cTRkM05iTFZqbg==",
+    "clientId": "gmxcom_mailcheck_chrome"
+  },
+  "mailcom": {
+    "authURL": "https://oauth2.mail.com/authorize",
+    "domains": [
+      "mail.com",
+      "linuxmail.org",
+      "2trom.com",
+      "boardermail.com",
+      "bsdmail.com",
+      "dbzmail.com",
+      "doramail.com",
+      "galaxyhit.com",
+      "hackermail.com",
+      "keromail.com",
+      "kittymail.com",
+      "lovecat.com",
+      "marchmail.com",
+      "uymail.com"
+    ],
+    "logoutURL": "https://oauth2.mail.com/token",
+    "mxTLD": "mail.com",
+    "name": "mail.com",
+    "pacsURL": "https://hsp.mail.com/http-service-proxy1/service/pacs/ToolbarContext",
+    "permissions": {
+      "origins": [
+        "https://*.mail.com/*"
+      ]
+    },
+    "provider": "mailcom",
+    "statistics": "m-f4i27E7O49ouX435H_yKri5wGL5MdjQqZUiBWEP4U5Ro9i5NfBkiP52WhMpHbVIKnnFzsT_FUV8BJSrkPTbl1I0k5eiPAE-EaSoIjRCTpHR1AdxKLy5YtJmb0C90XfVc27baZKjKEw80TsS0w1aBoekUkrX-6qV5JU1YUykDbPL9l4VLjO9sVFY6_u5Dcg",
+    "subtype": "oauth2",
+    "tokenURL": "https://oauth2.mail.com/token",
+    "type": "unitedinternet",
+    "webappLoginProxyURL": "https://dl.mail.com/backend/post.html",
+    "webappOrigin": "https://navigator-lxa.mail.com",
+    "clientAuthorization": "Basic bWFpbGNvbV9tYWlsY2hlY2tfY2hyb21lOnRJWkNZWjFZOFFhNUt0MjJMVXJXSDJTc29td1VhV1F5dGszWWdNem4=",
+    "clientId": "mailcom_mailcheck_chrome"
+  },
+  "outlook": {
+    "domains": [
+      "outlook.com",
+      "outlook.de",
+      "hotmail.com",
+      "msn.com",
+      "live.com",
+      "passport.com",
+      "passport.net"
+    ],
+    "mxTLD": "outlook.com",
+    "name": "Outlook",
+    "permissions": {},
+    "provider": "outlook",
+    "subtype": "oauth2",
+    "type": "outlook",
+    "clientId": "a8f3d8d1-f05b-4415-9f2c-19d81b43048f"
+  },
+  "webde": {
+    "authURL": "https://oauth2.web.de/authorize",
+    "domains": [
+      "web.de"
+    ],
+    "logoutURL": "https://oauth2.web.de/token",
+    "mxTLD": "web.de",
+    "name": "WEB.DE",
+    "pacsURL": "https://hsp.web.de/http-service-proxy1/service/pacs/ToolbarContext",
+    "permissions": {
+      "origins": [
+        "https://*.web.de/*"
+      ]
+    },
+    "provider": "webde",
+    "statistics": "T+OegFQ+3l5ar6m2YFv/6AgnfBucqQFSaJ9bLBAlh8IrubMIN8VslB6bvM99LJ18F/6XHc42e3VbtGZNZAHwNhYaj0yF5tyzvbXnTTWnethxJrKxZsm21aMqxMEH8LSP2qCmEsejP+2g8tm7UJy0TZ2z9JiLkj368Gj7+3+98e7CoUCKfatxwwfaa+TvF0Sn",
+    "subtype": "oauth2",
+    "tokenURL": "https://oauth2.web.de/token",
+    "type": "unitedinternet",
+    "webappLoginProxyURL": "https://dl.web.de/backend/post.html",
+    "webappOrigin": "https://bs.navigator.web.de",
+    "clientAuthorization": "Basic d2ViZGVfbWFpbGNoZWNrX2Nocm9tZTp4RFdYQzhKdzRNOUppeTJ4WTd3eUtMNUJHWEdSZE1neHpUcTlBaFRyUlU=",
+    "clientId": "webde_mailcheck_chrome"
+  }
+}

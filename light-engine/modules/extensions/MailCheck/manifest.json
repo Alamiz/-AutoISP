@@ -1,0 +1,70 @@
+{
+   "action": {
+      "default_icon": {
+         "19": "images/envelope-19.png",
+         "38": "images/envelope-38.png"
+      },
+      "default_title": "__MSG_browserActionTitle__"
+   },
+   "author": "__MSG_appAuthor__",
+   "background": {
+      "service_worker": "js/background-mailcheck.js"
+   },
+   "content_scripts": [ {
+      "js": [ "js/identify-to-site-cs.js" ],
+      "matches": [ "https://*.web.de/*", "https://*.gmx.net/*", "https://*.gmx.de/*", "https://*.gmx.ch/*", "https://*.gmx.at/*", "https://*.gmx.com/*", "https://*.mail.com/*", "https://*.1und1.de/*", "https://*.1and1.com/*" ],
+      "run_at": "document_start"
+   }, {
+      "exclude_globs": [ "*/login/*" ],
+      "js": [ "js/aib-cs.js" ],
+      "matches": [ "https://*.mail.com/*" ],
+      "run_at": "document_idle"
+   }, {
+      "exclude_globs": [ "*/login/*" ],
+      "js": [ "js/aib-main-cs.js" ],
+      "matches": [ "https://*.mail.com/*" ],
+      "run_at": "document_idle",
+      "world": "MAIN"
+   }, {
+      "all_frames": true,
+      "js": [ "js/portal-page-badge-cs.js" ],
+      "matches": [ "https://search.mail.com/*" ],
+      "run_at": "document_end"
+   }, {
+      "js": [ "js/webapp-start-proxy-cs.js" ],
+      "matches": [ "https://dl.web.de/backend/post.html", "https://dl.gmx.net/backend/post.html", "https://dl.gmx.com/backend/post.html", "https://dl.mail.com/backend/post.html", "https://dl.1und1.de/backend/post.html" ],
+      "run_at": "document_end"
+   }, {
+      "all_frames": true,
+      "js": [ "js/backtab-ads-cs.js" ],
+      "matches": [ "https://www.adsensecustomsearchads.com/afs/ads?*", "https://www.adsensecustomsearchads.com/afs/ads/*" ],
+      "run_at": "document_end"
+   }, {
+      "all_frames": true,
+      "include_globs": [ "*code=*" ],
+      "js": [ "js/brand-oauth2-cs.js" ],
+      "matches": [ "https://1und1.de/login/oauth2/*", "https://www.1und1.de/login/oauth2/*", "https://gmx.net/login/oauth2/*", "https://www.gmx.net/login/oauth2/*", "https://gmx.com/login/oauth2/*", "https://www.gmx.com/login/oauth2/*", "https://mail.com/login/oauth2/*", "https://www.mail.com/login/oauth2/*", "https://web.de/login/oauth2/*", "https://www.web.de/login/oauth2/*" ],
+      "run_at": "document_end"
+   }, {
+      "include_globs": [ "*/oauth20_desktop*code=*", "*/oauth20_desktop*error=*" ],
+      "js": [ "js/microsoft-web-auth-cs.js" ],
+      "matches": [ "https://login.live.com/*" ],
+      "run_at": "document_end"
+   } ],
+   "default_locale": "en",
+   "description": "__MSG_appDescription__",
+   "host_permissions": [ "https://*.mail.com/*", "https://*.web.de/*", "https://*.1und1.de/*", "https://*.uilogin.de/*", "https://*.gmx.com/*", "https://accounts.google.com/*", "https://www.googleapis.com/*", "https://mail.google.com/*", "https://*.live.com/*", "*://localhost/*" ],
+   "icons": {
+      "128": "images/icon128.png",
+      "16": "images/icon16.png",
+      "48": "images/icon48.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApL9L8ZLngcp9GrW9SXrPekj0T/WnNOL026CX0wrbSsXcSOZ5IMYrWtGurkRzadJ8l3U446STG1wiiJG/4cJj4nNxt7nP1ZpSOdGqK1jngMbOcJYihmekExVONjG9QJqPBSXspl8Eg+MvrsPgu3mzGbD/oLDbHW5ZoizGMU2YWsJJLdgWJt+wMNjtmZKvoJ9Nv14xYLqesMyumnifIYykgE7socjjHBdcsnHXsvCWM8kHS7PAv6pvlESJUPy9SEq4/CJoOnW579Py1yGntSXi6WNvuQzUAvJJqftaP32niX5o3L2Y4qZDT0evopdz7d0VItd4jOI14q5zHHtR8Hp4wwIDAQAB",
+   "manifest_version": 3,
+   "name": "__MSG_appName__",
+   "permissions": [ "activeTab", "alarms", "tabs", "scripting", "storage", "notifications", "offscreen", "contextMenus", "identity" ],
+   "short_name": "__MSG_appShortName__",
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "8.0.5.0",
+   "version_name": "8.0.6"
+}
