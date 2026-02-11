@@ -14,7 +14,7 @@ class UnknownPageHandler(StateHandler):
 
     def handle(self, page: Page) -> FlowResult:
         try:
-            navigate_to(page, "https://lightmailer-bs.web.de/")
+            navigate_to(page, "https://alligator.navigator.web.de/go/?targetURI=https://link.web.de/mail/showStartView&ref=link")
             return FlowResult.RETRY
         except Exception:
             return FlowResult.ABORT

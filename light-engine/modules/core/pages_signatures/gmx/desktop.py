@@ -19,35 +19,96 @@ PAGE_SIGNATURES = {
         "required_sublink": "auth.gmx.net",
         "checks": [
             {
-                "name": "Check email input",
-                "css_selector": 'input[name="username"]',
+                "name": "Check email or password input",
+                "css_selector": 'div[data-testid="container-email"], form[data-testid="container-password"]',
                 "contains_text": None,
                 "min_count": 1,
-                "description": "Email input field exists",
+                "description": "Email or password input field exists",
                 "weight": 5.0,
                 "should_exist": True
             },
             {
-                "name": "Captcha Container",
-                "css_selector": 'div[data-testid="captcha-container"]',
+                "name": "Wrong username error message",
+                "css_selector": "p[data-testid='error-username']",
+                "deep_search": True,
                 "contains_text": None,
-                "description": "Captcha container don't exists",
-                "weight": 5.0,
+                "description": "Wrong username error message exists",
+                "weight": 10.0,
+                "should_exist": False
+            },
+            {
+                "name": "Wrong password error message",
+                "css_selector": "p[data-testid='error-password']",
+                "deep_search": True,
+                "contains_text": None,
+                "description": "Wrong password error message exists",
+                "weight": 10.0,
                 "should_exist": False
             },
         ]
     },
-    "gmx_login_captcha_page_v2": {
-        "description": "GMX Login captcha page v2.",
+    "gmx_login_captcha_page": {
+        "description": "GMX Login captcha page.",
         "required_sublink": "auth.gmx.net",
         "checks": [
             {
-                "name": "Captcha Container",
-                "css_selector": 'div[data-testid="captcha-container"]',
+                "name": "Captcha",
+                "css_selector": "form[data-testid='container-captcha']",
+                "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "description": "Captcha container exists",
-                "weight": 5.0,
+                "description": "Captcha exists",
+                "weight": 4.0,
+                "should_exist": True
+            },
+            {
+                "name": "Wrong username error message",
+                "css_selector": "p[data-testid='error-username']",
+                "deep_search": True,
+                "contains_text": None,
+                "description": "Wrong username error message exists",
+                "weight": 10.0,
+                "should_exist": False
+            },
+            {
+                "name": "Wrong password error message",
+                "css_selector": "p[data-testid='error-password']",
+                "deep_search": True,
+                "contains_text": None,
+                "description": "Wrong password error message exists",
+                "weight": 10.0,
+                "should_exist": False
+            },
+        ]
+    },
+    "gmx_wrong_username_v2_page": {
+        "description": "GMX Login wrong username page v2 (split).",
+        "required_sublink": "auth.gmx.net",
+        "checks": [
+            {
+                "name": "Wrong username error message",
+                "css_selector": 'p[data-testid="error-username"]',
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Wrong username error message exists",
+                "weight": 10.0,
+                "should_exist": True
+            },
+        ]
+    },
+    "gmx_wrong_password_v2_page": {
+        "description": "GMX Login wrong password page v2 (split).",
+        "required_sublink": "auth.gmx.net",
+        "checks": [
+            {
+                "name": "Wrong password error message",
+                "css_selector": "p[data-testid='error-password']",
+                "deep_search": True,
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Wrong password error message exists",
+                "weight": 10.0,
                 "should_exist": True
             },
         ]
@@ -82,30 +143,6 @@ PAGE_SIGNATURES = {
                 "min_count": 1,
                 "description": "",
                 "weight": 1.0,
-                "should_exist": True
-            },
-            {
-                "name": "Onboarding dialog",
-                "css_selector": 'div[data-notification-type="onboarding"]',
-                "contains_text": None,
-                "description": "Onboarding dialog exists",
-                "weight": 10.0,
-                "should_exist": False
-            },
-        ]
-    },
-    "gmx_login_captcha_page": {
-        "description": "GMX Login captcha page.",
-        "required_sublink": "www.gmx.net",
-        "checks": [
-            {
-                "name": "Captcha",
-                "css_selector": "div[data-testid='captcha']",
-                "deep_search": True,
-                "contains_text": None,
-                "min_count": 1,
-                "description": "Captcha exists",
-                "weight": 4.0,
                 "should_exist": True
             },
             {

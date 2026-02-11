@@ -34,6 +34,10 @@ class OnboardingPageHandler(StateHandler):
 class LoginPageV2Handler(StateHandler):
     """Handle GMX login page v2 - split email and password entry"""
     
+    def __init__(self, automation, logger, context=None):
+        super().__init__(automation, logger)
+        self.context = context
+    
     def handle(self, page: Page) -> FlowResult:
         try:
             # Check if we are already at the password step
@@ -321,7 +325,7 @@ class UnknownPageHandler(StateHandler):
         try:
             self.logger.warning("Redirecting to GMX mobile", extra={"account_id": self.account.id})
             
-            navigate_to(page, "https://lightmailer-bs.gmx.net/")
+            navigate_to(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link")
             self.automation.human_behavior.read_delay()
             return FlowResult.RETRY
             

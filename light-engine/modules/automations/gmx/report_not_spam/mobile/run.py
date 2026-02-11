@@ -155,7 +155,7 @@ class ReportNotSpam(HumanAction):
                     page.wait_for_timeout(wait_time)
                     
                     try:
-                        navigate_to(page, "https://lightmailer-bs.gmx.net/")
+                        navigate_to(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link")
                         page.wait_for_load_state("domcontentloaded")
                     except Exception as e:
                         self.logger.warning(f"Failed to reset to main page: {e}", extra={"account_id": self.account.id})

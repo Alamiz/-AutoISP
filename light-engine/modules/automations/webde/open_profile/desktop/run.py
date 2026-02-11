@@ -38,7 +38,7 @@ class OpenProfile(HumanAction):
                 # job_manager.register_browser(self.job_id, self.browser)
             page = self.browser.new_page()
             
-            navigate_to(page, "https://web.de/")
+            navigate_to(page, "https://alligator.navigator.web.de/go/?targetURI=https://link.web.de/mail/showStartView&ref=link")
             
             self.logger.info("Profile opened. Waiting for manual interaction...", extra={"account_id": self.account.id})
             

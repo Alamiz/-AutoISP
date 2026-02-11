@@ -119,6 +119,10 @@ class LoginPageHandler(StateHandler):
 class LoginPageV2Handler(StateHandler):
     """Handle GMX login page v2 - split email and password entry"""
     
+    def __init__(self, automation, logger, context=None):
+        super().__init__(automation, logger)
+        self.context = context
+    
     def handle(self, page: Page) -> FlowResult:
         try:
             # Check if we are already at the password step

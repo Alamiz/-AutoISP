@@ -11,7 +11,7 @@ class UnknownPageHandler(StateHandler):
 
     def handle(self, page: Page) -> FlowResult:
         try:
-            navigate_to(page, "https://gmx.net/")
+            navigate_to(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link")
             return FlowResult.RETRY
         except Exception as e:
             return FlowResult.ABORT

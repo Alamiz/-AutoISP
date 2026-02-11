@@ -315,7 +315,7 @@ class UnknownPageHandler(StateHandler):
         try:
             self.logger.warning("Redirecting to web.de mobile", extra={"account_id": self.account.id})
             
-            navigate_to(page, "https://lightmailer-bs.web.de/")
+            navigate_to(page, "https://alligator.navigator.web.de/go/?targetURI=https://link.web.de/mail/showStartView&ref=link")
             self.automation.human_behavior.read_delay()
             return FlowResult.RETRY
             
