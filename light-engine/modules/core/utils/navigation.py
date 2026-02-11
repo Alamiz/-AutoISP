@@ -11,7 +11,7 @@ def navigate_with_retry(
     page: Page,
     url: str,
     account: Account,
-    max_retries: int = 3,
+    max_retries: int = 4,
     retry_delay: float = 3.0,
     timeout: int = 30000,
     logger: logging.Logger = None

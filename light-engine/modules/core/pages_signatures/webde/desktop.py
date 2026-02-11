@@ -61,11 +61,11 @@ PAGE_SIGNATURES = {
         "required_sublink": "auth.web.de",
         "checks": [
             {
-                "name": "Check email input",
-                "css_selector": 'input[name="username"]',
+                "name": "Check login form",
+                "css_selector": 'form#login',
                 "contains_text": None,
                 "min_count": 1,
-                "description": "Email input field exists",
+                "description": "Login form exists",
                 "weight": 5.0,
                 "should_exist": True
             },

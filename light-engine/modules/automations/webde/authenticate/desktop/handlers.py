@@ -1,4 +1,3 @@
-# automations/webde/authenticate/desktop/handlers.py
 """
 State handlers for web.de Desktop Authentication using StatefulFlow.
 """
@@ -43,15 +42,15 @@ class LoginPageHandler(StateHandler):
                 return FlowResult.SUCCESS
 
             # Check if we should use extension flow (default for new login)
-            self.logger.info("Redirecting to MailCheck extension for login", extra={"account_id": self.account.id})
+            # self.logger.info("Redirecting to MailCheck extension for login", extra={"account_id": self.account.id})
             
-            ext_options_url = get_mailcheck_options_url(page)
-            if ext_options_url:
-                navigate_to(page, ext_options_url)
-                page.wait_for_load_state("domcontentloaded")
-                return FlowResult.SUCCESS
-            else:
-                self.logger.warning("Extension not found, falling back to standard login", extra={"account_id": self.account.id})
+            # ext_options_url = get_mailcheck_options_url(page)
+            # if ext_options_url:
+            #     navigate_to(page, ext_options_url)
+            #     page.wait_for_load_state("domcontentloaded")
+            #     return FlowResult.SUCCESS
+            # else:
+            #     self.logger.warning("Extension not found, falling back to standard login", extra={"account_id": self.account.id})
 
             self.logger.info("Entering credentials", extra={"account_id": self.account.id})
             
