@@ -127,7 +127,7 @@ class PlaywrightBrowserFactory:
             "--disable-background-timer-throttling",
             "--disable-backgrounding-occluded-windows",
             "--disable-renderer-backgrounding",
-            "--disable-extensions",
+            # "--disable-extensions", # Enabling extensions for MailCheck
             "--disable-sync",
             "--disable-default-apps",
             "--disable-component-update",
@@ -146,6 +146,40 @@ class PlaywrightBrowserFactory:
             # Kill Chrome background mode
             "--disable-features=Translate,BackForwardCache,AcceptCHFrame,MediaRouter"
         ]
+
+        # Configure extensions based on provider
+        extensions_to_load = []
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            modules_dir = os.path.abspath(os.path.join(current_dir, "..", ".."))
+
+            if self.account.provider == 'libero':
+                # Note: 'extentions' (with 't') for rektCaptcha
+                extensions_to_load.append(os.path.join(modules_dir, "extentions", "rektCaptcha"))
+            elif self.account.provider in ['gmx', 'webde', None]: 
+                # Note: 'extensions' (with 's') for MailCheck
+                # Defaulting to MailCheck for gmx/webde or if provider is None
+                extensions_to_load.append(os.path.join(modules_dir, "extensions", "MailCheck"))
+
+            # Always load popupBlocker
+            # extensions_to_load.append(os.path.join(modules_dir, "extentions", "popupBlocker"))
+
+            if extensions_to_load:
+                print(f"🧩 Configuring {len(extensions_to_load)} extensions...")
+                extensions_arg = ",".join(extensions_to_load)
+                args.extend([
+                    f"--disable-extensions-except={extensions_arg}",
+                    f"--load-extension={extensions_arg}",
+                ])
+                
+                for ext_path in extensions_to_load:
+                    if os.path.exists(ext_path):
+                         print(f"  + Loaded: {ext_path}")
+                    else:
+                         print(f"  ⚠️ Extension path not found: {ext_path}")
+
+        except Exception as e:
+            print(f"⚠️ Failed to configure extensions: {e}")
 
         # Only start maximized for desktop
         if self.user_agent_type == "desktop":
