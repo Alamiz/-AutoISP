@@ -1,10 +1,8 @@
 # core/flow_engine/state_handler.py
-from typing import Callable, Dict, Optional, Literal
+from typing import Callable, Dict, Optional
 from playwright.sync_api import Page
 from core.utils.browser_utils import navigate_to
-
-# Define the type for handler return values
-HandlerAction = Literal["continue", "abort", "retry"]
+from modules.core.flow_state import FlowResult
 
 class StateHandler:
     """
@@ -16,14 +14,14 @@ class StateHandler:
         self.logger = logger
         self.account = automation.account if automation else None
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         """
         Handle unexpected pages.
         
         Returns:
-            "continue" - Page handled successfully, continue with current step
-            "abort" - Critical error, abort the entire flow
-            "retry" - Request retry of current step after handling
+            FlowResult.SUCCESS - Page handled successfully, continue with current step
+            FlowResult.ABORT - Critical error, abort the entire flow
+            FlowResult.RETRY - Request retry of current step after handling
         """
         raise NotImplementedError("Subclasses must implement handle()")
 
@@ -97,12 +95,12 @@ class RedirectStateHandler(StateHandler):
     Convenience handler that redirects to a specific URL.
     Useful for common redirect scenarios.
     """
-    def __init__(self, redirect_url: str, action: HandlerAction = "continue", logger=None):
+    def __init__(self, redirect_url: str, action: FlowResult = FlowResult.SUCCESS, logger=None):
         super().__init__(logger)
         self.redirect_url = redirect_url
         self.action = action
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             if self.logger:
                 self.logger.info(f"Redirecting to: {self.redirect_url}")
@@ -112,4 +110,4 @@ class RedirectStateHandler(StateHandler):
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Redirect failed: {e}")
-            return "abort"
+            return FlowResult.ABORT
