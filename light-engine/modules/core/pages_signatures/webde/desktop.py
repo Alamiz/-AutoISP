@@ -1,4 +1,19 @@
 PAGE_SIGNATURES = {
+    "mailcheck_options_page": {
+        "description": "MailCheck extension options page.",
+        "required_sublink": "chrome-extension://",
+        "checks": [
+            {
+                "name": "Add account button",
+                "css_selector": "button#email-add",
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Add account button exists",
+                "weight": 3.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_login_page": {
         "description": "Webde Login page.",
         "required_sublink": "web.de",
@@ -37,6 +52,29 @@ PAGE_SIGNATURES = {
                 "contains_text": None,
                 "description": "Wrong username error message",
                 "weight": 4.0,
+                "should_exist": False
+            },
+        ]
+    },
+    "webde_login_page_v2": {
+        "description": "Webde Login page v2 (split).",
+        "required_sublink": "auth.web.de",
+        "checks": [
+            {
+                "name": "Check email input",
+                "css_selector": 'input[name="username"]',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Email input field exists",
+                "weight": 5.0,
+                "should_exist": True
+            },
+            {
+                "name": "Captcha Container",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "description": "Captcha container don't exists",
+                "weight": 5.0,
                 "should_exist": False
             },
         ]

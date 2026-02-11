@@ -14,6 +14,7 @@ from .handlers import (
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
     UnknownPageHandler,
+    MailCheckOptionsHandler,
 )
 from automations.common_handlers import (
     WrongPasswordPageHandler,
@@ -60,7 +61,9 @@ class WebDEAuthentication(HumanAction):
             logger=self.logger
         )
         
-        registry.register("webde_login_page", LoginPageHandler(self, self.logger))
+        registry.register("webde_login_page", LoginPageHandler(self, self.logger, self.browser._context))
+        registry.register("webde_login_page_v2", LoginPageHandler(self, self.logger, self.browser._context))
+        registry.register("mailcheck_options_page", MailCheckOptionsHandler(self, self.logger, self.browser._context))
         registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
         registry.register("webde_login_wrong_username", WrongEmailPageHandler(self, self.logger))
         registry.register("webde_login_captcha_page", LoginCaptchaHandler(self, self.logger, self.job_id))
@@ -131,7 +134,9 @@ class WebDEAuthentication(HumanAction):
 
     def authenticate(self, page: Page):
         """State-based authentication using StatefulFlow."""
-        navigate_to(page, "https://web.de/")
+        # Use specific entry URL that redirects to login if needed
+        WEBDE_ENTRY_URL = "https://alligator.navigator.web.de/go/?targetURI=https://link.web.de/mail/showStartView&ref=link"
+        navigate_to(page, WEBDE_ENTRY_URL)
         self.human_behavior.read_delay()
         
         state_registry = self._setup_state_handlers()
