@@ -11,6 +11,7 @@ from modules.core.flow_state import FlowResult
 from .handlers import (
     RegisterPageHandler,
     LoginPageHandler,
+    LoginPageV2Handler,
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
@@ -64,6 +65,7 @@ class WebDEAuthentication(HumanAction):
         
         registry.register("webde_register_page", RegisterPageHandler(self, self.logger))
         registry.register("webde_login_page", LoginPageHandler(self, self.logger))
+        registry.register("webde_login_page_v2", LoginPageV2Handler(self, self.logger))
         registry.register("webde_login_not_possible", LoginNotPossiblePageHandler(self, self.logger))
         registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
         registry.register("webde_login_wrong_username", WrongEmailPageHandler(self, self.logger))
@@ -134,7 +136,7 @@ class WebDEAuthentication(HumanAction):
 
     def authenticate(self, page: Page):
         """State-based authentication using StatefulFlow."""
-        navigate_to(page, "https://lightmailer-bs.web.de/")
+        navigate_to(page, "https://alligator.navigator.web.de/go/?targetURI=https://link.web.de/mail/showStartView&ref=link")
         self.human_behavior.read_delay()
         
         state_registry = self._setup_state_handlers()

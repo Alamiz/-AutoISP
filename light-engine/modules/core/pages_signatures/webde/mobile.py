@@ -176,16 +176,40 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "webde_login_page_v2": {
+        "description": "Webde Login page v2 (split).",
+        "required_sublink": "auth.web.de",
+        "checks": [
+            {
+                "name": "Check login form",
+                "css_selector": 'form#login',
+                "contains_text": None,
+                "min_count": 1,
+                "description": "Login form exists",
+                "weight": 5.0,
+                "should_exist": True
+            },
+            {
+                "name": "Captcha Container",
+                "css_selector": 'div[data-testid="captcha-container"]',
+                "contains_text": None,
+                "description": "Captcha container don't exists",
+                "weight": 5.0,
+                "should_exist": False
+            },
+        ]
+    },
     "webde_login_captcha_page": {
-        "description": "WebDE Login captcha page.",
-        "required_sublink": "auth.web.de/login/mobile",
+        "description": "Webde Login captcha page.",
+        "required_sublink": "web.de",
         "checks": [
             {
                 "name": "Captcha",
-                "css_selector": 'div[data-testid="captcha-container"]',
+                "css_selector": "div[data-testid='captcha']",
+                "deep_search": True,
                 "contains_text": None,
                 "min_count": 1,
-                "description": "",  
+                "description": "Captcha exists",
                 "weight": 4.0,
                 "should_exist": True
             },

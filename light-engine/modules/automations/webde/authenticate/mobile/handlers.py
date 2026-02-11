@@ -112,6 +112,120 @@ class LoginPageHandler(StateHandler):
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
             return FlowResult.RETRY
 
+class LoginPageV2Handler(StateHandler):
+    """Handle GMX login page v2 - split email and password entry"""
+    
+    def __init__(self, automation, logger, context=None):
+        super().__init__(automation, logger)
+        self.context = context
+    
+    def handle(self, page: Page) -> FlowResult:
+        try:
+            # Check if we are already at the password step
+            password_field_visible = False
+            try:
+                page.wait_for_selector('input[name="password"]', state="visible", timeout=2000)
+                password_field_visible = True
+            except:
+                pass
+
+            if password_field_visible:
+                self.logger.info("Password field visible, skipping email entry", extra={"account_id": self.account.id})
+                
+                start_time = time.perf_counter()
+                self.automation.human_fill(
+                    page,
+                    selectors=['input[name="password"]'],
+                    text=self.account.password,
+                    deep_search=False
+                )
+                
+                self.automation.human_click(
+                    page,
+                    selectors=['button[type="submit"]'],
+                    deep_search=False
+                )
+                
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Password submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+                return FlowResult.SUCCESS
+
+            # Check if we should use extension flow (default for new login)
+            # self.logger.info("Redirecting to MailCheck extension for login", extra={"account_id": self.account.id})
+            
+            # ext_options_url = get_mailcheck_options_url(page)
+            # if ext_options_url:
+            #     navigate_to(page, ext_options_url)
+            #     page.wait_for_load_state("domcontentloaded")
+            #     return FlowResult.SUCCESS
+            # else:
+            #     self.logger.warning("Extension not found, falling back to standard login", extra={"account_id": self.account.id})
+
+            self.logger.info("Entering credentials (V2 flow)", extra={"account_id": self.account.id})
+            
+            start_time = time.perf_counter()
+            # Fill email
+            self.automation.human_fill(
+                page,
+                selectors=['input[name="username"]'],
+                text=self.account.email,
+                deep_search=False
+            )
+            
+            # Click continue
+            self.automation.human_click(
+                page,
+                selectors=['button[type="submit"]'],
+                deep_search=False
+            )
+            duration = time.perf_counter() - start_time
+            self.logger.info(f"Email submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+
+            self.logger.info("Checking for captcha", extra={"account_id": self.account.id})
+            # Check for captcha after clicking continue
+            start_time = time.perf_counter()
+            captcha_found = False
+            for selector in ["div[data-testid='captcha']", "div[data-testid='captcha-container']"]:
+                try:
+                    page.wait_for_selector(selector, state="attached", timeout=1000)
+                    captcha_found = True
+                    break
+                except:
+                    continue
+            
+            if captcha_found:
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Captcha detected: {duration:.2f} seconds", extra={"account_id": self.account.id})
+                return FlowResult.SUCCESS
+            
+            # If no captcha, wait for password field to appear and fill it
+            try:
+                page.wait_for_selector('input[name="password"]', timeout=10000)
+                
+                start_time = time.perf_counter()
+                self.automation.human_fill(
+                    page,
+                    selectors=['input[name="password"]'],
+                    text=self.account.password,
+                    deep_search=False
+                )
+                
+                self.automation.human_click(
+                    page,
+                    selectors=['button[type="submit"]'],
+                    deep_search=False
+                )
+                duration = time.perf_counter() - start_time
+                self.logger.info(f"Password submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            except Exception as e:
+                self.logger.info(f"Password field did not appear immediately: {e}. Re-identifying status.", extra={"account_id": self.account.id})
+            
+            return FlowResult.SUCCESS
+            
+        except Exception as e:
+            self.logger.error(f"Failed LoginPageV2Handler - {e}", extra={"account_id": self.account.id})
+            return FlowResult.RETRY
+
 class LoggedInPageHandler(StateHandler):
     """Handle web.de mobile logged in page - click continue to inbox"""
     
