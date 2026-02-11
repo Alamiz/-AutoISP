@@ -1,5 +1,6 @@
 from playwright.sync_api import Page
-from core.flow_engine.state_handler import StateHandler, HandlerAction
+from core.flow_engine.state_handler import StateHandler
+from modules.core.flow_state import FlowResult
 # from crud.account import update_account_state
 from core.utils.retry_decorators import retry_action
 from core.humanization.actions import HumanAction
@@ -12,32 +13,32 @@ class CommonHandler(StateHandler):
 
 class InboxHandler(CommonHandler):
     """Handle inbox page"""
-    def handle(self, page: Page = None) -> HandlerAction:
-        return "success"
+    def handle(self, page: Page = None) -> FlowResult:
+        return FlowResult.SUCCESS
 
 class WrongPasswordPageHandler(CommonHandler):
     """Handle wrong password page"""
-    def handle(self, page: Page = None) -> HandlerAction:
+    def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("WrongPasswordPageHandler: Wrong password detected")
         # update_account_state(self.account.id, "wrong_password")
-        return "abort"
+        return FlowResult.WRONG_PASSWORD
 
 class WrongEmailPageHandler(CommonHandler):
     """Handle wrong email page"""
-    def handle(self, page: Page = None) -> HandlerAction:
+    def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("WrongEmailPageHandler: Wrong email detected")
         # update_account_state(self.account.id, "wrong_username")
-        return "abort"
+        return FlowResult.WRONG_EMAIL
 
 class LoginNotPossiblePageHandler(CommonHandler):
     """Handle login not possible page"""
-    def handle(self, page: Page = None) -> HandlerAction:
+    def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("LoginNotPossiblePageHandler: Login not possible detected")
         # update_account_state(self.account.id, "error")
-        return "abort"
+        return FlowResult.FAILED
 
 class LoginCaptchaHandler(CommonHandler, HumanAction):
     """Handle login captcha with auto-solve + fallback to user"""
@@ -50,7 +51,7 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
         CommonHandler.__init__(self, automation, logger)
         HumanAction.__init__(self, job_id=job_id)
 
-    def handle(self, page: Page = None) -> HandlerAction:
+    def handle(self, page: Page = None) -> FlowResult:
         from core.utils.element_finder import deep_find_elements
         import time
 
@@ -79,7 +80,7 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
                     "CaptchaHandler: Captcha solved automatically.",
                     extra={"account_id": self.account.id}
                 )
-            return "retry"
+            return FlowResult.RETRY
 
         # 2. Fallback → wait for user
         if self.logger:
@@ -127,7 +128,7 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
         elements = deep_find_elements(page, self.PASSWORD_SELECTOR)
         return any(el.is_visible() for el in elements)
 
-    def _wait_for_user_solution(self, page: Page) -> HandlerAction:
+    def _wait_for_user_solution(self, page: Page) -> FlowResult:
         """Wait up to 1440 seconds for user to solve captcha."""
         from core.utils.element_finder import deep_find_elements
         import time
@@ -146,7 +147,7 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
                                 "CaptchaHandler: Captcha solved by user.",
                                 extra={"account_id": self.account.id}
                             )
-                        return "retry"
+                        return FlowResult.RETRY
 
                 page.wait_for_timeout(1000)
 
@@ -154,36 +155,36 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
                 self.logger.error(
                     "CaptchaHandler: Timeout waiting for captcha solution."
                 )
-            return "abort"
+            return FlowResult.CAPTCHA
 
         except Exception as e:
             if self.logger:
                 self.logger.error(
                     f"CaptchaHandler: Error while waiting for user captcha solve: {e}"
                 )
-            return "abort"
+            return FlowResult.ABORT
 
 
 class SecuritySuspensionHandler(CommonHandler):
     """Handle security suspension page"""
-    def handle(self, page: Page = None) -> HandlerAction:
+    def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("SecuritySuspensionHandler: Account suspended")
         # update_account_state(self.account.id, "suspended")
-        return "abort"
+        return FlowResult.SUSPENDED
 
 class PhoneVerificationHandler(CommonHandler):
     """Handle phone verification page"""
-    def handle(self, page: Page = None) -> HandlerAction:
+    def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("PhoneVerificationHandler: Phone verification required")
         # update_account_state(self.account.id, "phone_verification")
-        return "abort"
+        return FlowResult.PHONE_VERIFICATION
 
 class SmartFeaturesPopupHandler(StateHandler):
     """Handle smart features popup"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Accepting smart features popup", extra={"account_id": self.account.id})
             
@@ -197,21 +198,21 @@ class SmartFeaturesPopupHandler(StateHandler):
             
             page.wait_for_timeout(1500)
             page.reload()
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages"""
 
-    def handle(self, page: Page, reset_link: str = None) -> HandlerAction:
+    def handle(self, page: Page, reset_link: str = None) -> FlowResult:
         try:
             if reset_link:
                 navigate_with_retry(page, reset_link, self.account)
             else:
                 page.reload()
-            return "retry"
+            return FlowResult.RETRY
         except Exception as e:
-            return "abort"
+            return FlowResult.ABORT

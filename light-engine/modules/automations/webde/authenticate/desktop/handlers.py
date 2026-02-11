@@ -5,7 +5,8 @@ State handlers for web.de Desktop Authentication using StatefulFlow.
 import logging
 import time
 from playwright.sync_api import Page
-from core.flow_engine.state_handler import StateHandler, HandlerAction
+from core.flow_engine.state_handler import StateHandler
+from modules.core.flow_state import FlowResult
 from core.utils.element_finder import deep_find_elements
 from core.utils.browser_utils import navigate_to
 from core.utils.extension_helper import get_mailcheck_options_url, get_mailcheck_mail_panel_url
@@ -17,7 +18,7 @@ class LoginPageHandler(StateHandler):
         super().__init__(automation, logger)
         self.context = context  # Needed for popup handling later
 
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             # Check if we are already at the password step (e.g. after captcha retry)
             # Use deep_find_elements because it's in an iframe
@@ -39,7 +40,7 @@ class LoginPageHandler(StateHandler):
                 self.logger.info(f"Password submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
 
                 page.wait_for_selector("header.navigator__brand-logo-appname") # Wait for inbox page to load
-                return "continue"
+                return FlowResult.SUCCESS
 
             # Check if we should use extension flow (default for new login)
             self.logger.info("Redirecting to MailCheck extension for login", extra={"account_id": self.account.id})
@@ -48,7 +49,7 @@ class LoginPageHandler(StateHandler):
             if ext_options_url:
                 navigate_to(page, ext_options_url)
                 page.wait_for_load_state("domcontentloaded")
-                return "continue"
+                return FlowResult.SUCCESS
             else:
                 self.logger.warning("Extension not found, falling back to standard login", extra={"account_id": self.account.id})
 
@@ -71,7 +72,7 @@ class LoginPageHandler(StateHandler):
             if len(captcha_elements) > 0:
                 duration = time.perf_counter() - start_time
                 self.logger.info(f"Captcha check took: {duration:.2f} seconds", extra={"account_id": self.account.id})
-                return "continue"
+                return FlowResult.SUCCESS
 
             start_time = time.perf_counter()
             self.automation.human_fill(
@@ -85,16 +86,20 @@ class LoginPageHandler(StateHandler):
             self.logger.info(f"Password submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_selector("header.navigator__brand-logo-appname") # Wait for inbox page to load
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 class LoginPageV2Handler(StateHandler):
     """Handle GMX login page v2 - split email and password entry"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def __init__(self, automation, logger, context=None):
+        super().__init__(automation, logger)
+        self.context = context
+    
+    def handle(self, page: Page) -> FlowResult:
         try:
             # Check if we are already at the password step
             password_field_visible = False
@@ -123,7 +128,7 @@ class LoginPageV2Handler(StateHandler):
                 
                 duration = time.perf_counter() - start_time
                 self.logger.info(f"Password submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
-                return "continue"
+                return FlowResult.SUCCESS
 
             # Check if we should use extension flow (default for new login)
             # self.logger.info("Redirecting to MailCheck extension for login", extra={"account_id": self.account.id})
@@ -132,7 +137,7 @@ class LoginPageV2Handler(StateHandler):
             # if ext_options_url:
             #     navigate_to(page, ext_options_url)
             #     page.wait_for_load_state("domcontentloaded")
-            #     return "continue"
+            #     return FlowResult.SUCCESS
             # else:
             #     self.logger.warning("Extension not found, falling back to standard login", extra={"account_id": self.account.id})
 
@@ -171,7 +176,7 @@ class LoginPageV2Handler(StateHandler):
             if captcha_found:
                 duration = time.perf_counter() - start_time
                 self.logger.info(f"Captcha detected: {duration:.2f} seconds", extra={"account_id": self.account.id})
-                return "continue"
+                return FlowResult.SUCCESS
             
             # If no captcha, wait for password field to appear and fill it
             try:
@@ -195,11 +200,11 @@ class LoginPageV2Handler(StateHandler):
             except Exception as e:
                 self.logger.info(f"Password field did not appear immediately: {e}. Re-identifying status.", extra={"account_id": self.account.id})
             
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed LoginPageV2Handler - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 class MailCheckOptionsHandler(StateHandler):
     """Handle MailCheck extension options page - perform login via extension"""
@@ -208,7 +213,7 @@ class MailCheckOptionsHandler(StateHandler):
         super().__init__(automation, logger)
         self.context = context  # BrowserContext for expect_page()
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Performing extension-based login", extra={"account_id": self.account.id})
             
@@ -228,7 +233,7 @@ class MailCheckOptionsHandler(StateHandler):
             # Requires context to be passed to handler
             if not self.context:
                 self.logger.error("Browser context not available for popup handling", extra={"account_id": self.account.id})
-                return "abort"
+                return FlowResult.ABORT
 
             with self.context.expect_page(timeout=10000) as popup_info:
                 page.click("button#add-account")
@@ -285,16 +290,16 @@ class MailCheckOptionsHandler(StateHandler):
             
             # 9. Wait for inbox to load (managed by next state check or explicitly here)
             # If we return continue, the flow engine will identify the new page (hopefully inbox)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Extension login failed: {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 class LoggedInPageHandler(StateHandler):
     """Handle already authenticated page - click continue"""
 
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Clicking continue", extra={"account_id": self.account.id})
             
@@ -307,17 +312,17 @@ class LoggedInPageHandler(StateHandler):
             self.logger.info(f"Continue clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_selector("header.navigator__brand-logo-appname") # Wait for inbox page to load
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 
 class AdsPreferencesPopup1Handler(StateHandler):
     """Handle ads preferences popup type 1"""
 
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Accepting ads preferences popup", extra={"account_id": self.account.id})
             
@@ -328,17 +333,17 @@ class AdsPreferencesPopup1Handler(StateHandler):
             self.logger.info(f"Ads preferences popup accepted: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_timeout(1500)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 
 class AdsPreferencesPopup2Handler(StateHandler):
     """Handle ads preferences popup type 2"""
 
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Denying ads preferences popup", extra={"account_id": self.account.id})
             
@@ -349,23 +354,23 @@ class AdsPreferencesPopup2Handler(StateHandler):
             self.logger.info(f"Ads preferences popup denied: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_timeout(1500)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to web.de"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.warning("Redirecting to web.de", extra={"account_id": self.account.id})
             
             navigate_to(page, "https://web.de/")
             self.automation.human_behavior.read_delay()
-            return "retry"
+            return FlowResult.RETRY
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY

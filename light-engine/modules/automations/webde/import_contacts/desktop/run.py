@@ -89,7 +89,8 @@ class ImportContacts(HumanAction):
         
         except RequiredActionFailed as e:
             self.logger.error("Import contacts failed", extra={"account_id": self.account.id})
-            return {"status": "failed", "message": str(e)}
+            status = e.status.name if e.status else "failed"
+            return {"status": status, "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
@@ -127,7 +128,7 @@ class ImportContacts(HumanAction):
         flow = SequentialFlow(steps, account=self.account, logger=self.logger)
         result = flow.run(page)
         
-        if result.status == FlowResult.FAILED:
-            raise RequiredActionFailed(f"Failed to complete import. Last error: {result.message}")
+        if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
+            raise RequiredActionFailed(f"Failed to complete import. Status: {result.status.name}, Message: {result.message}", status=result.status)
         
         self.logger.info("Import contacts completed via SequentialFlow", extra={"account_id": self.account.id})

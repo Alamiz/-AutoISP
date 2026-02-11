@@ -4,7 +4,8 @@ State handlers for web.de Mobile Authentication using StatefulFlow.
 """
 import time
 from playwright.sync_api import Page
-from core.flow_engine.state_handler import StateHandler, HandlerAction
+from core.flow_engine.state_handler import StateHandler
+from modules.core.flow_state import FlowResult
 from core.humanization.actions import HumanAction
 from core.utils.element_finder import deep_find_elements
 from core.utils.browser_utils import navigate_to
@@ -12,7 +13,7 @@ from core.models import Account
 
 class RegisterPageHandler(StateHandler):
     """Handle web.de mobile register page - click login button"""
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Clicking login button", extra={"account_id": self.account.id})
             
@@ -26,17 +27,17 @@ class RegisterPageHandler(StateHandler):
             self.logger.info(f"Login button clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_timeout(2000)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 
 class LoginPageHandler(StateHandler):
     """Handle web.de mobile login page - enter credentials"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             # Check if we are already at the password step (e.g. after captcha retry)
             if page.is_visible('form input#password'):
@@ -58,7 +59,7 @@ class LoginPageHandler(StateHandler):
                 self.logger.info(f"Credentials submitted (password only): {duration:.2f} seconds", extra={"account_id": self.account.id})
                 
                 page.wait_for_timeout(3_000)
-                return "continue"
+                return FlowResult.SUCCESS
 
             self.logger.info("Entering credentials", extra={"account_id": self.account.id})
             
@@ -85,7 +86,7 @@ class LoginPageHandler(StateHandler):
             if captcha_elements:
                 duration = time.perf_counter() - start_time
                 self.logger.info(f"Captcha check took: {duration:.2f} seconds", extra={"account_id": self.account.id})
-                return "continue"
+                return FlowResult.SUCCESS
             
             start_time = time.perf_counter()
             # Fill password
@@ -105,16 +106,16 @@ class LoginPageHandler(StateHandler):
             self.logger.info(f"Credentials submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_timeout(3_000)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 class LoggedInPageHandler(StateHandler):
     """Handle web.de mobile logged in page - click continue to inbox"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Clicking profile and continue", extra={"account_id": self.account.id})
             
@@ -137,17 +138,17 @@ class LoggedInPageHandler(StateHandler):
             self.logger.info(f"Profile and continue clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_timeout(2000)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 
 class AdsPreferencesPopup1Handler(StateHandler):
     """Handle ads preferences popup type 1"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Accepting ads preferences popup", extra={"account_id": self.account.id})
             
@@ -162,17 +163,17 @@ class AdsPreferencesPopup1Handler(StateHandler):
             self.logger.info(f"Ads preferences popup accepted: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_timeout(1500)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 
 class AdsPreferencesPopup2Handler(StateHandler):
     """Handle ads preferences popup type 2"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.info("Denying ads preferences popup", extra={"account_id": self.account.id})
             
@@ -187,23 +188,23 @@ class AdsPreferencesPopup2Handler(StateHandler):
             self.logger.info(f"Ads preferences popup denied: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
             page.wait_for_timeout(1500)
-            return "continue"
+            return FlowResult.SUCCESS
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY
 
 class UnknownPageHandler(StateHandler):
     """Handle unknown pages - redirect to web.de mobile"""
     
-    def handle(self, page: Page) -> HandlerAction:
+    def handle(self, page: Page) -> FlowResult:
         try:
             self.logger.warning("Redirecting to web.de mobile", extra={"account_id": self.account.id})
             
             navigate_to(page, "https://lightmailer-bs.web.de/")
             self.automation.human_behavior.read_delay()
-            return "retry"
+            return FlowResult.RETRY
             
         except Exception as e:
             self.logger.error(f"Failed - {e}", extra={"account_id": self.account.id})
-            return "retry"
+            return FlowResult.RETRY

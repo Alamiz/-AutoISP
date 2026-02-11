@@ -1,3 +1,4 @@
+import time
 import logging
 from playwright.sync_api import Page, Error as PlaywrightError
 from core.browser.browser_helper import PlaywrightBrowserFactory
@@ -10,6 +11,7 @@ from core.flow_engine.state_handler import StateHandlerRegistry
 from modules.core.flow_state import FlowResult
 from .handlers import (
     LoginPageHandler,
+    LoginPageV2Handler,
     LoggedInPageHandler,
     AdsPreferencesPopup1Handler,
     AdsPreferencesPopup2Handler,
@@ -27,6 +29,7 @@ from automations.common_handlers import (
 )
 from core.pages_signatures.webde.desktop import PAGE_SIGNATURES
 from core.utils.browser_utils import navigate_to
+from core.utils.extension_helper import get_rektcaptcha_popup_url
 
 class WebDEAuthentication(HumanAction):
     """
@@ -62,7 +65,7 @@ class WebDEAuthentication(HumanAction):
         )
         
         registry.register("webde_login_page", LoginPageHandler(self, self.logger, self.browser._context))
-        registry.register("webde_login_page_v2", LoginPageHandler(self, self.logger, self.browser._context))
+        registry.register("webde_login_page_v2", LoginPageV2Handler(self, self.logger, self.browser._context))
         registry.register("mailcheck_options_page", MailCheckOptionsHandler(self, self.logger, self.browser._context))
         registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
         registry.register("webde_login_wrong_username", WrongEmailPageHandler(self, self.logger))
@@ -121,7 +124,8 @@ class WebDEAuthentication(HumanAction):
             return {"status": "failed", "message": str(e)}
         except RequiredActionFailed as e:
             self.logger.error(f"Authentication failed for {self.account.email}: {e}", extra={"account_id": self.account.id})
-            return {"status": "failed", "message": str(e)}
+            status = e.status.name if e.status else "failed"
+            return {"status": status, "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
@@ -152,8 +156,8 @@ class WebDEAuthentication(HumanAction):
         
         result = flow.run(page)
         
-        if result.status == FlowResult.FAILED:
-            raise RequiredActionFailed(f"Failed to reach inbox. Last error: {result.message}")
+        if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
+            raise RequiredActionFailed(f"Failed to reach inbox. Status: {result.status.name}, Message: {result.message}", status=result.status)
         
         # Update account state to active on success
         # update_account_state(self.account.id, "active")

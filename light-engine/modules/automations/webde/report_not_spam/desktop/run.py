@@ -102,7 +102,8 @@ class ReportNotSpam(HumanAction):
         
         except RequiredActionFailed as e:
             self.logger.error("Report not spam failed", extra={"account_id": self.account.id})
-            return {"status": "failed", "message": str(e)}
+            status = e.status.name if e.status else "failed"
+            return {"status": status, "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}", exc_info=True, extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
@@ -136,7 +137,7 @@ class ReportNotSpam(HumanAction):
         flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
         result = flow.run(page)
         
-        if result.status == FlowResult.FAILED:
-            raise RequiredActionFailed(f"Failed to complete report. Last error: {result.message}")
+        if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
+            raise RequiredActionFailed(f"Failed to complete report. Status: {result.status.name}, Message: {result.message}", status=result.status)
         
         self.logger.info("Report not spam completed via SequentialFlow", extra={"account_id": self.account.id})

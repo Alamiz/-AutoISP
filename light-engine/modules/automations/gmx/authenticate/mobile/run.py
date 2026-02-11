@@ -126,7 +126,8 @@ class GMXAuthentication(HumanAction):
             return {"status": "failed", "message": str(e)}
         except RequiredActionFailed as e:
             self.logger.error("Authentication failed", extra={"account_id": self.account.id})
-            return {"status": "failed", "message": str(e)}
+            status = e.status.name if e.status else "failed"
+            return {"status": status, "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
@@ -154,8 +155,8 @@ class GMXAuthentication(HumanAction):
         
         result = flow.run(page)
         
-        if result.status == FlowResult.FAILED:
-            raise RequiredActionFailed(f"Failed to reach folder list. Last error: {result.message}")
+        if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
+            raise RequiredActionFailed(f"Failed to reach folder list. Status: {result.status.name}, Message: {result.message}", status=result.status)
         
         self.logger.info("Authentication completed", extra={"account_id": self.account.id})
 

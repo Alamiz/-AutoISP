@@ -42,10 +42,12 @@ class StepRunner:
                 
                 result = handler.handle(page)
                 
-                if result in (FlowResult.ABORT, FlowResult.FAILED):
+                if result in (FlowResult.ABORT, FlowResult.FAILED, FlowResult.LOCKED,
+                              FlowResult.WRONG_EMAIL, FlowResult.WRONG_PASSWORD,
+                              FlowResult.SUSPENDED, FlowResult.PHONE_VERIFICATION, FlowResult.CAPTCHA):
                     return StepResult(
-                        status=FlowResult.FAILED,
-                        message=f"Flow aborted by {page_id} handler"
+                        status=result,
+                        message=f"Flow terminated by {page_id} handler"
                     )
                 elif result == FlowResult.SUCCESS:
                     if self.logger:
@@ -75,7 +77,7 @@ class StepRunner:
             # Check page state before executing step
             state_result = self._check_page_state(page, current_step)
             if state_result:
-                if state_result.status == FlowResult.FAILED:
+                if state_result.status != FlowResult.RETRY:
                     self._log_execution_trace()
                     return state_result
                 elif state_result.status == FlowResult.RETRY:
@@ -144,9 +146,11 @@ class StepRunner:
                     next_step = result.payload
                     break
 
-                elif result.status in (FlowResult.FAILED, FlowResult.ABORT):
+                elif result.status in (FlowResult.FAILED, FlowResult.ABORT, FlowResult.LOCKED,
+                                     FlowResult.WRONG_EMAIL, FlowResult.WRONG_PASSWORD,
+                                     FlowResult.SUSPENDED, FlowResult.PHONE_VERIFICATION, FlowResult.CAPTCHA):
                     if self.logger:
-                        self.logger.error(f"[Step {step_index}] ✗ FAILURE: {result.message or ''}", extra={"account_id": self.account.id})
+                        self.logger.error(f"[Step {step_index}] ✗ {result.status.name}: {result.message or ''}", extra={"account_id": self.account.id})
                     self._log_execution_trace()
                     return result
             

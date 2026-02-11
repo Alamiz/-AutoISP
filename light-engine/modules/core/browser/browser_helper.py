@@ -153,16 +153,16 @@ class PlaywrightBrowserFactory:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             modules_dir = os.path.abspath(os.path.join(current_dir, "..", ".."))
 
-            if self.account.provider == 'libero':
-                # Note: 'extentions' (with 't') for rektCaptcha
-                extensions_to_load.append(os.path.join(modules_dir, "extentions", "rektCaptcha"))
-            elif self.account.provider in ['gmx', 'webde', None]: 
-                # Note: 'extensions' (with 's') for MailCheck
-                # Defaulting to MailCheck for gmx/webde or if provider is None
-                extensions_to_load.append(os.path.join(modules_dir, "extensions", "MailCheck"))
+            # if self.account.provider == 'libero':
+            # Note: 'extentions' (with 't') for rektCaptcha
+            # extensions_to_load.append(os.path.join(modules_dir, "extensions", "rektCaptcha"))
+            # elif self.account.provider in ['gmx', 'webde', None]: 
+            #     # Note: 'extensions' (with 's') for MailCheck
+            #     # Defaulting to MailCheck for gmx/webde or if provider is None
+            #     extensions_to_load.append(os.path.join(modules_dir, "extensions", "MailCheck"))
 
             # Always load popupBlocker
-            # extensions_to_load.append(os.path.join(modules_dir, "extentions", "popupBlocker"))
+            # extensions_to_load.append(os.path.join(modules_dir, "extensions", "popupBlocker"))
 
             if extensions_to_load:
                 print(f"🧩 Configuring {len(extensions_to_load)} extensions...")

@@ -8,6 +8,10 @@ logging.basicConfig(level=logging.INFO)
 
 class RequiredActionFailed(Exception):
     """Raised when a required automation action fails after all retries."""
+    def __init__(self, message: str, status: Optional['FlowResult'] = None):
+        super().__init__(message)
+        self.status = status
+        self.message = message
 
 
 logger = logging.getLogger("autoisp")

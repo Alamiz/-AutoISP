@@ -96,7 +96,8 @@ class ChangePasswordAndAddRecovery(HumanAction):
         
         except RequiredActionFailed as e:
             self.logger.error("Change password and add recovery failed", extra={"account_id": self.account.id})
-            return {"status": "failed", "message": str(e)}
+            status = e.status.name if e.status else "failed"
+            return {"status": status, "message": str(e)}
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}", exc_info=True, extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e)}
@@ -128,7 +129,7 @@ class ChangePasswordAndAddRecovery(HumanAction):
         flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
         result = flow.run(page)
         
-        if result.status == FlowResult.FAILED:
-            raise RequiredActionFailed(f"Failed to complete automation. Last error: {result.message}")
+        if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
+            raise RequiredActionFailed(f"Failed to complete automation. Status: {result.status.name}, Message: {result.message}", status=result.status)
         
         self.logger.info("Change password and add recovery completed via SequentialFlow", extra={"account_id": self.account.id})

@@ -84,8 +84,8 @@ class ReportNotSpam(HumanAction):
             flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
             result = flow.run(page)
             
-            if result.status == FlowResult.FAILED:
-                return {"status": "failed", "message": result.message, "retry_recommended": True}
+            if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
+                return {"status": result.status.name, "message": f"Flow failed with status {result.status.name}: {result.message}", "retry_recommended": True}
 
             return {
                 "status": "success",
@@ -122,6 +122,9 @@ class ReportNotSpam(HumanAction):
 
             try:
                 gmx_auth.authenticate(page)
+            except RequiredActionFailed as e:
+                self.logger.error(f"Authentication failed with status {e.status.name if e.status else 'failed'}: {e}", extra={"account_id": self.account.id})
+                return {"status": e.status.name if e.status else "failed", "message": str(e)}
             except Exception as e:
                 self.logger.error(f"Authentication failed: {e}", extra={"account_id": self.account.id})
                 return {"status": "failed", "message": "Authentication failed"}
@@ -159,11 +162,14 @@ class ReportNotSpam(HumanAction):
             
             self.logger.error(f"Flow failed after {self.max_flow_retries} attempts", extra={"account_id": self.account.id})
             return {
-                "status": "failed",
+                "status": last_result.get("status", "failed") if last_result else "failed",
                 "message": f"Flow failed after {self.max_flow_retries} attempts",
                 "last_error": last_result.get('message') if last_result else None
             }
 
+        except RequiredActionFailed as e:
+            self.logger.error(f"Critical error in automation: {e}", extra={"account_id": self.account.id})
+            return {"status": e.status.name if e.status else "failed", "message": str(e)}
         except Exception as e:
             self.logger.error(f"Critical error in automation: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": f"Critical error: {str(e)}"}
