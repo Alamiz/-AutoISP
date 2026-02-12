@@ -1,4 +1,5 @@
 import time
+import threading
 from core.utils.retry_decorators import retry_action
 from playwright.sync_api import Page
 from core.utils.element_finder import deep_find_elements
@@ -536,16 +537,35 @@ class OpenReportedEmailsStep(Step):
             if frame:
                 # frame is a Frame object, query_selector_all is fine
                 links = frame.query_selector_all("a")
-                if links:
-                    self.automation.human_behavior.click(links[0])
-                    page.wait_for_timeout(3000)
-                else:
+                target = links[0] if links else None
+                if not target:
                     imgs = frame.query_selector_all("img")
-                    if imgs:
-                        self.automation.human_behavior.click(imgs[0])
+                    target = imgs[0] if imgs else None
+
+                if target:
+                    try:
+                        with page.context.expect_page(timeout=5000) as new_page_info:
+                            self.automation.human_behavior.click(target)
+                        
+                        new_page = new_page_info.value
+                        self.logger.info("New tab opened, will close in 30s (Async)", extra={"account_id": self.account.id})
+                        
+                        def delayed_close(p):
+                            time.sleep(30)
+                            try:
+                                p.close()
+                            except:
+                                pass
+                        
+                        threading.Thread(target=delayed_close, args=(new_page,), daemon=True).start()
+                        
+                    except Exception:
+                        # Fallback if no new page is opened (e.g. click failed or same tab navigation)
+                        self.automation.human_behavior.click(target)
                         page.wait_for_timeout(3000)
+
             duration = time.perf_counter() - start_time
-            self.logger.info(f"Link or image clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
+            self.logger.info(f"Link or image clicked (and started async close if tab): {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Click inside email failed: {e}", extra={"account_id": self.account.id})
 
