@@ -16,12 +16,14 @@ class SequentialFlow(Flow):
     """
     Executes a predefined list of steps in order.
     Fails if any step fails.
+    Supports RESTART: if a step returns RESTART, the entire flow re-runs from step 1 (up to max_restarts times).
     """
-    def __init__(self, steps: List[Step], state_registry: Optional[StateHandlerRegistry] = None, account=None, logger=None):
+    def __init__(self, steps: List[Step], state_registry: Optional[StateHandlerRegistry] = None, account=None, logger=None, max_restarts: int = 3):
         super().__init__(logger=logger)
         self.steps = steps
         self.state_registry = state_registry
         self.account = account
+        self.max_restarts = max_restarts
 
     def _check_page_state(self, page) -> Optional[StepResult]:
         """
@@ -93,6 +95,33 @@ class SequentialFlow(Flow):
         return None
 
     def run(self, page: Page) -> StepResult:
+        restart_count = 0
+        
+        while True:
+            result = self._run_steps(page)
+            
+            if result.status == FlowResult.RESTART:
+                restart_count += 1
+                if restart_count > self.max_restarts:
+                    if self.logger:
+                        self.logger.error(
+                            f"Max restarts ({self.max_restarts}) exceeded. Marking as FAILED.",
+                            extra={"account_id": self.account.id if self.account else None}
+                        )
+                    return StepResult(status=FlowResult.FAILED, message=f"Max restarts ({self.max_restarts}) exceeded")
+                
+                if self.logger:
+                    self.logger.warning(
+                        f"Restarting flow from beginning (Restart {restart_count}/{self.max_restarts}): {result.message}",
+                        extra={"account_id": self.account.id if self.account else None}
+                    )
+                page.wait_for_timeout(3000)
+                continue
+            
+            return result
+
+    def _run_steps(self, page: Page) -> StepResult:
+        """Execute all steps sequentially. Returns the final result."""
         last_result = StepResult(status=FlowResult.SUCCESS)
         
         for i, step in enumerate(self.steps):

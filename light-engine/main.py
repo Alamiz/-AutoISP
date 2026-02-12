@@ -229,7 +229,7 @@ def main():
     parser.add_argument("--provider", help="ISP provider (e.g., webde, gmx)")
     parser.add_argument("--automation", help="Automation name (e.g., authenticate)")
     parser.add_argument("--type", default="desktop", choices=["desktop", "mobile"], help="Account type")
-    parser.add_argument("--workers", type=int, default=20, help="Number of concurrent workers")
+    parser.add_argument("--workers", type=int, default=10, help="Number of concurrent workers")
     
     args = parser.parse_args()
 

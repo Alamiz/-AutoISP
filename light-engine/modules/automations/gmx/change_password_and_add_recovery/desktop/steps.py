@@ -203,32 +203,67 @@ class AddRecoveryEmailStep(Step):
             self.logger.info("Opening temp-mail.io...", extra={"account_id": self.account.id})
             temp_mail_page = page.context.new_page()
             temp_mail_page.goto(TEMP_MAIL_URL)
+            
+            # Consent dialog handling
+            try:
+                self.logger.info("Checking for temp-mail consent dialog...", extra={"account_id": self.account.id})
+                temp_mail_page.wait_for_selector('div.fc-dialog-container', timeout=8000)
+                self.logger.info("Clicking temp-mail consent button...", extra={"account_id": self.account.id})
+                self.automation.human_click(
+                    temp_mail_page,
+                    selectors=['div.fc-dialog-container button.fc-cta-consent'],
+                    deep_search=False
+                )
+                temp_mail_page.wait_for_timeout(2000)
+            except Exception:
+                self.logger.info("Consent dialog not found or already closed", extra={"account_id": self.account.id})
+
             temp_mail_page.wait_for_timeout(3000)
+
+            # Check if current email input matches username
+            email_input = temp_mail_page.query_selector('input#email')
+            current_temp_email = email_input.input_value() if email_input else ""
             
-            # Step 2: Click change button on temp-mail
-            self.logger.info("Clicking change button on temp-mail...", extra={"account_id": self.account.id})
-            temp_mail_page.click('button[data-qa="change-button"]')
-            temp_mail_page.wait_for_timeout(1500)
-            
-            # Step 3: Insert email username
-            self.logger.info(f"Inserting email username: {email_username}", extra={"account_id": self.account.id})
-            temp_mail_page.fill('form input', email_username)
-            temp_mail_page.wait_for_timeout(1000)
-            
-            # Step 4: Click domain dropdown to open it
-            self.logger.info("Opening domain dropdown...", extra={"account_id": self.account.id})
-            temp_mail_page.click('select[data-qa="selected-domain"]')
-            temp_mail_page.wait_for_timeout(1000)
-            
-            # Step 5: Select the first domain option
-            self.logger.info("Selecting first domain option...", extra={"account_id": self.account.id})
-            temp_mail_page.click('section.flex-col > button:nth-of-type(1)')
-            temp_mail_page.wait_for_timeout(1000)
-            
-            # Step 6: Click submit button
-            self.logger.info("Clicking submit button...", extra={"account_id": self.account.id})
-            temp_mail_page.click('button[data-qa="submit-button"]')
-            temp_mail_page.wait_for_timeout(3000)
+            if email_username in current_temp_email:
+                self.logger.info(f"Existing temp email already matches username: {current_temp_email}", extra={"account_id": self.account.id})
+            else:
+                # Hover to reveal dropdown
+                self.logger.info("Hovering email input to check dropdown...", extra={"account_id": self.account.id})
+                temp_mail_page.hover('input#email')
+                temp_mail_page.wait_for_timeout(1500)
+                
+                # Check for button with username in div[data-qa="email-dropdown"]
+                username_button_selector = f'div[data-qa="email-dropdown"] button[title*="{email_username}"]'
+                try:
+                    username_button = temp_mail_page.wait_for_selector(username_button_selector, timeout=5000)
+                except:
+                    username_button = None
+                
+                if username_button:
+                    self.logger.info(f"Found existing email in dropdown for: {email_username}", extra={"account_id": self.account.id})
+                    self.automation.human_click(temp_mail_page, selectors=[username_button_selector])
+                    temp_mail_page.wait_for_timeout(3000)
+                else:
+                    self.logger.info(f"No existing email for {email_username}, creating new...", extra={"account_id": self.account.id})
+                    # Step 2: Click change button on temp-mail
+                    temp_mail_page.click('button[data-qa="change-button"]')
+                    temp_mail_page.wait_for_timeout(1500)
+                    
+                    # Step 3: Insert email username
+                    temp_mail_page.fill('form input', email_username)
+                    temp_mail_page.wait_for_timeout(1000)
+                    
+                    # Step 4: Click domain dropdown to open it
+                    temp_mail_page.click('select[data-qa="selected-domain"]')
+                    temp_mail_page.wait_for_timeout(1000)
+                    
+                    # Step 5: Select the first domain option
+                    temp_mail_page.click('section.flex-col > button:nth-of-type(1)')
+                    temp_mail_page.wait_for_timeout(1000)
+                    
+                    # Step 6: Click submit button
+                    temp_mail_page.click('button[data-qa="submit-button"]')
+                    temp_mail_page.wait_for_timeout(3000)
             
             # Step 7: Get the full temp email address
             temp_email_input = temp_mail_page.query_selector('div.items-center.relative > input#email')
@@ -287,7 +322,7 @@ class AddRecoveryEmailStep(Step):
             
             if not code:
                 self.logger.error("Failed to get verification code", extra={"account_id": self.account.id})
-                return StepResult(status=FlowResult.FAILED, message="Failed to get verification code")
+                return StepResult(status=FlowResult.SKIP, message="Failed to get verification code")
             
             self.logger.info(f"Got verification code: {code}", extra={"account_id": self.account.id})
             
