@@ -1,5 +1,4 @@
 import time
-import threading
 from core.utils.retry_decorators import retry_action
 from playwright.sync_api import Page
 from core.utils.element_finder import deep_find_elements
@@ -253,10 +252,14 @@ class OpenReportedEmailsStep(Step):
             # Select inbox and submit search
             self.select_inbox_and_submit(page)
 
+            if not hasattr(self.automation, "pending_closures"):
+                self.automation.pending_closures = []
+
             found_any = False
             current_page = 1
 
             while True:
+                self._cleanup_pending_pages()
                 self.logger.info(f"Processing page {current_page}", extra={"account_id": self.account.id})
 
                 email_items = deep_find_elements(
@@ -369,6 +372,9 @@ class OpenReportedEmailsStep(Step):
                     break
                 except Exception:
                     break
+
+            # Final cleanup
+            self._cleanup_pending_pages(force=True)
 
             return self._final(found_any)
 
@@ -530,6 +536,24 @@ class OpenReportedEmailsStep(Step):
             self.logger.warning(f"Failed to add to favorites: {e}", extra={"account_id": self.account.id})
             raise  # Re-raise to trigger retry
     
+    def _cleanup_pending_pages(self, force=False):
+        """Close pending pages that have been open for >30 seconds, or all if force=True."""
+        if not hasattr(self.automation, "pending_closures"):
+            return
+            
+        now = time.time()
+        remaining = []
+        for p, close_time in self.automation.pending_closures:
+            if force or now >= close_time:
+                try:
+                    p.close()
+                    self.logger.info("Pending tab closed successfully (Thread-safe)", extra={"account_id": self.account.id})
+                except Exception as e:
+                    self.logger.warning(f"Failed to close pending tab: {e}", extra={"account_id": self.account.id})
+            else:
+                remaining.append((p, close_time))
+        self.automation.pending_closures = remaining
+
     @retry_action()
     def _click_link_or_image(self, frame, page):
         try:
@@ -548,16 +572,11 @@ class OpenReportedEmailsStep(Step):
                             self.automation.human_behavior.click(target)
                         
                         new_page = new_page_info.value
-                        self.logger.info("New tab opened, will close in 30s (Async)", extra={"account_id": self.account.id})
+                        self.logger.info("New tab opened, will close in 30s (Queue-based)", extra={"account_id": self.account.id})
                         
-                        def delayed_close(p):
-                            time.sleep(30)
-                            try:
-                                p.close()
-                            except:
-                                pass
-                        
-                        threading.Thread(target=delayed_close, args=(new_page,), daemon=True).start()
+                        if not hasattr(self.automation, "pending_closures"):
+                            self.automation.pending_closures = []
+                        self.automation.pending_closures.append((new_page, time.time() + 30))
                         
                     except Exception:
                         # Fallback if no new page is opened (e.g. click failed or same tab navigation)
