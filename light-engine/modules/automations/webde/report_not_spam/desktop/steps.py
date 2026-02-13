@@ -536,6 +536,23 @@ class OpenReportedEmailsStep(Step):
             self.logger.warning(f"Failed to add to favorites: {e}", extra={"account_id": self.account.id})
             raise  # Re-raise to trigger retry
     
+    def _find_first_clickable(self, container):
+        """Find the first visible and clickable link or image inside a container."""
+        if not container:
+            return None
+        
+        # Search for all links and images
+        targets = container.query_selector_all("a, img")
+        for target in targets:
+            try:
+                if target.is_visible():
+                    box = target.bounding_box()
+                    if box and box['width'] > 0 and box['height'] > 0:
+                        return target
+            except:
+                continue
+        return None
+
     def _cleanup_pending_pages(self, force=False):
         """Close pending pages that have been open for >30 seconds, or all if force=True."""
         if not hasattr(self.automation, "pending_closures"):
@@ -559,17 +576,13 @@ class OpenReportedEmailsStep(Step):
         try:
             start_time = time.perf_counter()
             if frame:
-                # frame is a Frame object, query_selector_all is fine
-                links = frame.query_selector_all("a")
-                target = links[0] if links else None
-                if not target:
-                    imgs = frame.query_selector_all("img")
-                    target = imgs[0] if imgs else None
+                target = self._find_first_clickable(frame)
 
                 if target:
                     try:
                         with page.context.expect_page(timeout=5000) as new_page_info:
-                            self.automation.human_behavior.click(target)
+                            # Use a shorter timeout for the click itself to avoid 30s hangs
+                            self.automation.human_behavior.click(target, timeout=5000)
                         
                         new_page = new_page_info.value
                         self.logger.info("New tab opened, will close in 30s (Queue-based)", extra={"account_id": self.account.id})
@@ -578,10 +591,14 @@ class OpenReportedEmailsStep(Step):
                             self.automation.pending_closures = []
                         self.automation.pending_closures.append((new_page, time.time() + 30))
                         
-                    except Exception:
+                    except Exception as e:
+                        self.logger.warning(f"Failed to open new page from click: {e}", extra={"account_id": self.account.id})
                         # Fallback if no new page is opened (e.g. click failed or same tab navigation)
-                        self.automation.human_behavior.click(target)
-                        page.wait_for_timeout(3000)
+                        try:
+                            self.automation.human_behavior.click(target, timeout=5000)
+                            page.wait_for_timeout(3000)
+                        except:
+                            pass
 
             duration = time.perf_counter() - start_time
             self.logger.info(f"Link or image clicked (and started async close if tab): {duration:.2f} seconds", extra={"account_id": self.account.id})

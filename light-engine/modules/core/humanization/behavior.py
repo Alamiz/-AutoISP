@@ -49,7 +49,7 @@ class HumanBehavior:
         else:
             element.type(text, delay=self._human_typing_delay())
     
-    def click(self, element: ElementHandle, page: Optional[Page] = None, force: bool = False):
+    def click(self, element: ElementHandle, page: Optional[Page] = None, force: bool = False, timeout: Optional[float] = None):
         """
         Perform a human-like mouse movement and click.
         If page is not provided, fall back to element.click().
@@ -57,12 +57,12 @@ class HumanBehavior:
 
         # If no page, we cannot move the mouse → fallback
         if page is None:
-            element.click(force=force)
+            element.click(force=force, timeout=timeout)
             return
 
         box = element.bounding_box()
         if not box:
-            element.click(force=force)
+            element.click(force=force, timeout=timeout)
             return
 
         # Target point with slight randomness
