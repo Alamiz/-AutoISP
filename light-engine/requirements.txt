@@ -5,3 +5,7 @@ beautifulsoup4
 pyinstaller
 python-dotenv
 psutil
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
