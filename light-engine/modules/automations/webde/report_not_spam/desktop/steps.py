@@ -259,7 +259,6 @@ class OpenReportedEmailsStep(Step):
             current_page = 1
 
             while True:
-                self._cleanup_pending_pages()
                 self.logger.info(f"Processing page {current_page}", extra={"account_id": self.account.id})
 
                 email_items = deep_find_elements(
@@ -272,6 +271,7 @@ class OpenReportedEmailsStep(Step):
 
                 index = 0
                 while index < len(email_items):
+                    self._cleanup_pending_pages()
                     start_process = time.perf_counter()
                     item = email_items[index]
 
@@ -373,8 +373,8 @@ class OpenReportedEmailsStep(Step):
                 except Exception:
                     break
 
-            # Final cleanup
-            self._cleanup_pending_pages(force=True)
+            # Final cleanup (gentle)
+            self._cleanup_pending_pages(force=False)
 
             return self._final(found_any)
 

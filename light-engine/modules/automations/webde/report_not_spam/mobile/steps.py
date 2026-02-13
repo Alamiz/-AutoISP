@@ -285,7 +285,6 @@ class OpenReportedEmailsStep(Step):
             current_page = 1
 
             while True:
-                self._cleanup_pending_pages()
                 page.wait_for_selector("div.message-list-panel__content")
 
                 email_items = page.query_selector_all("li.message-list__item")
@@ -299,6 +298,7 @@ class OpenReportedEmailsStep(Step):
                 
                 index = 0
                 while index < len(email_items):
+                    self._cleanup_pending_pages()
                     start_process = time.perf_counter()
                     try:
                         item = email_items[index]
@@ -399,8 +399,8 @@ class OpenReportedEmailsStep(Step):
                     )
                     break
 
-            # Final cleanup
-            self._cleanup_pending_pages(force=True)
+            # Final cleanup (gentle)
+            self._cleanup_pending_pages(force=False)
 
             return self._final(found_any)
 
