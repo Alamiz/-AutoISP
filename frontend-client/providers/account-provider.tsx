@@ -1,25 +1,25 @@
 "use client"
 
 import { Account } from "@/lib/types"
-import { createContext, useState, useCallback, useMemo } from "react"
+import { createContext, useState, useCallback, useMemo, useContext } from "react"
 
 type AccountContextType = {
   // Selection state
-  selectedAccounts: Account[]           // Accounts currently loaded that are selected (for backward compatibility)
-  isAllSelected: boolean                 // True when "select all" mode is active
-  excludedIds: Set<string>               // IDs to exclude when in select-all mode
+  selectedAccounts: Account[]           // Accounts that are selected
   totalCount: number                     // Total count of accounts for current provider
 
   // Actions
   setSelectedAccounts: (accounts: Account[]) => void
+  selectedAccountsMap: Record<string, boolean>
+  setSelectedAccountsMap: (updater: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => void
   selectAccount: (account: Account) => void
-  deselectAccount: (accountId: string) => void
-  selectAllAccounts: (total: number) => void
+  deselectAccount: (accountId: number | string) => void
+  selectAllAccounts: (accounts: Account[]) => void
   clearSelection: () => void
   setTotalCount: (count: number) => void
 
   // Helpers
-  isAccountSelected: (accountId: string) => boolean
+  isAccountSelected: (accountId: number | string) => boolean
   getSelectedCount: () => number
 
   // Filtering
@@ -31,85 +31,87 @@ export const AccountContext = createContext<AccountContextType | null>(null)
 
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [selectedAccounts, setSelectedAccountsInternal] = useState<Account[]>([])
-  const [isAllSelected, setIsAllSelected] = useState(false)
-  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
+  const [selectedAccountsMap, setSelectedAccountsMapInternal] = useState<Record<string, boolean>>({})
   const [totalCount, setTotalCount] = useState(0)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
+
+  // Sync selectedAccounts list when map changes
+  // This is a bit tricky, but since we usually have the full objects when we select, 
+  // maybe we should update the map when the list changes instead.
+  // Actually, TanStack table will give us a map of IDs.
+
+  const setSelectedAccountsMap = useCallback((updaterOrValue: any) => {
+    setSelectedAccountsMapInternal(prev => {
+      const nextMap = typeof updaterOrValue === 'function' ? updaterOrValue(prev) : updaterOrValue
+      return nextMap
+    })
+  }, [])
 
   // Legacy setter for backward compatibility
   const setSelectedAccounts = useCallback((accounts: Account[]) => {
     setSelectedAccountsInternal(accounts)
-    // If manually setting accounts, exit select-all mode
-    if (isAllSelected && accounts.length === 0) {
-      setIsAllSelected(false)
-      setExcludedIds(new Set())
-    }
-  }, [isAllSelected])
+    const newMap: Record<string, boolean> = {}
+    accounts.forEach(a => {
+      newMap[String(a.id)] = true
+    })
+    setSelectedAccountsMapInternal(newMap)
+  }, [])
 
   // Select a single account
   const selectAccount = useCallback((account: Account) => {
-    if (isAllSelected) {
-      // In select-all mode, remove from excluded
-      setExcludedIds(prev => {
-        const next = new Set(prev)
-        next.delete(account.id)
-        return next
-      })
-    }
-    // Also add to selectedAccounts for components that need the full objects
+    const id = String(account.id)
     setSelectedAccountsInternal(prev => {
-      if (prev.some(a => a.id === account.id)) return prev
+      if (prev.some(a => String(a.id) === id)) return prev
       return [...prev, account]
     })
-  }, [isAllSelected])
+    setSelectedAccountsMapInternal(prev => ({ ...prev, [id]: true }))
+  }, [])
 
   // Deselect a single account
-  const deselectAccount = useCallback((accountId: string) => {
-    if (isAllSelected) {
-      // In select-all mode, add to excluded
-      setExcludedIds(prev => new Set(prev).add(accountId))
-    }
-    // Also remove from selectedAccounts
-    setSelectedAccountsInternal(prev => prev.filter(a => a.id !== accountId))
-  }, [isAllSelected])
+  const deselectAccount = useCallback((accountId: number | string) => {
+    const id = String(accountId)
+    setSelectedAccountsInternal(prev => prev.filter(a => String(a.id) !== id))
+    setSelectedAccountsMapInternal(prev => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }, [])
 
   // Select all accounts
-  const selectAllAccounts = useCallback((total: number) => {
-    setIsAllSelected(true)
-    setExcludedIds(new Set())
-    setTotalCount(total)
+  const selectAllAccounts = useCallback((accounts: Account[]) => {
+    setSelectedAccountsInternal(accounts)
+    const newMap: Record<string, boolean> = {}
+    accounts.forEach(a => {
+      newMap[String(a.id)] = true
+    })
+    setSelectedAccountsMapInternal(newMap)
   }, [])
 
   // Clear all selection
   const clearSelection = useCallback(() => {
-    setIsAllSelected(false)
-    setExcludedIds(new Set())
     setSelectedAccountsInternal([])
+    setSelectedAccountsMapInternal({})
   }, [])
 
   // Check if an account is selected
-  const isAccountSelected = useCallback((accountId: string) => {
-    if (isAllSelected) {
-      return !excludedIds.has(accountId)
-    }
-    return selectedAccounts.some(a => a.id === accountId)
-  }, [isAllSelected, excludedIds, selectedAccounts])
+  const isAccountSelected = useCallback((accountId: number | string) => {
+    const id = String(accountId)
+    return selectedAccounts.some(a => String(a.id) === id)
+  }, [selectedAccounts])
 
   // Get the count of selected accounts
   const getSelectedCount = useCallback(() => {
-    if (isAllSelected) {
-      return totalCount - excludedIds.size
-    }
     return selectedAccounts.length
-  }, [isAllSelected, totalCount, excludedIds, selectedAccounts])
+  }, [selectedAccounts])
 
   const value = useMemo(() => ({
     selectedAccounts,
-    isAllSelected,
-    excludedIds,
+    selectedAccountsMap,
     totalCount,
     statusFilter,
     setSelectedAccounts,
+    setSelectedAccountsMap,
     selectAccount,
     deselectAccount,
     selectAllAccounts,
@@ -120,17 +122,19 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     getSelectedCount,
   }), [
     selectedAccounts,
-    isAllSelected,
-    excludedIds,
+    selectedAccountsMap,
     totalCount,
+    statusFilter,
     setSelectedAccounts,
+    setSelectedAccountsMap,
     selectAccount,
     deselectAccount,
     selectAllAccounts,
     clearSelection,
+    setTotalCount,
+    setStatusFilter,
     isAccountSelected,
     getSelectedCount,
-    statusFilter,
   ])
 
   return (
@@ -138,4 +142,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AccountContext.Provider>
   )
+} export function useAccounts() {
+  const context = useContext(AccountContext)
+  if (context === null) {
+    throw new Error('useAccounts must be used within an AccountProvider')
+  }
+  return context
 }

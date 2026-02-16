@@ -81,7 +81,7 @@ export function BackupModal({
   const handleStartBackup = () => {
     if (account) {
       setBackupStatus("idle")
-      startBackup.mutate(account.id);
+      startBackup.mutate(String(account.id));
     }
   }
 

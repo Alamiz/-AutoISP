@@ -33,11 +33,22 @@ export interface Account {
   status: string
   created_at: string
   updated_at?: string
+  type: "mobile" | "desktop"
+  label?: string
+  latest_automation?: string
+  proxy_settings?: {
+    host: string
+    port: number
+    username?: string
+    password?: string
+  }
   credentials?: {
     password: string
     recovery_email?: string
     number?: string
   }
+  activities?: HistoryEntry[]
+  backups?: Backup[]
 }
 
 
@@ -170,4 +181,15 @@ export interface JobSummary {
   proxies_count: number
   automations: any[]
   job_accounts: JobAccount[]
+}
+
+export interface Proxy {
+  id: number
+  ip: string
+  port: number
+  username?: string
+  password?: string
+  status?: string
+  type?: string
+  created_at: string
 }

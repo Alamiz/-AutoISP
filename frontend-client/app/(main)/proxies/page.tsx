@@ -11,6 +11,8 @@ import { toast } from "sonner"
 import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useProxies } from "@/providers/proxy-provider"
+import { Proxy } from "@/lib/types"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -32,14 +34,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ProxyDrawer } from "@/components/proxy-drawer"
 
-interface Proxy {
-    id: number
-    ip: string
-    port: number
-    username?: string
-    password?: string
-    created_at: string
-}
+
 
 export default function ProxiesPage() {
     const [showUploader, setShowUploader] = useState(false)
@@ -47,12 +42,27 @@ export default function ProxiesPage() {
     const [editingProxy, setEditingProxy] = useState<Proxy | null>(null)
     const [proxies, setProxies] = useState<Proxy[]>([])
     const [loading, setLoading] = useState(false)
+    const {
+        selectedProxiesMap: rowSelection,
+        setSelectedProxiesMap: setRowSelection,
+        statusFilter,
+        setStatusFilter,
+        totalCount,
+        setTotalCount,
+        clearSelection
+    } = useProxies()
 
     const fetchProxies = async () => {
         try {
             setLoading(true)
-            const res = await apiGet<any>("/proxies?page_size=100", "local")
-            setProxies(res?.items || [])
+            let url = `/proxies?page_size=100`
+            if (statusFilter && statusFilter !== "all") {
+                url += `&status=${statusFilter}`
+            }
+            const res = await apiGet<any>(url, "local")
+            const items = res?.items || []
+            setProxies(items)
+            setTotalCount(res?.total || items.length)
         } catch (err) {
             toast.error("Failed to load proxies")
             console.error(err)
@@ -71,11 +81,14 @@ export default function ProxiesPage() {
         }
     }
 
-    const bulkDelete = async (selected: Proxy[]) => {
+    const bulkDelete = async () => {
+        const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]).map(Number)
+        if (selectedIds.length === 0) return
+
         try {
-            const ids = selected.map(p => p.id)
-            await apiDelete(`/proxies/bulk`, ids, "local")
-            toast.success(`Deleted ${selected.length} proxies`)
+            await apiDelete(`/proxies/bulk`, selectedIds, "local")
+            toast.success(`Deleted ${selectedIds.length} proxies`)
+            clearSelection()
             fetchProxies()
         } catch (err) {
             toast.error("An error occurred during bulk deletion")
@@ -83,19 +96,51 @@ export default function ProxiesPage() {
         }
     }
 
-    const exportToTxt = (selected: Proxy[]) => {
-        const content = selected
-            .map(p => `${p.ip}:${p.port}${p.username ? `:${p.username}:${p.password}` : ""}`)
-            .join("\n")
+    const exportToTxt = async () => {
+        const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]).map(Number)
+        if (selectedIds.length === 0) return
 
-        const blob = new Blob([content], { type: "text/plain" })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `proxies_export_${new Date().toISOString().slice(0, 10)}.txt`
-        a.click()
-        URL.revokeObjectURL(url)
-        toast.success(`Exported ${selected.length} proxies`)
+        // We might need to fetch all selected proxies if they are not in the current page
+        // For simplicity, let's assume if they are many, we fetch them
+        try {
+            const res = await apiGet<any>(`/proxies?page_size=10000`, "local")
+            const allProxies: Proxy[] = res?.items || []
+            const selected = allProxies.filter(p => rowSelection[String(p.id)])
+
+            const content = selected
+                .map(p => `${p.ip}:${p.port}${p.username ? `:${p.username}:${p.password}` : ""}`)
+                .join("\n")
+
+            const blob = new Blob([content], { type: "text/plain" })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = `proxies_export_${new Date().toISOString().slice(0, 10)}.txt`
+            a.click()
+            URL.revokeObjectURL(url)
+            toast.success(`Exported ${selected.length} proxies`)
+        } catch (err) {
+            toast.error("Failed to export proxies")
+        }
+    }
+
+    const handleSelectAll = async () => {
+        try {
+            let url = `/proxies?page_size=10000`
+            if (statusFilter && statusFilter !== "all") {
+                url += `&status=${statusFilter}`
+            }
+            const res = await apiGet<any>(url, "local")
+            const items = res?.items || []
+            const newSelection: Record<string, boolean> = {}
+            items.forEach((p: Proxy) => {
+                newSelection[String(p.id)] = true
+            })
+            setRowSelection(newSelection)
+            toast.success(`Selected all ${items.length} proxies`)
+        } catch (err) {
+            toast.error("Failed to select all proxies")
+        }
     }
 
     const columns: ColumnDef<Proxy>[] = useMemo(() => [
@@ -204,7 +249,7 @@ export default function ProxiesPage() {
 
     useEffect(() => {
         fetchProxies()
-    }, [])
+    }, [statusFilter])
 
     return (
         <div className="flex h-full flex-col">
@@ -256,6 +301,23 @@ export default function ProxiesPage() {
                     onDeleteSelected={bulkDelete}
                     onExportSelected={exportToTxt}
                     enableRowSelectionOnClick={true}
+                    showTopSelectionCount={true}
+                    getRowId={(p) => String(p.id)}
+                    rowSelection={rowSelection}
+                    onRowSelectionChange={setRowSelection}
+                    totalCount={totalCount}
+                    selectedCount={Object.keys(rowSelection).filter(id => rowSelection[id]).length}
+                    onSelectAllItems={handleSelectAll}
+                    onClearSelection={clearSelection}
+                    statusFilter={{
+                        value: statusFilter || "all",
+                        onChange: (val) => setStatusFilter(val === "all" ? null : val),
+                        options: [
+                            { label: "Active", value: "active" },
+                            { label: "Dead", value: "dead" },
+                            { label: "Unknown", value: "unknown" },
+                        ]
+                    }}
                 />
             </div>
 

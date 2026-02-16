@@ -8,6 +8,8 @@ import { ProviderProvider } from "@/contexts/provider-context";
 import { JobsProvider } from "@/contexts/jobs-context";
 import { auth } from "@/lib/auth";
 import { apiPost } from "@/lib/api";
+import { AccountProvider } from "./account-provider";
+import { ProxyProvider } from "./proxy-provider";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -31,7 +33,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <UserProvider>
           <ProviderProvider>
             <JobsProvider>
-              {children}
+              <AccountProvider>
+                <ProxyProvider>
+                  {children}
+                </ProxyProvider>
+              </AccountProvider>
             </JobsProvider>
           </ProviderProvider>
         </UserProvider>

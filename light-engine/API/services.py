@@ -113,7 +113,8 @@ def create_job_run(
     *,
     name: Optional[str],
     max_concurrent: int,
-    accounts_data: List[Dict[str, Any]],
+    accounts_data: Optional[List[Dict[str, Any]]] = None,
+    account_ids: Optional[List[int]] = None,
     proxy_ids: List[int],
     automations_data: List[Dict[str, Any]],
 ) -> Job:
@@ -124,9 +125,21 @@ def create_job_run(
     3. Create JobAccount rows (round-robin proxy assignment)
     4. Create JobAutomation rows
     """
-    # 1 — Upsert accounts and collect all IDs
-    upsert_result = upsert_accounts(db, accounts_data)
-    all_account_ids = upsert_result["created_ids"] + upsert_result["existing_ids"]
+    # 1 — Collect all Account IDs
+    all_account_ids = []
+    if accounts_data:
+        upsert_result = upsert_accounts(db, accounts_data)
+        all_account_ids.extend(upsert_result["created_ids"] + upsert_result["existing_ids"])
+
+    if account_ids:
+        # Filter out duplicates
+        for aid in account_ids:
+            if aid not in all_account_ids:
+                all_account_ids.append(aid)
+
+    if not all_account_ids:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="No accounts selected for this job")
 
     # 2 — Create the Job
     job = Job(name=name, max_concurrent=max_concurrent, status="queued")

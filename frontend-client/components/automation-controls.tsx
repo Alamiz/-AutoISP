@@ -37,11 +37,11 @@ export function AutomationControls() {
   const [automationParams, setAutomationParams] = useState<Record<string, Record<string, any>>>({})
   const [activeTab, setActiveTab] = useState("select")
 
-  const { selectedAccounts, clearSelection, getSelectedCount, isAllSelected, excludedIds, statusFilter } = useAccounts()
+  const { selectedAccounts, clearSelection, getSelectedCount, statusFilter } = useAccounts()
   const queryClient = useQueryClient()
   const { busyAccountIds } = useJobs()
-  const availableAccounts = selectedAccounts.filter(acc => !busyAccountIds.has(acc.id))
-  const busyAccounts = selectedAccounts.filter(acc => busyAccountIds.has(acc.id))
+  const availableAccounts = selectedAccounts.filter(acc => !busyAccountIds.has(String(acc.id)))
+  const busyAccounts = selectedAccounts.filter(acc => busyAccountIds.has(String(acc.id)))
 
   // Update available automations when provider changes
   useEffect(() => {
@@ -114,14 +114,7 @@ export function AutomationControls() {
       return await apiPost('/automations/run', {
         automation_id: automation.id,
         parameters: automationParams[automationId] || {},
-        ...(isAllSelected
-          ? {
-            select_all: true,
-            provider: globalProvider?.slug,
-            excluded_ids: Array.from(excludedIds),
-            status: statusFilter && statusFilter !== "all" ? statusFilter : undefined
-          }
-          : { account_ids: availableAccounts.map(acc => acc.id) }),
+        account_ids: availableAccounts.map(acc => acc.id),
       },
         "local"
       )
@@ -146,14 +139,7 @@ export function AutomationControls() {
       return await apiPost('/automations/run-sequential', {
         automation_id: automation.id,
         parameters: automationParams[automationId] || {},
-        ...(isAllSelected
-          ? {
-            select_all: true,
-            provider: globalProvider?.slug,
-            excluded_ids: Array.from(excludedIds),
-            status: statusFilter && statusFilter !== "all" ? statusFilter : undefined
-          }
-          : { account_ids: availableAccounts.map(acc => acc.id) }),
+        account_ids: availableAccounts.map(acc => acc.id),
       },
         "local"
       )

@@ -40,8 +40,9 @@ export function AccountList() {
   const [currentHistory, setCurrentHistory] = useState<HistoryEntry[]>([])
   const {
     selectedAccounts,
+    selectedAccountsMap,
     setSelectedAccounts,
-    isAllSelected,
+    setSelectedAccountsMap,
     selectAllAccounts,
     clearSelection,
     selectAccount,
@@ -49,7 +50,6 @@ export function AccountList() {
     isAccountSelected,
     getSelectedCount,
     setTotalCount,
-    excludedIds,
     statusFilter,
     setStatusFilter
   } = useAccounts();
@@ -145,8 +145,26 @@ export function AccountList() {
   // Check if all accounts on current page are selected
   const isCurrentPageFullySelected = accounts.length > 0 && accounts.every(acc => isAccountSelected(acc.id))
 
+  // Check if all accounts globally are selected
+  const isAllSelectedGlobal = totalCount > 0 && selectedAccounts.length === totalCount
+
   // Check if we should show the "select all" banner
-  const showSelectAllBanner = isCurrentPageFullySelected && !isAllSelected && totalCount > accounts.length
+  const showSelectAllBanner = isCurrentPageFullySelected && !isAllSelectedGlobal && totalCount > accounts.length
+
+  const handleSelectAllGlobal = async () => {
+    if (!selectedProvider) return;
+    try {
+      let url = `/api/accounts?provider=${selectedProvider.slug}&page_size=10000`;
+      if (statusFilter && statusFilter !== "all") {
+        url += `&status=${statusFilter}`;
+      }
+      const res = await apiGet<PaginatedResponse<Account>>(url);
+      selectAllAccounts(res.results);
+      toast.success(`Selected all ${res.count} accounts`);
+    } catch (err) {
+      toast.error("Failed to select all accounts");
+    }
+  };
 
   const handleEditAccount = (account: Account) => {
     setEditingAccount(account)
@@ -155,16 +173,16 @@ export function AccountList() {
 
   const handleShowhistory = (account: Account) => {
     setShowHistory(account.email)
-    setCurrentHistory(account.activities.reverse())
+    setCurrentHistory([...(account.activities || [])].reverse())
   }
 
   const deleteAccount = useMutation({
-    mutationFn: async (accountId: string) => {
+    mutationFn: async (accountId: number | string) => {
       await apiDelete(`/api/accounts/${accountId}/`)
       return accountId
     },
 
-    onMutate: async (accountId: string) => {
+    onMutate: async (accountId: number | string) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] })
       const previousData = queryClient.getQueryData(["accounts", page, selectedProvider?.slug])
 
@@ -172,7 +190,7 @@ export function AccountList() {
         if (!old) return old;
         return {
           ...old,
-          results: old.results.filter(acc => acc.id !== accountId)
+          results: old.results.filter(acc => String(acc.id) !== String(accountId))
         }
       })
 
@@ -210,13 +228,13 @@ export function AccountList() {
           // but mostly we rely on the refetch.
           if (payload.excluded_ids && payload.excluded_ids.length > 0) {
             // If we have exclusions, we keep them.
-            newResults = old.results.filter(acc => payload.excluded_ids?.includes(acc.id));
+            newResults = old.results.filter(acc => payload.excluded_ids?.includes(String(acc.id)));
           } else {
             // If select all and no exclusions, everything goes.
             newResults = [];
           }
         } else if (payload.account_ids) {
-          newResults = old.results.filter(acc => !payload.account_ids?.includes(acc.id))
+          newResults = old.results.filter(acc => !payload.account_ids?.includes(String(acc.id)))
         }
 
         return {
@@ -240,15 +258,8 @@ export function AccountList() {
 
 
   const handleBulkDelete = () => {
-    if (isAllSelected) {
-      bulkDeleteAccounts.mutate({
-        select_all: true,
-        provider: selectedProvider?.slug,
-        excluded_ids: Array.from(excludedIds),
-        status: statusFilter && statusFilter !== "all" ? statusFilter : undefined
-      });
-    } else if (selectedAccounts.length > 0) {
-      const selectedAccountIds = selectedAccounts.map(acc => acc.id);
+    if (selectedAccounts.length > 0) {
+      const selectedAccountIds = selectedAccounts.map(acc => String(acc.id));
       bulkDeleteAccounts.mutate({ account_ids: selectedAccountIds });
     }
   }
@@ -411,19 +422,15 @@ export function AccountList() {
                     // Add all accounts on current page
                     accounts.forEach(acc => selectAccount(acc))
                   } else {
-                    // Remove all accounts on current page (or clear all if in select-all mode)
-                    if (isAllSelected) {
-                      clearSelection()
-                    } else {
-                      accounts.forEach(acc => deselectAccount(acc.id))
-                    }
+                    // Remove all accounts on current page
+                    accounts.forEach(acc => deselectAccount(acc.id))
                   }
                 }}
               />
               Accounts
               {getSelectedCount() > 0 && (
                 <span className="text-sm font-normal text-muted-foreground">
-                  ({getSelectedCount()}{isAllSelected ? ` of ${totalCount}` : ''} selected)
+                  ({getSelectedCount()}{isAllSelectedGlobal ? ` of ${totalCount}` : ''} selected)
                 </span>
               )}
             </CardTitle>
@@ -496,17 +503,18 @@ export function AccountList() {
             </div>
           </div>
 
+
           {/* Select All Banner */}
           {showSelectAllBanner && (
-            <div className="mt-3 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between">
+            <div className="mt-3 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-200">
               <span className="text-sm text-foreground">
                 All {accounts.length} accounts on this page are selected.
               </span>
               <Button
                 variant="link"
                 size="sm"
-                className="text-primary h-auto p-0"
-                onClick={() => selectAllAccounts(totalCount)}
+                className="text-primary h-auto p-0 font-semibold"
+                onClick={handleSelectAllGlobal}
               >
                 Select all {totalCount} accounts
               </Button>
@@ -514,8 +522,8 @@ export function AccountList() {
           )}
 
           {/* Select All Active Banner */}
-          {isAllSelected && (
-            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-between">
+          {isAllSelectedGlobal && (
+            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-200">
               <span className="text-sm text-foreground">
                 All {getSelectedCount()} accounts are selected.
               </span>
@@ -547,7 +555,7 @@ export function AccountList() {
                     className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                   >
                     <Checkbox
-                      checked={isAccountSelected(account.id)}
+                      checked={isAccountSelected(String(account.id))}
                       onCheckedChange={(checked) => handleSelectAccount(account, !!checked)}
                     />
 
@@ -562,7 +570,7 @@ export function AccountList() {
                         <Badge className={getStatusColor(account.status)}>{account.status.replace('_', ' ')}</Badge>
                         {/* Job Status Indicator */}
                         {(() => {
-                          const job = getAccountJob(account.id);
+                          const job = getAccountJob(String(account.id));
                           if (job?.status === "running") {
                             return (
                               <div className="flex items-center gap-1">
@@ -681,28 +689,32 @@ export function AccountList() {
                           <History className="h-4 w-4 mr-2" />
                           View History
                         </DropdownMenuItem>
-                        {/* <DropdownMenuSub>
+                        <DropdownMenuSub>
                           <DropdownMenuSubTrigger>
-                            <Database className="h-4 w-4 mr-4 text-muted-foreground" />
+                            <Database className="h-4 w-4 mr-2 text-muted-foreground" />
                             Backup & Restore
                           </DropdownMenuSubTrigger>
                           <DropdownMenuSubContent className="bg-popover border-border">
+                            {account.backups && account.backups.length > 0 ? (
+                              account.backups.map((backup) => (
+                                <DropdownMenuItem key={backup.id} onClick={() => setRestoreAccount(account)}>
+                                  Restore {formatBytes(backup.file_size || 0)}
+                                </DropdownMenuItem>
+                              ))
+                            ) : (
+                              <DropdownMenuItem disabled>No backups</DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => setBackupAccount(account)}>
-                              <Database className="h-4 w-4 mr-2" />
-                              {account.backups.length > 0 ? "Update Backup" : "Create Backup"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setRestoreAccount(account)} disabled={!account.backups[account.backups.length - 1]?.filename}>
-                              <RotateCcw className="h-4 w-4 mr-2" />
-                              Restore Backup
+                              Create New Backup
                             </DropdownMenuItem>
                           </DropdownMenuSubContent>
-                        </DropdownMenuSub> */}
+                        </DropdownMenuSub>
                         <DropdownMenuItem onClick={() => handleEditAccount(account)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Account
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDeleteAccount(account?.id)}
+                          onClick={() => handleDeleteAccount(String(account.id))}
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2 text-destructive" />
@@ -757,7 +769,7 @@ export function AccountList() {
             </Pagination>
           )}
         </CardFooter>
-      </Card>
+      </Card >
 
       <AccountDrawer
         open={showAddAccount}
@@ -769,7 +781,7 @@ export function AccountList() {
         onAccountSaved={handleAccountUpdated}
       />
 
-      <BulkUploader open={showBulkUpload} onOpenChange={setShowBulkUpload} onAccountSaved={handleAccountUpdated} />
+      <BulkUploader open={showBulkUpload} onOpenChange={setShowBulkUpload} onUploadSuccess={handleAccountUpdated} mode="accounts" />
 
       <AccountHistoryModal
         open={!!showHistory}
@@ -789,7 +801,7 @@ export function AccountList() {
         open={!!restoreAccount}
         onOpenChange={(open) => !open && setRestoreAccount(null)}
         accountEmail={restoreAccount?.email || ""}
-        backup={restoreAccount?.backups[restoreAccount.backups.length - 1]}
+        backup={restoreAccount?.backups ? restoreAccount.backups[restoreAccount.backups.length - 1] : undefined}
         onRestoreComplete={handleRestoreComplete}
       />
     </>

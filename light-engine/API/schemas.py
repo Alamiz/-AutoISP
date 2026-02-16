@@ -157,7 +157,8 @@ class JobRunRequest(BaseModel):
     """Payload for POST /jobs/run — creates everything in one shot."""
     name: Optional[str] = None
     max_concurrent: int = 1
-    accounts: List[AccountCreate]
+    accounts: Optional[List[AccountCreate]] = None
+    account_ids: Optional[List[int]] = None
     proxy_ids: List[int] = []
     automations: List[AutomationInput] = []
 

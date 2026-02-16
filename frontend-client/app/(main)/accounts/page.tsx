@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useAccounts } from "@/providers/account-provider"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -40,19 +41,31 @@ import { Account } from "@/lib/types"
 export default function AccountsPage() {
     const { selectedProvider } = useProvider()
     const [accounts, setAccounts] = useState<Account[]>([])
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [showUploader, setShowUploader] = useState(false)
     const [showDrawer, setShowDrawer] = useState(false)
     const [launchDrawerOpen, setLaunchDrawerOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
     const [selectedForLaunch, setSelectedForLaunch] = useState<Account[]>([])
+    const {
+        selectedAccountsMap: rowSelection,
+        setSelectedAccountsMap: setRowSelection,
+        setSelectedAccounts,
+        statusFilter,
+        setStatusFilter,
+        totalCount,
+        setTotalCount,
+        clearSelection
+    } = useAccounts()
 
     const fetchAccounts = async () => {
         try {
             setLoading(true)
-            // TODO: Add type safety
-            // Call local API, endpoint /accounts (base URL already has /api)
-            const res = await apiGet<any>("/accounts?page_size=100", "local")
+            let url = `/accounts?page_size=100`
+            if (statusFilter && statusFilter !== "all") {
+                url += `&status=${statusFilter}`
+            }
+            const res = await apiGet<any>(url, "local")
 
             // Ensure we have items, fallback to []
             // Map credentials field for drawer compatibility if needed
@@ -66,6 +79,7 @@ export default function AccountsPage() {
                 }
             }))
             setAccounts(mapped)
+            setTotalCount(res?.total || mapped.length)
         } catch (err) {
             toast.error("Failed to load accounts")
             console.error(err)
@@ -76,7 +90,7 @@ export default function AccountsPage() {
 
     const deleteAccount = async (id: number) => {
         try {
-            await apiDelete(`/accounts/${id}`, undefined, "local")
+            await apiDelete(`/accounts/${id}/`, undefined, "local")
             toast.success("Account deleted")
             fetchAccounts()
         } catch (err) {
@@ -88,8 +102,9 @@ export default function AccountsPage() {
         // Bulk delete is now handled by AlertDialog inside DataTable
         try {
             const ids = selected.map(acc => acc.id)
-            await apiDelete(`/accounts/bulk`, ids, "local")
+            await apiDelete(`/accounts/bulk/`, ids, "local")
             toast.success(`Deleted ${selected.length} accounts`)
+            clearSelection()
             fetchAccounts()
         } catch (err) {
             toast.error("An error occurred during bulk deletion")
@@ -110,6 +125,26 @@ export default function AccountsPage() {
         a.click()
         URL.revokeObjectURL(url)
         toast.success(`Exported ${selected.length} accounts`)
+    }
+
+    const handleSelectAll = async () => {
+        try {
+            let url = `/accounts?page_size=10000`
+            if (statusFilter && statusFilter !== "all") {
+                url += `&status=${statusFilter}`
+            }
+            const res = await apiGet<any>(url, "local")
+            const items = res?.items || []
+            setSelectedAccounts(items)
+            const newSelection: Record<string, boolean> = {}
+            items.forEach((acc: Account) => {
+                newSelection[String(acc.id)] = true
+            })
+            setRowSelection(newSelection)
+            toast.success(`Selected all ${items.length} accounts`)
+        } catch (err) {
+            toast.error("Failed to select all accounts")
+        }
     }
 
     const columns: ColumnDef<Account>[] = useMemo(() => [
@@ -222,7 +257,7 @@ export default function AccountsPage() {
 
     useEffect(() => {
         fetchAccounts()
-    }, [])
+    }, [statusFilter])
 
     return (
         <div className="flex h-full flex-col">
@@ -274,6 +309,23 @@ export default function AccountsPage() {
                     onDeleteSelected={bulkDelete}
                     onExportSelected={exportToTxt}
                     enableRowSelectionOnClick={true}
+                    showTopSelectionCount={false}
+                    totalCount={totalCount}
+                    selectedCount={Object.keys(rowSelection).filter(id => rowSelection[id]).length}
+                    rowSelection={rowSelection}
+                    onRowSelectionChange={setRowSelection}
+                    onSelectAllItems={handleSelectAll}
+                    onClearSelection={clearSelection}
+                    statusFilter={{
+                        value: statusFilter || "all",
+                        onChange: (val) => setStatusFilter(val === "all" ? null : val),
+                        options: [
+                            { label: "Active", value: "active" },
+                            { label: "Error", value: "error" },
+                            { label: "Locked", value: "locked" },
+                            { label: "Unknown", value: "unknown" },
+                        ]
+                    }}
                     actions={(selected) => (
                         <Button
                             size="sm"
