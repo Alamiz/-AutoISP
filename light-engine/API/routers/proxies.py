@@ -71,6 +71,13 @@ def patch_proxy(proxy_id: int, updates: ProxyUpdate, db: Session = Depends(get_d
     return proxy
 
 
+# ── Bulk Delete ─────────────────────────────────────────────────────────────
+@router.delete("/bulk", status_code=204)
+def bulk_delete_proxies(ids: list[int], db: Session = Depends(get_db)):
+    db.query(Proxy).filter(Proxy.id.in_(ids)).delete(synchronize_session=False)
+    db.commit()
+
+
 # ── Delete ────────────────────────────────────────────────────────────────
 @router.delete("/{proxy_id}", status_code=204)
 def delete_proxy(proxy_id: int, db: Session = Depends(get_db)):

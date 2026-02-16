@@ -7,6 +7,7 @@ Run with:
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from API.database import create_tables
 from API.routers import accounts, proxies, jobs
@@ -25,6 +26,15 @@ app = FastAPI(
     version="0.1.0",
     description="Local desktop backend for managing Accounts, Proxies, and Jobs.",
     lifespan=lifespan,
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For local development, allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Register routers under /api prefix

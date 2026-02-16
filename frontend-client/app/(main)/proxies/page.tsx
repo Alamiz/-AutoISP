@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
 import { BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { User, Plus, RefreshCw, MoreHorizontal, Trash2, Edit } from "lucide-react"
+import { Globe, Plus, RefreshCw, MoreHorizontal, Trash2, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BulkUploader } from "@/components/bulk-uploader"
 import { apiGet, apiDelete } from "@/lib/api"
@@ -30,98 +30,75 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
-import { AccountDrawer } from "@/components/account-drawer"
+import { ProxyDrawer } from "@/components/proxy-drawer"
 
-// Aligning with local backend schema but keeping name compatible with Drawer
-interface Account {
+interface Proxy {
     id: number
-    email: string
-    password: string
-    provider: string
-    status: string
-    recovery_email?: string
-    phone_number?: string
-    credentials?: {
-        password: string
-        recovery_email?: string
-        number?: string
-    }
+    ip: string
+    port: number
+    username?: string
+    password?: string
     created_at: string
 }
 
-export default function AccountsPage() {
+export default function ProxiesPage() {
     const [showUploader, setShowUploader] = useState(false)
     const [showDrawer, setShowDrawer] = useState(false)
-    const [editingAccount, setEditingAccount] = useState<Account | null>(null)
-    const [accounts, setAccounts] = useState<Account[]>([])
+    const [editingProxy, setEditingProxy] = useState<Proxy | null>(null)
+    const [proxies, setProxies] = useState<Proxy[]>([])
     const [loading, setLoading] = useState(false)
 
-    const fetchAccounts = async () => {
+    const fetchProxies = async () => {
         try {
             setLoading(true)
-            // TODO: Add type safety
-            // Call local API, endpoint /accounts (base URL already has /api)
-            const res = await apiGet<any>("/accounts?page_size=100", "local")
-
-            // Ensure we have items, fallback to []
-            // Map credentials field for drawer compatibility if needed
-            const mapped = (res?.items || []).map((acc: any) => ({
-                ...acc,
-                credentials: {
-                    password: acc.password,
-                    recovery_email: acc.recovery_email,
-                    number: acc.phone_number
-                }
-            }))
-            setAccounts(mapped)
+            const res = await apiGet<any>("/proxies?page_size=100", "local")
+            setProxies(res?.items || [])
         } catch (err) {
-            toast.error("Failed to load accounts")
+            toast.error("Failed to load proxies")
             console.error(err)
         } finally {
             setLoading(false)
         }
     }
 
-    const deleteAccount = async (id: number) => {
+    const deleteProxy = async (id: number) => {
         try {
-            await apiDelete(`/accounts/${id}`, undefined, "local")
-            toast.success("Account deleted")
-            fetchAccounts()
+            await apiDelete(`/proxies/${id}`, undefined, "local")
+            toast.success("Proxy deleted")
+            fetchProxies()
         } catch (err) {
-            toast.error("Failed to delete account")
+            toast.error("Failed to delete proxy")
         }
     }
 
-    const bulkDelete = async (selected: Account[]) => {
-        // Bulk delete is now handled by AlertDialog inside DataTable
+    const bulkDelete = async (selected: Proxy[]) => {
         try {
-            const ids = selected.map(acc => acc.id)
-            await apiDelete(`/accounts/bulk`, ids, "local")
-            toast.success(`Deleted ${selected.length} accounts`)
-            fetchAccounts()
+            const ids = selected.map(p => p.id)
+            await apiDelete(`/proxies/bulk`, ids, "local")
+            toast.success(`Deleted ${selected.length} proxies`)
+            fetchProxies()
         } catch (err) {
             toast.error("An error occurred during bulk deletion")
-            fetchAccounts()
+            fetchProxies()
         }
     }
 
-    const exportToTxt = (selected: Account[]) => {
+    const exportToTxt = (selected: Proxy[]) => {
         const content = selected
-            .map(acc => `${acc.email},${acc.password}${acc.recovery_email ? `,${acc.recovery_email}` : ""}${acc.phone_number ? `,${acc.phone_number}` : ""}`)
+            .map(p => `${p.ip}:${p.port}${p.username ? `:${p.username}:${p.password}` : ""}`)
             .join("\n")
 
         const blob = new Blob([content], { type: "text/plain" })
         const url = URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
-        a.download = `accounts_export_${new Date().toISOString().slice(0, 10)}.txt`
+        a.download = `proxies_export_${new Date().toISOString().slice(0, 10)}.txt`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success(`Exported ${selected.length} accounts`)
+        toast.success(`Exported ${selected.length} proxies`)
     }
 
-    const columns: ColumnDef<Account>[] = useMemo(() => [
+    const columns: ColumnDef<Proxy>[] = useMemo(() => [
         {
             id: "select",
             header: ({ table }) => (
@@ -142,23 +119,19 @@ export default function AccountsPage() {
             enableHiding: false,
         },
         {
-            accessorKey: "email",
-            header: "Email",
-            cell: ({ row }) => <div className="font-medium text-xs truncate max-w-[200px]" title={row.getValue("email")}>{row.getValue("email")}</div>,
+            accessorKey: "ip",
+            header: "IP Address",
+            cell: ({ row }) => <div className="font-mono font-medium text-xs truncate max-w-[150px]">{row.getValue("ip")}</div>,
         },
         {
-            accessorKey: "provider",
-            header: "Provider",
-            cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px] py-0">{row.getValue("provider")}</Badge>,
+            accessorKey: "port",
+            header: "Port",
+            cell: ({ row }) => <div className="font-mono text-muted-foreground text-xs">{row.getValue("port")}</div>,
         },
         {
-            accessorKey: "status",
-            header: "Status",
-            cell: ({ row }) => {
-                const status = row.getValue("status") as string
-                const variant = status === "active" ? "default" : status === "error" ? "destructive" : "secondary"
-                return <Badge variant={variant} className="capitalize text-[10px] py-0">{status}</Badge>
-            },
+            accessorKey: "username",
+            header: "Username",
+            cell: ({ row }) => <div className="text-muted-foreground text-xs truncate max-w-[100px]">{row.getValue("username") || "-"}</div>,
         },
         {
             accessorKey: "created_at",
@@ -170,7 +143,7 @@ export default function AccountsPage() {
         {
             id: "actions",
             cell: ({ row }) => {
-                const account = row.original
+                const proxy = row.original
 
                 return (
                     <DropdownMenu>
@@ -183,18 +156,18 @@ export default function AccountsPage() {
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => {
-                                navigator.clipboard.writeText(account.email)
-                                toast.success("Email copied to clipboard")
+                                navigator.clipboard.writeText(`${proxy.ip}:${proxy.port}`)
+                                toast.success("Proxy copied to clipboard")
                             }}>
-                                Copy email
+                                Copy address
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => {
-                                setEditingAccount(account)
+                                setEditingProxy(proxy)
                                 setShowDrawer(true)
                             }}>
                                 <Edit className="mr-2 h-4 w-4" />
-                                Edit Account
+                                Edit Proxy
                             </DropdownMenuItem>
 
                             <AlertDialog>
@@ -208,13 +181,13 @@ export default function AccountsPage() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This will permanently delete the account <strong>{account.email}</strong>.
+                                            This will permanently delete the proxy <strong>{proxy.ip}:{proxy.port}</strong>.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                                         <AlertDialogAction
-                                            onClick={() => deleteAccount(account.id)}
+                                            onClick={() => deleteProxy(proxy.id)}
                                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                         >
                                             Delete
@@ -230,7 +203,7 @@ export default function AccountsPage() {
     ], [])
 
     useEffect(() => {
-        fetchAccounts()
+        fetchProxies()
     }, [])
 
     return (
@@ -241,7 +214,7 @@ export default function AccountsPage() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                    <BreadcrumbPage>Accounts</BreadcrumbPage>
+                    <BreadcrumbPage>Proxies</BreadcrumbPage>
                 </BreadcrumbItem>
             </PageBreadcrumb>
 
@@ -249,24 +222,24 @@ export default function AccountsPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                            <User className="h-5 w-5 text-primary" />
+                            <Globe className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight">Accounts</h1>
-                            <p className="text-sm text-muted-foreground">Manage your email accounts</p>
+                            <h1 className="text-2xl font-bold tracking-tight">Proxies</h1>
+                            <p className="text-sm text-muted-foreground">Manage your proxy pool</p>
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={fetchAccounts} disabled={loading}>
+                        <Button variant="outline" size="sm" onClick={fetchProxies} disabled={loading}>
                             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
                             Refresh
                         </Button>
                         <Button size="sm" onClick={() => {
-                            setEditingAccount(null)
+                            setEditingProxy(null)
                             setShowDrawer(true)
                         }}>
                             <Plus className="h-4 w-4 mr-2" />
-                            Add Account
+                            Add Proxy
                         </Button>
                         <Button size="sm" variant="secondary" onClick={() => setShowUploader(true)}>
                             <Plus className="h-4 w-4 mr-2" />
@@ -277,26 +250,26 @@ export default function AccountsPage() {
 
                 <DataTable
                     columns={columns}
-                    data={accounts}
-                    filterColumn="email"
-                    filterPlaceholder="Filter by email..."
+                    data={proxies}
+                    filterColumn="ip"
+                    filterPlaceholder="Filter by IP..."
                     onDeleteSelected={bulkDelete}
                     onExportSelected={exportToTxt}
                 />
             </div>
 
-            <AccountDrawer
+            <ProxyDrawer
                 open={showDrawer}
                 onOpenChange={setShowDrawer}
-                editingAccount={editingAccount as any}
-                onAccountSaved={fetchAccounts}
+                editingProxy={editingProxy as any}
+                onProxySaved={fetchProxies}
             />
 
             <BulkUploader
-                mode="accounts"
+                mode="proxies"
                 open={showUploader}
                 onOpenChange={setShowUploader}
-                onUploadSuccess={fetchAccounts}
+                onUploadSuccess={fetchProxies}
             />
         </div>
     )

@@ -86,6 +86,13 @@ def patch_account(
     return account
 
 
+# ── Bulk Delete ─────────────────────────────────────────────────────────────
+@router.delete("/bulk", status_code=204)
+def bulk_delete_accounts(ids: list[int], db: Session = Depends(get_db)):
+    db.query(Account).filter(Account.id.in_(ids)).delete(synchronize_session=False)
+    db.commit()
+
+
 # ── Delete ────────────────────────────────────────────────────────────────
 @router.delete("/{account_id}", status_code=204)
 def delete_account(account_id: int, db: Session = Depends(get_db)):

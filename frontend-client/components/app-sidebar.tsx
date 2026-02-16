@@ -9,6 +9,7 @@ import {
   Command,
   Frame,
   GalleryVerticalEnd,
+  Globe,
   Home,
   Map,
   PieChart,
@@ -72,21 +73,21 @@ const data = {
       url: "/",
       icon: Home,
     },
-    // {
-    //   title: "Dashboard",
-    //   url: "/dashboard",
-    //   icon: BarChart3,
-    // },
-    // {
-    //   title: "Accounts",
-    //   url: "/accounts",
-    //   icon: User,
-    // },
-    // {
-    //   title: "Automations",
-    //   url: "/automations",
-    //   icon: Bot,
-    // },
+    {
+      title: "Jobs",
+      url: "/jobs",
+      icon: SquareTerminal,
+    },
+    {
+      title: "Accounts",
+      url: "/accounts",
+      icon: User,
+    },
+    {
+      title: "Proxies",
+      url: "/proxies",
+      icon: Globe,
+    },
   ],
 }
 
