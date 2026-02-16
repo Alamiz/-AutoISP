@@ -1,6 +1,6 @@
-"use client"
 
 import { useState, useEffect } from "react"
+import { AccountStatusBadge } from "@/components/account-status-badge"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ import { useAccounts } from "@/hooks/useAccounts"
 import { useProvider } from "@/contexts/provider-context"
 import { toast } from "sonner"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useJobs } from "@/contexts/jobs-context"
+import { useActiveJobs } from "@/hooks/useActiveJobs"
 import { Loader2, Clock } from "lucide-react"
 import {
   Pagination,
@@ -56,10 +56,10 @@ export function AccountList() {
   const [backupAccount, setBackupAccount] = useState<Account | null>(null)
   const [restoreAccount, setRestoreAccount] = useState<Account | null>(null)
   const { selectedProvider } = useProvider()
-  const { getAccountJob, isAccountBusy, onJobComplete, stopJob, stopAllJobs, jobs } = useJobs()
+  const { getAccountJob, isAccountBusy, stopJob, stopAllJobs, activeJobs } = useActiveJobs()
 
   // Check if any jobs are running or queued
-  const hasActiveJobs = jobs.running.length > 0 || jobs.queued.length > 0
+  const hasActiveJobs = activeJobs.length > 0
 
   // Pagination State
   const [page, setPage] = useState(1)
@@ -67,20 +67,11 @@ export function AccountList() {
 
   const queryClient = useQueryClient()
 
-  // Refetch accounts when a job completes (to get updated activities)
+  // Refetch accounts when a job completes is handled by JobProvider invalidation
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout
-    const unsubscribe = onJobComplete(() => {
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["accounts"] })
-      }, 2000) // Debounce for 2 seconds to batch rapid updates
-    })
-    return () => {
-      unsubscribe()
-      clearTimeout(timeoutId)
-    }
-  }, [onJobComplete, queryClient])
+    clearSelection()
+    setPage(1)
+  }, [selectedProvider, clearSelection])
 
   useEffect(() => {
     clearSelection()
@@ -109,30 +100,7 @@ export function AccountList() {
     queryClient.invalidateQueries({ queryKey: ["accounts"] })
   }
 
-  const getStatusColor = (status: Account["status"]) => {
-    switch (status) {
-      case "active":
-        return "bg-green-500/10 text-green-400 border-green-500/20"
-      case "inactive":
-        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-      case "disabled":
-        return "bg-gray-600/10 text-gray-400 border-gray-500/20"
-      case "error":
-        return "bg-red-500/10 text-red-400 border-red-500/20"
-      case "suspended":
-        return "bg-red-600/10 text-red-500 border-red-600/20"
-      case "phone_verification":
-        return "bg-orange-500/10 text-orange-400 border-orange-500/20"
-      case "captcha":
-        return "bg-purple-500/10 text-purple-400 border-purple-500/20"
-      case "wrong_password":
-        return "bg-pink-500/10 text-pink-400 border-pink-500/20"
-      case "wrong_username":
-        return "bg-pink-600/10 text-pink-500 border-pink-600/20"
-      default:
-        return "bg-slate-500/10 text-slate-400 border-slate-500/20"
-    }
-  }
+
 
   const handleSelectAccount = (account: Account, checked: boolean) => {
     if (checked) {
@@ -445,14 +413,14 @@ export function AccountList() {
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="disabled">Disabled</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="unknown">Unknown</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="locked">Locked</SelectItem>
                   <SelectItem value="suspended">Suspended</SelectItem>
                   <SelectItem value="phone_verification">Phone Verification</SelectItem>
                   <SelectItem value="captcha">Captcha</SelectItem>
                   <SelectItem value="wrong_password">Wrong Password</SelectItem>
-                  <SelectItem value="wrong_username">Wrong Username</SelectItem>
+                  <SelectItem value="wrong_email">Wrong Email</SelectItem>
                 </SelectContent>
               </Select>
               {/* Stop All Button */}
@@ -470,7 +438,7 @@ export function AccountList() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Stop all jobs ({jobs.running.length + jobs.queued.length})</p>
+                    <p>Stop all jobs ({activeJobs.length})</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -567,7 +535,7 @@ export function AccountList() {
                         </Badge>}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <Badge className={getStatusColor(account.status)}>{account.status.replace('_', ' ')}</Badge>
+                        <AccountStatusBadge status={account.status} />
                         {/* Job Status Indicator */}
                         {(() => {
                           const job = getAccountJob(String(account.id));

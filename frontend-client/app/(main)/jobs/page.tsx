@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
 import { BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
@@ -23,46 +24,35 @@ import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CreateJobWizard } from "@/components/create-job-wizard"
 import { format } from "date-fns"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function JobsPage() {
-    const [jobs, setJobs] = useState<Job[]>([])
-    const [loading, setLoading] = useState(true)
     const [wizardOpen, setWizardOpen] = useState(false)
-    const [stats, setStats] = useState({
-        total: 0,
-        running: 0,
-        completed: 0,
-        failed: 0
+    const [deleteId, setDeleteId] = useState<number | null>(null)
+
+    const { data: response, isLoading: loading, refetch: fetchJobs } = useQuery<{ items: Job[], total: number }>({
+        queryKey: ["jobs"],
+        queryFn: () => apiGet<{ items: Job[], total: number }>("/jobs?page_size=100", "local"),
+        refetchInterval: 10000 // Backup polling
     })
 
-    const fetchJobs = async () => {
-        try {
-            setLoading(true)
-            const response = await apiGet<{ items: Job[], total: number }>("/jobs?page_size=100", "local")
-            setJobs(response.items || [])
+    const jobs = response?.items || []
 
-            // Calculate stats
-            const items = response.items || []
-            setStats({
-                total: response.total || items.length,
-                running: items.filter(j => j.status === "running" || j.status === "queued").length,
-                completed: items.filter(j => j.status === "completed").length,
-                failed: items.filter(j => j.status === "failed").length
-            })
-        } catch (error) {
-            toast.error("Failed to fetch jobs")
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
+    const stats = {
+        total: response?.total || jobs.length,
+        running: jobs.filter(j => j.status === "running" || j.status === "queued").length,
+        completed: jobs.filter(j => j.status === "completed").length,
+        failed: jobs.filter(j => j.status === "failed").length
     }
-
-    // Poll for updates
-    useEffect(() => {
-        fetchJobs()
-        const interval = setInterval(fetchJobs, 10000)
-        return () => clearInterval(interval)
-    }, [])
 
     const deleteJob = async (id: number) => {
         try {
@@ -71,6 +61,8 @@ export default function JobsPage() {
             fetchJobs()
         } catch (error) {
             toast.error("Failed to delete job")
+        } finally {
+            setDeleteId(null)
         }
     }
 
@@ -131,7 +123,7 @@ export default function JobsPage() {
                 return (
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/jobs/${job.id}`}>
+                            <Link href={`/jobs/detail?id=${job.id}`}>
                                 View Details
                             </Link>
                         </Button>
@@ -144,7 +136,7 @@ export default function JobsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => deleteJob(job.id)} className="text-destructive focus:text-destructive">
+                                <DropdownMenuItem onClick={() => setDeleteId(job.id)} className="text-destructive focus:text-destructive">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete Job
                                 </DropdownMenuItem>
@@ -237,6 +229,26 @@ export default function JobsPage() {
             </div>
 
             <CreateJobWizard open={wizardOpen} onOpenChange={setWizardOpen} />
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the job run and all its execution history.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => deleteId && deleteJob(deleteId)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

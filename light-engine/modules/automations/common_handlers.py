@@ -1,6 +1,7 @@
 from playwright.sync_api import Page
 from core.flow_engine.state_handler import StateHandler
 from modules.core.flow_state import FlowResult
+from modules.core.account_helper import update_account_status  # Import helper
 # from crud.account import update_account_state
 from core.utils.retry_decorators import retry_action
 from core.humanization.actions import HumanAction
@@ -14,6 +15,7 @@ class CommonHandler(StateHandler):
 class InboxHandler(CommonHandler):
     """Handle inbox page"""
     def handle(self, page: Page = None) -> FlowResult:
+        update_account_status(int(self.account.id), "active")
         return FlowResult.SUCCESS
 
 class WrongPasswordPageHandler(CommonHandler):
@@ -21,7 +23,7 @@ class WrongPasswordPageHandler(CommonHandler):
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("WrongPasswordPageHandler: Wrong password detected")
-        # update_account_state(self.account.id, "wrong_password")
+        update_account_status(int(self.account.id), "wrong_password")
         return FlowResult.WRONG_PASSWORD
 
 class WrongEmailPageHandler(CommonHandler):
@@ -29,6 +31,7 @@ class WrongEmailPageHandler(CommonHandler):
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("WrongEmailPageHandler: Wrong email detected")
+        update_account_status(int(self.account.id), "wrong_email")
         # update_account_state(self.account.id, "wrong_username")
         return FlowResult.WRONG_EMAIL
 
@@ -37,6 +40,7 @@ class LoginNotPossiblePageHandler(CommonHandler):
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("LoginNotPossiblePageHandler: Login not possible detected")
+        update_account_status(int(self.account.id), "failed")
         # update_account_state(self.account.id, "error")
         return FlowResult.FAILED
 
@@ -61,7 +65,7 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
                 extra={"account_id": self.account.id}
             )
 
-        # update_account_state(self.account.id, "captcha")
+        update_account_status(int(self.account.id), "captcha")
 
         # 1. Try to solve captcha automatically
         solved = False
@@ -170,7 +174,7 @@ class SecuritySuspensionHandler(CommonHandler):
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("SecuritySuspensionHandler: Account suspended")
-        # update_account_state(self.account.id, "suspended")
+        update_account_status(int(self.account.id), "suspended")
         return FlowResult.SUSPENDED
 
 class PhoneVerificationHandler(CommonHandler):
@@ -178,7 +182,7 @@ class PhoneVerificationHandler(CommonHandler):
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("PhoneVerificationHandler: Phone verification required")
-        # update_account_state(self.account.id, "phone_verification")
+        update_account_status(int(self.account.id), "phone_verification")
         return FlowResult.PHONE_VERIFICATION
 
 class SmartFeaturesPopupHandler(StateHandler):

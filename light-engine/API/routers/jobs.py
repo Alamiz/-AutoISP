@@ -2,6 +2,7 @@
 Jobs router — create job run, list jobs, get job summary.
 """
 
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,7 @@ from API.schemas import (
     PaginatedResponse,
 )
 from API.services import create_job_run, get_job_summary
+from modules.core.job_manager import job_manager
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -25,12 +27,17 @@ def run_job(payload: JobRunRequest, db: Session = Depends(get_db)):
         db,
         name=payload.name,
         max_concurrent=payload.max_concurrent,
-        accounts_data=[a.model_dump() for a in payload.accounts],
+        accounts_data=[a.model_dump() for a in payload.accounts] if payload.accounts else None,
+        account_ids=payload.account_ids,
         proxy_ids=payload.proxy_ids,
         automations_data=[a.model_dump() for a in payload.automations],
     )
     db.commit()
     db.refresh(job)
+    
+    # Submit job to background manager
+    job_manager.submit_job(job.id)
+    
     return job
 
 
@@ -59,3 +66,33 @@ def job_summary(job_id: int, db: Session = Depends(get_db)):
     if result is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return result
+
+
+# ── Active Jobs (Running/Queued) ──────────────────────────────────────────
+@router.get("/active", response_model=List[JobSummary])
+def get_active_jobs(db: Session = Depends(get_db)):
+    """Returns full summary for all running or queued jobs."""
+    active_jobs = db.query(Job).filter(Job.status.in_(["running", "queued"])).all()
+    results = []
+    for job in active_jobs:
+        summary = get_job_summary(db, job.id)
+        if summary:
+            results.append(summary)
+    return results
+
+
+# ── Delete Job ────────────────────────────────────────────────────────────
+@router.delete("/{job_id}", status_code=204)
+def delete_job(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # If job is running, we might want to stop it first or prevent deletion.
+    # For now, just delete it (cascade rules in models should handle children).
+    # If not using database-level cascade, we might need manual cleanup.
+    # Assuming models have cascade="all, delete-orphan".
+    
+    db.delete(job)
+    db.commit()
+    return None

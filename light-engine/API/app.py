@@ -5,20 +5,31 @@ Run with:
     uvicorn API.app:app --reload --port 8000
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from API.database import create_tables
-from API.routers import accounts, proxies, jobs
+from API.routers import accounts, proxies, jobs, ws
 
+
+from modules.core.job_manager import job_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: create tables if they don't exist
     create_tables()
+    # Capture loop for WebSocket bridge
+    ws.set_main_event_loop(asyncio.get_running_loop())
+    
+    # Start JobManager worker
+    job_manager.start_worker()
+    
     yield
-    # Shutdown: nothing to clean up for now
+    
+    # Shutdown
+    job_manager.stop_worker()
 
 
 app = FastAPI(
@@ -41,6 +52,8 @@ app.add_middleware(
 app.include_router(accounts.router, prefix="/api")
 app.include_router(proxies.router, prefix="/api")
 app.include_router(jobs.router, prefix="/api")
+app.include_router(ws.router) # WebSocket is usually at root or /ws
+
 
 
 @app.get("/")

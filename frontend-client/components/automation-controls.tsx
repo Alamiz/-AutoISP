@@ -17,7 +17,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useAccounts } from "@/hooks/useAccounts"
 import { useProvider } from "@/contexts/provider-context"
-import { useJobs } from "@/contexts/jobs-context"
+import { useActiveJobs } from "@/hooks/useActiveJobs"
 import { automations } from "@/data/automations"
 import { Automation } from "@/lib/types"
 import { format } from "date-fns"
@@ -39,9 +39,9 @@ export function AutomationControls() {
 
   const { selectedAccounts, clearSelection, getSelectedCount, statusFilter } = useAccounts()
   const queryClient = useQueryClient()
-  const { busyAccountIds } = useJobs()
-  const availableAccounts = selectedAccounts.filter(acc => !busyAccountIds.has(String(acc.id)))
-  const busyAccounts = selectedAccounts.filter(acc => busyAccountIds.has(String(acc.id)))
+  const { isAccountBusy } = useActiveJobs()
+  const availableAccounts = selectedAccounts.filter(acc => !isAccountBusy(acc.id))
+  const busyAccounts = selectedAccounts.filter(acc => isAccountBusy(acc.id))
 
   // Update available automations when provider changes
   useEffect(() => {

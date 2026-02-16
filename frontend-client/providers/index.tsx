@@ -5,7 +5,7 @@ import { QueryProvider } from "./query-provider"
 import { BreadcrumbProvider } from "@/components/breadcrumb-context";
 import { UserProvider } from "@/contexts/user-context";
 import { ProviderProvider } from "@/contexts/provider-context";
-import { JobsProvider } from "@/contexts/jobs-context";
+import { JobProvider } from "./job-provider";
 import { auth } from "@/lib/auth";
 import { apiPost } from "@/lib/api";
 import { AccountProvider } from "./account-provider";
@@ -32,13 +32,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <QueryProvider>
         <UserProvider>
           <ProviderProvider>
-            <JobsProvider>
+            <JobProvider>
               <AccountProvider>
                 <ProxyProvider>
                   {children}
                 </ProxyProvider>
               </AccountProvider>
-            </JobsProvider>
+            </JobProvider>
           </ProviderProvider>
         </UserProvider>
       </QueryProvider>

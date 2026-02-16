@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
 import { BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { SquareTerminal, CheckCircle2, XCircle, Clock, AlertCircle, ArrowLeft, RefreshCw, MoreVertical } from "lucide-react"
+import { SquareTerminal, CheckCircle2, XCircle, Clock, ArrowLeft, RefreshCw } from "lucide-react"
 import { JobSummary, JobAccount } from "@/lib/types"
 import { apiGet } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -12,38 +11,25 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { toast } from "sonner"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
+import { useActiveJobs } from "@/hooks/useActiveJobs"
 
-export default function JobDetailsPage() {
-    const params = useParams()
+export default function JobDetailsView() {
+    const searchParams = useSearchParams()
     const router = useRouter()
-    const jobId = params.id as string
-    const [summary, setSummary] = useState<JobSummary | null>(null)
-    const [loading, setLoading] = useState(true)
+    const jobId = Number(searchParams.get("id"))
+    const { activeJobs } = useActiveJobs()
 
-    const fetchSummary = async () => {
-        try {
-            setLoading(true)
-            const data = await apiGet<JobSummary>(`/jobs/${jobId}/summary`, "local")
-            setSummary(data)
-        } catch (err) {
-            toast.error("Failed to fetch job details")
-        } finally {
-            setLoading(false)
-        }
-    }
+    // Check if this job is currently active to determine poll rate
+    const isActive = activeJobs.some(j => j.job.id === jobId)
 
-    useEffect(() => {
-        fetchSummary()
-        // Poll for updates if the job is still running or queued
-        const interval = setInterval(() => {
-            if (summary?.job.status === "running" || summary?.job.status === "queued") {
-                fetchSummary()
-            }
-        }, 5000)
-        return () => clearInterval(interval)
-    }, [jobId, summary?.job.status])
+    const { data: summary, isLoading, error } = useQuery<JobSummary>({
+        queryKey: ["job", jobId],
+        queryFn: () => apiGet<JobSummary>(`/jobs/${jobId}/summary`, "local"),
+        enabled: !isNaN(jobId),
+        refetchInterval: isActive ? 1000 : 5000
+    })
 
     const columns: ColumnDef<JobAccount>[] = [
         {
@@ -82,11 +68,14 @@ export default function JobDetailsPage() {
         }
     ]
 
-    if (!summary && loading) {
-        return <div className="p-8 text-center">Loading job details...</div>
+    if (isLoading) {
+        return <div className="p-8 text-center flex items-center justify-center gap-2">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Loading job details...
+        </div>
     }
 
-    if (!summary) {
+    if (error || !summary) {
         return <div className="p-8 text-center text-destructive">Job not found</div>
     }
 
@@ -136,8 +125,8 @@ export default function JobDetailsPage() {
                             </div>
                         </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={fetchSummary} disabled={loading}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                    <Button variant="outline" size="sm" onClick={() => router.refresh()} disabled={isLoading}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
                         Refresh
                     </Button>
                 </div>
