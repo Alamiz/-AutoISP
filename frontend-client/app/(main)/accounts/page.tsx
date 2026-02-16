@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { AccountDrawer } from "@/components/account-drawer"
-import { LaunchJobDrawer } from "@/components/launch-job-drawer"
 import { useProvider } from "@/contexts/provider-context"
 import { Play } from "lucide-react"
 import { Account } from "@/lib/types"
@@ -44,9 +43,7 @@ export default function AccountsPage() {
     const [loading, setLoading] = useState(false)
     const [showUploader, setShowUploader] = useState(false)
     const [showDrawer, setShowDrawer] = useState(false)
-    const [launchDrawerOpen, setLaunchDrawerOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
-    const [selectedForLaunch, setSelectedForLaunch] = useState<Account[]>([])
     const {
         selectedAccountsMap: rowSelection,
         setSelectedAccountsMap: setRowSelection,
@@ -326,19 +323,7 @@ export default function AccountsPage() {
                             { label: "Unknown", value: "unknown" },
                         ]
                     }}
-                    actions={(selected) => (
-                        <Button
-                            size="sm"
-                            className="bg-primary text-primary-foreground hover:bg-primary/90"
-                            onClick={() => {
-                                setSelectedForLaunch(selected as Account[])
-                                setLaunchDrawerOpen(true)
-                            }}
-                        >
-                            <Play className="mr-2 h-4 w-4 fill-current" />
-                            Run Automation
-                        </Button>
-                    )}
+
                 />
             </div>
 
@@ -356,11 +341,7 @@ export default function AccountsPage() {
                 onUploadSuccess={fetchAccounts}
             />
 
-            <LaunchJobDrawer
-                open={launchDrawerOpen}
-                onOpenChange={setLaunchDrawerOpen}
-                selectedAccounts={selectedForLaunch}
-            />
+
         </div>
     )
 }
