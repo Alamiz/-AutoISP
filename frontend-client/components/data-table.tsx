@@ -13,6 +13,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table"
+import { cn } from "@/lib/utils"
 import {
     Table,
     TableBody,
@@ -49,6 +50,8 @@ interface DataTableProps<TData, TValue> {
     filterPlaceholder?: string
     onDeleteSelected?: (selectedRows: TData[]) => void
     onExportSelected?: (selectedRows: TData[]) => void
+    actions?: (selectedRows: TData[]) => React.ReactNode
+    enableRowSelectionOnClick?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -58,6 +61,8 @@ export function DataTable<TData, TValue>({
     filterPlaceholder = "Filter...",
     onDeleteSelected,
     onExportSelected,
+    actions,
+    enableRowSelectionOnClick,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -115,6 +120,7 @@ export function DataTable<TData, TValue>({
                                     Export
                                 </Button>
                             )}
+                            {actions && actions(selectedRows)}
                             {onDeleteSelected && (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -202,9 +208,18 @@ export function DataTable<TData, TValue>({
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
+                                    className={cn(enableRowSelectionOnClick && "cursor-pointer hover:bg-muted/50 select-none")}
+                                    onClick={() => enableRowSelectionOnClick && row.toggleSelected()}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
+                                        <TableCell
+                                            key={cell.id}
+                                            onClick={(e) => {
+                                                if (cell.column.id === "select" || cell.column.id === "actions") {
+                                                    e.stopPropagation()
+                                                }
+                                            }}
+                                        >
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}

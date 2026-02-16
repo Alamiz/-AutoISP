@@ -255,6 +255,7 @@ export default function ProxiesPage() {
                     filterPlaceholder="Filter by IP..."
                     onDeleteSelected={bulkDelete}
                     onExportSelected={exportToTxt}
+                    enableRowSelectionOnClick={true}
                 />
             </div>
 

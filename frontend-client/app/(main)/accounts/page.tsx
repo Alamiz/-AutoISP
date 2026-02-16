@@ -32,30 +32,20 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { AccountDrawer } from "@/components/account-drawer"
-
-// Aligning with local backend schema but keeping name compatible with Drawer
-interface Account {
-    id: number
-    email: string
-    password: string
-    provider: string
-    status: string
-    recovery_email?: string
-    phone_number?: string
-    credentials?: {
-        password: string
-        recovery_email?: string
-        number?: string
-    }
-    created_at: string
-}
+import { LaunchJobDrawer } from "@/components/launch-job-drawer"
+import { useProvider } from "@/contexts/provider-context"
+import { Play } from "lucide-react"
+import { Account } from "@/lib/types"
 
 export default function AccountsPage() {
+    const { selectedProvider } = useProvider()
+    const [accounts, setAccounts] = useState<Account[]>([])
+    const [loading, setLoading] = useState(true)
     const [showUploader, setShowUploader] = useState(false)
     const [showDrawer, setShowDrawer] = useState(false)
+    const [launchDrawerOpen, setLaunchDrawerOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
-    const [accounts, setAccounts] = useState<Account[]>([])
-    const [loading, setLoading] = useState(false)
+    const [selectedForLaunch, setSelectedForLaunch] = useState<Account[]>([])
 
     const fetchAccounts = async () => {
         try {
@@ -66,8 +56,9 @@ export default function AccountsPage() {
 
             // Ensure we have items, fallback to []
             // Map credentials field for drawer compatibility if needed
-            const mapped = (res?.items || []).map((acc: any) => ({
+            const mapped: Account[] = (res?.items || []).map((acc: any) => ({
                 ...acc,
+                provider: acc.provider as Account["provider"],
                 credentials: {
                     password: acc.password,
                     recovery_email: acc.recovery_email,
@@ -282,6 +273,20 @@ export default function AccountsPage() {
                     filterPlaceholder="Filter by email..."
                     onDeleteSelected={bulkDelete}
                     onExportSelected={exportToTxt}
+                    enableRowSelectionOnClick={true}
+                    actions={(selected) => (
+                        <Button
+                            size="sm"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                            onClick={() => {
+                                setSelectedForLaunch(selected as Account[])
+                                setLaunchDrawerOpen(true)
+                            }}
+                        >
+                            <Play className="mr-2 h-4 w-4 fill-current" />
+                            Run Automation
+                        </Button>
+                    )}
                 />
             </div>
 
@@ -297,6 +302,12 @@ export default function AccountsPage() {
                 open={showUploader}
                 onOpenChange={setShowUploader}
                 onUploadSuccess={fetchAccounts}
+            />
+
+            <LaunchJobDrawer
+                open={launchDrawerOpen}
+                onOpenChange={setLaunchDrawerOpen}
+                selectedAccounts={selectedForLaunch}
             />
         </div>
     )

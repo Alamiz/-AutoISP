@@ -33,7 +33,7 @@ def bulk_upsert(accounts: list[AccountCreate], db: Session = Depends(get_db)):
 @router.get("", response_model=PaginatedResponse[AccountOut])
 def list_accounts(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=200),
+    page_size: int = Query(50, ge=1, le=10000),
     provider: Optional[str] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,

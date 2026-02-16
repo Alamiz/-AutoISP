@@ -24,30 +24,20 @@ export interface Backup {
 }
 
 export interface Account {
-  id: string;
-  email: string;
-  credentials: {
-    password: string;
-    number?: string;
-    recovery_email?: string;
-  };
-  label: string;
-  last_sync: string;
-  status: "active" | "inactive" | "error" | "disabled" | "suspended" | "phone_verification" | "captcha" | "wrong_password" | "wrong_username";
-  latest_automation: string;
-  provider: "gmx" | "webde";
-  type: "desktop" | "mobile";
-  proxy_settings: {
-    host: string;
-    port: number;
-    username: string;
-    password: string;
-    protocol: "http" | "https";
-  };
-  activities: HistoryEntry[];
-  backups: Backup[];
-  created_at: string;
-  updated_at: string;
+  id: number
+  email: string
+  password: string
+  recovery_email?: string
+  phone_number?: string
+  provider: "gmx" | "webde"
+  status: string
+  created_at: string
+  updated_at?: string
+  credentials?: {
+    password: string
+    recovery_email?: string
+    number?: string
+  }
 }
 
 
@@ -154,4 +144,30 @@ export interface RunningJob {
     summary: string
     details?: Record<string, any>
   }
+}
+export interface Job {
+  id: number
+  name: string | null
+  status: "queued" | "running" | "completed" | "failed" | "stopped"
+  max_concurrent: number
+  created_at: string
+  started_at: string | null
+  finished_at: string | null
+}
+
+export interface JobAccount {
+  id: number
+  job_id: number
+  account_id: number
+  proxy_id: number | null
+  status: string
+  error_message: string | null
+}
+
+export interface JobSummary {
+  job: Job
+  accounts_count: number
+  proxies_count: number
+  automations: any[]
+  job_accounts: JobAccount[]
 }
