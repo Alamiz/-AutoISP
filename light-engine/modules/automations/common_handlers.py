@@ -15,7 +15,7 @@ class CommonHandler(StateHandler):
 class InboxHandler(CommonHandler):
     """Handle inbox page"""
     def handle(self, page: Page = None) -> FlowResult:
-        update_account_status(int(self.account.id), "active")
+        update_account_status(self.account.id, "active")
         return FlowResult.SUCCESS
 
 class WrongPasswordPageHandler(CommonHandler):
@@ -23,7 +23,7 @@ class WrongPasswordPageHandler(CommonHandler):
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("WrongPasswordPageHandler: Wrong password detected")
-        update_account_status(int(self.account.id), "wrong_password")
+        update_account_status(self.account.id, "wrong_password")
         return FlowResult.WRONG_PASSWORD
 
 class WrongEmailPageHandler(CommonHandler):
@@ -31,18 +31,16 @@ class WrongEmailPageHandler(CommonHandler):
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("WrongEmailPageHandler: Wrong email detected")
-        update_account_status(int(self.account.id), "wrong_email")
+        update_account_status(self.account.id, "wrong_email")
         # update_account_state(self.account.id, "wrong_username")
         return FlowResult.WRONG_EMAIL
 
 class LoginNotPossiblePageHandler(CommonHandler):
-    """Handle login not possible page"""
+    """Handle login not possible page - temporary error, just retry"""
     def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
-            self.logger.warning("LoginNotPossiblePageHandler: Login not possible detected")
-        update_account_status(int(self.account.id), "failed")
-        # update_account_state(self.account.id, "error")
-        return FlowResult.FAILED
+            self.logger.warning("LoginNotPossiblePageHandler: Login not possible detected (temp error, retrying)")
+        return FlowResult.RETRY
 
 class LoginCaptchaHandler(CommonHandler, HumanAction):
     """Handle login captcha with auto-solve + fallback to user"""

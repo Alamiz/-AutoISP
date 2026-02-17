@@ -168,6 +168,7 @@ class JobAccountOut(BaseModel):
 
     id: int
     account_id: int
+    account_email: Optional[str] = None
     proxy_id: Optional[int] = None
     status: str
     error_message: Optional[str] = None

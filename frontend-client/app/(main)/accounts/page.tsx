@@ -32,6 +32,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
+import { AccountStatusBadge } from "@/components/account-status-badge"
 import { AccountDrawer } from "@/components/account-drawer"
 import { useProvider } from "@/contexts/provider-context"
 import { Play } from "lucide-react"
@@ -179,8 +180,7 @@ export default function AccountsPage() {
             header: "Status",
             cell: ({ row }) => {
                 const status = row.getValue("status") as string
-                const variant = status === "active" ? "default" : status === "error" ? "destructive" : "secondary"
-                return <Badge variant={variant} className="capitalize text-[10px] py-0">{status}</Badge>
+                return <AccountStatusBadge status={status} />
             },
         },
         {
@@ -318,8 +318,13 @@ export default function AccountsPage() {
                         onChange: (val) => setStatusFilter(val === "all" ? null : val),
                         options: [
                             { label: "Active", value: "active" },
-                            { label: "Error", value: "error" },
+                            { label: "Failed", value: "failed" },
                             { label: "Locked", value: "locked" },
+                            { label: "Wrong Password", value: "wrong_password" },
+                            { label: "Wrong Email", value: "wrong_email" },
+                            { label: "Suspended", value: "suspended" },
+                            { label: "Phone Verification", value: "phone_verification" },
+                            { label: "Captcha", value: "captcha" },
                             { label: "Unknown", value: "unknown" },
                         ]
                     }}

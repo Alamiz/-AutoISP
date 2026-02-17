@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from API.models import Account, Job, JobAccount, JobAutomation, Proxy
 
@@ -191,8 +191,15 @@ def get_job_summary(db: Session, job_id: int) -> Optional[Dict[str, Any]]:
         return None
 
     job_accounts = (
-        db.query(JobAccount).filter(JobAccount.job_id == job_id).all()
+        db.query(JobAccount)
+        .options(joinedload(JobAccount.account))
+        .filter(JobAccount.job_id == job_id)
+        .all()
     )
+
+    # Populate account_email for schema serialization
+    for ja in job_accounts:
+        ja.account_email = ja.account.email if ja.account else None
     automations = (
         db.query(JobAutomation).filter(JobAutomation.job_id == job_id).all()
     )

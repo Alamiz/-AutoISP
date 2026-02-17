@@ -4,7 +4,7 @@ import logging
 import json
 import traceback
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor, Future, TimeoutError as FuturesTimeoutError
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
@@ -232,11 +232,12 @@ class JobManager:
                 )
                 futures_map[future] = ja
 
-            # Wait for completion
+            # Wait for completion (with timeout to prevent indefinite hangs)
+            ACCOUNT_TIMEOUT = 600  # 10 minutes per account
             for future in futures_map:
                 ja = futures_map[future]
                 try:
-                    result = future.result()
+                    result = future.result(timeout=ACCOUNT_TIMEOUT)
                     # result is typically a dict {"status": "success", "message": "..."}
                     
                     status = "completed"
@@ -251,6 +252,11 @@ class JobManager:
                     ja.status = status.lower()
                     ja.error_message = msg
                     
+                except FuturesTimeoutError:
+                    logger.error(f"Account {ja.account.email} timed out after {ACCOUNT_TIMEOUT}s")
+                    ja.status = "failed"
+                    ja.error_message = f"Timed out after {ACCOUNT_TIMEOUT}s"
+                    future.cancel()
                 except Exception as e:
                     logger.error(f"Account {ja.account.email} failed: {e}")
                     ja.status = "failed"

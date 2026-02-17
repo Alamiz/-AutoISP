@@ -4,10 +4,19 @@ from API.models import Account
 
 logger = logging.getLogger("autoisp")
 
-def update_account_status(account_id: int, status: str):
+def update_account_status(account_id, status: str):
     """
     Update the status of an account in the database.
+    Accepts either an int DB ID or a string. If the ID can't be
+    converted to int (e.g. running from CLI with profile names),
+    the update is silently skipped.
     """
+    try:
+        account_id = int(account_id)
+    except (ValueError, TypeError):
+        # Not a valid DB id (e.g. CLI profile name) — skip
+        return
+
     db = SessionLocal()
     try:
         account = db.query(Account).filter(Account.id == account_id).first()

@@ -170,6 +170,7 @@ export interface JobAccount {
   id: number
   job_id: number
   account_id: number
+  account_email: string | null
   proxy_id: number | null
   status: string
   error_message: string | null

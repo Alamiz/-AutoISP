@@ -6,6 +6,7 @@ import { BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } f
 import { SquareTerminal, CheckCircle2, XCircle, Clock, ArrowLeft, RefreshCw } from "lucide-react"
 import { JobSummary, JobAccount } from "@/lib/types"
 import { apiGet } from "@/lib/api"
+import { JobAccountStatusBadge } from "@/components/job-account-status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,28 +34,20 @@ export default function JobDetailsView() {
 
     const columns: ColumnDef<JobAccount>[] = [
         {
-            accessorKey: "account_id",
-            header: "Account ID",
-            cell: ({ row }) => <span className="font-mono text-xs">#{row.original.account_id}</span>
+            accessorKey: "account_email",
+            header: "Account",
+            cell: ({ row }) => (
+                <span className="text-xs truncate max-w-[200px] block" title={row.original.account_email || ""}>
+                    {row.original.account_email || `#${row.original.account_id}`}
+                </span>
+            )
         },
         {
             accessorKey: "status",
             header: "Status",
             cell: ({ row }) => {
                 const status = row.original.status
-                return (
-                    <Badge
-                        variant={
-                            status === "completed" ? "success" :
-                                status === "failed" ? "destructive" :
-                                    status === "running" ? "warning" :
-                                        "secondary"
-                        }
-                        className="capitalize font-normal"
-                    >
-                        {status}
-                    </Badge>
-                )
+                return <JobAccountStatusBadge status={status} />
             }
         },
         {
@@ -118,9 +111,7 @@ export default function JobDetailsView() {
                                 </h1>
                                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                                     Started {format(new Date(summary.job.created_at), "PPP p")}
-                                    <Badge variant="outline" className="ml-2 font-normal uppercase text-[10px]">
-                                        {summary.job.status}
-                                    </Badge>
+                                    <JobAccountStatusBadge status={summary.job.status} className="ml-2" />
                                 </p>
                             </div>
                         </div>

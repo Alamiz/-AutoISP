@@ -22,8 +22,10 @@ from automations.common_handlers import (
     WrongPasswordPageHandler,
     WrongEmailPageHandler,
     LoginCaptchaHandler,
+    LoginNotPossiblePageHandler,
     SecuritySuspensionHandler,
-    PhoneVerificationHandler
+    PhoneVerificationHandler,
+    InboxHandler
 )
 from core.pages_signatures.gmx.mobile import PAGE_SIGNATURES
 # from crud.account import update_account_state
@@ -76,6 +78,8 @@ class GMXAuthentication(HumanAction):
         # registry.register("gmx_inbox_ads_preferences_popup_2", AdsPreferencesPopup2Handler(self, self.logger))
         registry.register("gmx_security_suspension", SecuritySuspensionHandler(self, self.logger))
         registry.register("gmx_phone_verification", PhoneVerificationHandler(self, self.logger))
+        registry.register("gmx_login_not_possible_page", LoginNotPossiblePageHandler(self, self.logger))
+        registry.register("gmx_folder_list_page", InboxHandler(self, self.logger))
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         
         return registry

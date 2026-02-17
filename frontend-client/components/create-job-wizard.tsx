@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import { AccountStatusBadge } from "@/components/account-status-badge"
 import { Play, Info, ArrowRight, ArrowLeft, Plus, CheckCircle2, User, Globe, Mail, Shield, Settings, Search, FlaskConical, Zap, Calendar as CalendarIcon, FileSpreadsheet, Upload } from "lucide-react"
 import { automations } from "@/data/automations"
 import { useAccounts } from "@/providers/account-provider"
@@ -275,7 +276,7 @@ export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
             header: "Status",
             cell: ({ row }) => {
                 const status = row.getValue("status") as string
-                return <Badge className={`${status === 'active' ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'bg-muted text-muted-foreground'}`}>{status.replace('_', ' ')}</Badge>
+                return <AccountStatusBadge status={status} />
             }
         },
     ], [])

@@ -113,6 +113,22 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "gmx_login_not_possible_page": {
+        "description": "GMX Login not possible page.",
+        "required_sublink": "auth.gmx.net",
+        "checks": [
+            {
+                "name": "Login not possible error message",
+                "css_selector": 'div[role="alert"] > div[data-testid="description"] strong',
+                "deep_search": True,
+                "contains_text": "nicht möglich",
+                "min_count": 1,
+                "description": "Login not possible error message exists",
+                "weight": 10.0,
+                "should_exist": True
+            },
+        ]
+    },
     "gmx_login_page": {
         "description": "GMX Login page.",
         "required_sublink": "www.gmx.net",
