@@ -9,7 +9,7 @@
     "start": "npx next start",
     "lint": "eslint",
     "build-electron": "tsc electron/main.ts --outDir electron/dist --esModuleInterop && tsc electron/preload.ts --outDir electron/dist --esModuleInterop",
-    "build-backend": "cd ../backend-engine && venv\\Scripts\\pyinstaller.exe --clean api.spec",
+    "build-backend": "cd ../light-engine && venv\\Scripts\\pyinstaller.exe --clean api.spec",
     "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"npm run build-electron && wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
     "dist": "npm run build-backend && npm run build && npm run build-electron && electron-builder"
   },
@@ -28,7 +28,7 @@
     ],
     "extraResources": [
       {
-        "from": "../backend-engine/dist/api.exe",
+        "from": "../light-engine/dist/api.exe",
         "to": "backend/api.exe"
       }
     ],

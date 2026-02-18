@@ -3,6 +3,7 @@ import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarM
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible"
 import clsx from "clsx"
 import { usePathname } from "next/navigation"
+import Link from "next/link"
 
 export function NavMain({
   items,
@@ -27,8 +28,12 @@ export function NavMain({
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) => {
-          const isCurrentPathActive = currentPathName === item.url;
-          const isAnySubItemActive = item.items?.some(subItem => currentPathName === subItem.url);
+          const normalize = (path: string) => path.endsWith('/') ? path : `${path}/`;
+          const activePath = normalize(currentPathName);
+          const itemPath = normalize(item.url);
+
+          const isCurrentPathActive = activePath === itemPath;
+          const isAnySubItemActive = item.items?.some(subItem => normalize(subItem.url) === activePath);
           const isGroupActive = item.isActive || isAnySubItemActive;
 
           if (!item.items?.length) {
@@ -37,18 +42,19 @@ export function NavMain({
                 <SidebarMenuButton
                   asChild
                   tooltip={item.title}
+                  isActive={isCurrentPathActive}
                   className={clsx(
                     {
-                      "text-foreground": isCurrentPathActive,
-                      "text-muted-foreground": !isCurrentPathActive,
+                      "text-foreground bg-accent/50 border-r-2 border-primary": isCurrentPathActive,
+                      "text-muted-foreground hover:text-foreground": !isCurrentPathActive,
                     },
-                    "font-semibold"
+                    "font-semibold transition-all duration-200"
                   )}
                 >
-                  <a href={item.url}>
+                  <Link href={item.url}>
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )
@@ -84,16 +90,18 @@ export function NavMain({
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton
                             asChild
+                            isActive={isSubItemActive}
                             className={clsx(
                               {
-                                "font-semibold text-foreground": isSubItemActive,
-                                "text-muted-foreground": !isSubItemActive,
-                              }
+                                "font-semibold text-foreground bg-accent/30": isSubItemActive,
+                                "text-muted-foreground hover:text-foreground": !isSubItemActive,
+                              },
+                              "transition-all duration-200"
                             )}
                           >
-                            <a href={subItem.url}>
+                            <Link href={subItem.url}>
                               <span>{subItem.title}</span>
-                            </a>
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       )

@@ -4,11 +4,20 @@ SQLAlchemy 2.0 + SQLite.
 """
 
 import os
+import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Store the DB file next to the light-engine root
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Determine the base directory for data (persistent in AppData for frozen apps)
+if getattr(sys, 'frozen', False):
+    # Running in a bundle (PyInstaller)
+    APPDATA = os.getenv('APPDATA')
+    BASE_DIR = os.path.join(APPDATA, 'AutoISP')
+    os.makedirs(BASE_DIR, exist_ok=True)
+else:
+    # Running in development
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'autoisp.db')}"
 
 engine = create_engine(

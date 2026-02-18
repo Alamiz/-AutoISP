@@ -18,15 +18,33 @@ modules_path = os.path.join(current_dir, "modules")
 if modules_path not in sys.path:
     sys.path.insert(0, modules_path)
 
+# Ensure UTF-8 output on Windows
+import io
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from modules.core.models import Account
 from modules.core.automation_metadata import AutomationMetadata
 from modules.core.flow_state import FlowResult
 
-# Static Paths
-DATA_DIR = os.path.join(current_dir, "data")
-OUTPUT_DIR = os.path.join(current_dir, "output")
+# Determine paths based on environment
+if getattr(sys, 'frozen', False):
+    # In production, use AppData for persistence
+    PERSISTENT_DIR = os.path.join(os.getenv('APPDATA'), 'AutoISP')
+    DATA_DIR = os.path.join(PERSISTENT_DIR, "data")
+    OUTPUT_DIR = os.path.join(PERSISTENT_DIR, "output")
+else:
+    # In development, use local directories
+    DATA_DIR = os.path.join(current_dir, "data")
+    OUTPUT_DIR = os.path.join(current_dir, "output")
+
 ACCOUNTS_FILE = os.path.join(DATA_DIR, "accounts.txt")
 PROXIES_FILE = os.path.join(DATA_DIR, "proxies.txt")
+
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Configure Logging
 logging.basicConfig(

@@ -131,7 +131,7 @@ function startPythonBackend() {
         console.log(`Starting Production Backend: ${executablePath}`);
     } else {
         // In development
-        backendPath = path.join(__dirname, '../../../backend-engine');
+        backendPath = path.join(__dirname, '../../../light-engine');
         pythonExecutable = path.join(backendPath, 'venv', 'Scripts', 'python.exe');
         const scriptPath = path.join(backendPath, 'api.py');
         apiScript = [scriptPath];
@@ -140,13 +140,25 @@ function startPythonBackend() {
 
     pythonProcess = spawn(pythonExecutable, apiScript, {
         cwd: backendPath,
-        stdio: 'inherit',
+        stdio: 'pipe', // Change to pipe to capture logs
         env: {
             ...process.env,
             PYTHONIOENCODING: 'utf-8',
             PYTHONLEGACYWINDOWSSTDIO: 'utf-8',
         }
     });
+
+    if (pythonProcess.stdout) {
+        pythonProcess.stdout.on('data', (data) => {
+            log.info(`[Backend STDOUT]: ${data.toString()}`);
+        });
+    }
+
+    if (pythonProcess.stderr) {
+        pythonProcess.stderr.on('data', (data) => {
+            log.error(`[Backend STDERR]: ${data.toString()}`);
+        });
+    }
 
     pythonProcess.on('error', (err) => {
         console.error('Failed to start Python backend:', err);
@@ -301,7 +313,7 @@ app.whenReady().then(
         createLoadingWindow();
 
         try {
-            await waitForBackend(8001);
+            await waitForBackend(8000);
             createWindow();
 
             // Initial update check (delayed to let the window settle)

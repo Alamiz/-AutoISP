@@ -90,7 +90,7 @@ export function BackupModal({
   //   console.log("account", account)
   //   if (!account) return
 
-  //   const ws = new WebSocket(`ws://localhost:8001/backups/${account.id}/progress`)
+  //   const ws = new WebSocket(`ws://localhost:8000/backups/${account.id}/progress`)
 
   //   ws.onopen = () => console.log("Backup WebSocket opened")
   //   ws.onmessage = (event) => {

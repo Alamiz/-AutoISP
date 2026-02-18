@@ -35,7 +35,7 @@ interface JobsContextType {
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined)
 
-const LOCAL_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+const LOCAL_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 const WS_URL = LOCAL_API_URL.replace("http", "ws") + "/jobs/ws"
 
 export function JobsProvider({ children }: { children: React.ReactNode }) {

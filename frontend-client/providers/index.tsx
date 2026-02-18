@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth";
 import { apiPost } from "@/lib/api";
 import { AccountProvider } from "./account-provider";
 import { ProxyProvider } from "./proxy-provider";
+import { RouteGuard } from "@/components/route-guard";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -35,7 +36,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <JobProvider>
               <AccountProvider>
                 <ProxyProvider>
-                  {children}
+                  <RouteGuard>
+                    {children}
+                  </RouteGuard>
                 </ProxyProvider>
               </AccountProvider>
             </JobProvider>

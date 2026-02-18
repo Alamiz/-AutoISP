@@ -1,4 +1,4 @@
-const LOCAL_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const LOCAL_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const MASTER_API_URL = process.env.NEXT_PUBLIC_MASTER_API_URL || "http://139.162.141.200:8000";
 
 interface ApiErrorDetails {
