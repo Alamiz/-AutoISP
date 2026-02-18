@@ -1,4 +1,5 @@
 import time
+import asyncio
 import logging
 from functools import wraps
 from typing import Callable, Type, Tuple, Optional
@@ -26,24 +27,44 @@ def retry_action(
 
     """
     Decorator for retrying actions with exponential backoff.
-    
-    Args:
-        max_attempts: Maximum number of retry attempts
-        delay: Initial delay between retries in seconds
-        backoff: Multiplier for delay (exponential backoff)
-        exceptions: Tuple of exceptions to catch and retry
-        on_retry: Optional callback function called before each retry
-                 Signature: on_retry(attempt, exception, delay)
-    
-    Example:
-
-        @retry_action(max_attempts=3, delay=1.0, backoff=2.0)
-        def click_element(page, selector):
-            page.click(selector)
+    Supports both sync and async functions.
     """
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        async def async_wrapper(*args, **kwargs):
+            current_delay = delay
+            last_exception = None
+            
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return await func(*args, **kwargs)
+                    
+                except exceptions as e:
+                    last_exception = e
+                    
+                    if attempt == max_attempts:
+                        logger.error(f"Action '{func.__name__}' failed after {max_attempts} attempts: {e}")
+                        raise
+                    
+                    logger.warning(f"Action '{func.__name__}' failed (attempt {attempt}/{max_attempts}): {e}")
+                    
+                    if on_retry:
+                        try:
+                            if asyncio.iscoroutinefunction(on_retry):
+                                await on_retry(attempt, e, current_delay)
+                            else:
+                                on_retry(attempt, e, current_delay)
+                        except Exception as callback_error:
+                            logger.error(f"Retry callback failed: {callback_error}")
+                    
+                    logger.info(f"Retrying in {current_delay}s...")
+                    await asyncio.sleep(current_delay)
+                    current_delay *= backoff
+            
+            raise last_exception
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
             current_delay = delay
             last_exception = None
             
@@ -55,16 +76,11 @@ def retry_action(
                     last_exception = e
                     
                     if attempt == max_attempts:
-                        logger.error(
-                            f"Action '{func.__name__}' failed after {max_attempts} attempts: {e}"
-                        )
+                        logger.error(f"Action '{func.__name__}' failed after {max_attempts} attempts: {e}")
                         raise
                     
-                    logger.warning(
-                        f"Action '{func.__name__}' failed (attempt {attempt}/{max_attempts}): {e}"
-                    )
+                    logger.warning(f"Action '{func.__name__}' failed (attempt {attempt}/{max_attempts}): {e}")
                     
-                    # Call retry callback if provided
                     if on_retry:
                         try:
                             on_retry(attempt, e, current_delay)
@@ -75,66 +91,44 @@ def retry_action(
                     time.sleep(current_delay)
                     current_delay *= backoff
             
-            # Should never reach here, but just in case
             raise last_exception
         
-        return wrapper
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
+
     return decorator
 
 
 def retry_on_timeout(max_attempts: int = 3, delay: float = 2.0):
-    """
-    Specialized decorator for timeout errors.
-    
-    Example:
-        @retry_on_timeout(max_attempts=3)
-        def wait_for_element(page, selector):
-            page.wait_for_selector(selector, timeout=5000)
-    """
-    from playwright.sync_api import TimeoutError as PlaywrightTimeout
+    from playwright.async_api import TimeoutError as AsyncTimeout
+    from playwright.sync_api import TimeoutError as SyncTimeout
     
     return retry_action(
         max_attempts=max_attempts,
         delay=delay,
         backoff=1.5,
-        exceptions=(PlaywrightTimeout,)
+        exceptions=(AsyncTimeout, SyncTimeout)
     )
 
 
 def retry_on_element_not_found(max_attempts: int = 3, delay: float = 1.0):
-    """
-    Specialized decorator for element not found errors.
-    
-    Example:
-        @retry_on_element_not_found(max_attempts=5)
-        def find_and_click(page, selector):
-            element = page.locator(selector)
-            element.click()
-    """
-    from playwright.sync_api import Error as PlaywrightError
+    from playwright.async_api import Error as AsyncError
+    from playwright.sync_api import Error as SyncError
     
     return retry_action(
         max_attempts=max_attempts,
         delay=delay,
         backoff=1.5,
-        exceptions=(PlaywrightError,)
+        exceptions=(AsyncError, SyncError)
     )
 
 
 def retry_with_page_refresh(max_attempts: int = 2):
-    """
-    Decorator that refreshes the page before retry.
-    Useful for stale element issues.
-    
-    Example:
-        @retry_with_page_refresh(max_attempts=2)
-        def interact_with_element(page, selector):
-            page.click(selector)
-    """
     def refresh_callback(attempt, exception, delay):
         logger.info("Refreshing page before retry...")
-        # Note: page object needs to be accessible in scope
-        # This is a simplified version
+        # Note: Logic to refresh page would depend on context (args[0] if it's page)
     
     return retry_action(
         max_attempts=max_attempts,

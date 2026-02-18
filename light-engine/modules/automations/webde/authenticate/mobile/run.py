@@ -1,5 +1,5 @@
 import logging
-from playwright.sync_api import Page, Error as PlaywrightError
+from playwright.async_api import Page, Error as PlaywrightError
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.retry_decorators import RequiredActionFailed
 from core.utils.exceptions import JobCancelledException
@@ -80,10 +80,10 @@ class WebDEAuthentication(HumanAction):
         
         return registry
 
-    def _is_goal_reached(self, page: Page) -> bool:
+    async def _is_goal_reached(self, page: Page) -> bool:
         """Check if we've reached folder list."""
         try:
-            page_id = identify_page(page, page.url, self.signatures)
+            page_id = await identify_page(page, page.url, self.signatures)
             is_goal = page_id in self.GOAL_STATES
             if is_goal:
                 self.logger.debug(f"Goal state reached: {page_id}", extra={"account_id": self.account.id})
@@ -92,7 +92,7 @@ class WebDEAuthentication(HumanAction):
             self.logger.warning(f"Error checking goal: {e}", extra={"account_id": self.account.id})
             return False
 
-    def execute(self) -> dict:
+    async def execute(self) -> dict:
         """Runs authentication flow for web.de Mobile"""
         self.logger.info("Starting mobile authentication", extra={"account_id": self.account.id})
         
@@ -101,13 +101,13 @@ class WebDEAuthentication(HumanAction):
             self.logger.info(f"Using proxy: {proxy_info}", extra={"account_id": self.account.id})
         
         try:
-            self.browser.start()
+            await self.browser.start()
             if self.job_id:
                 pass
                 # from modules.core.job_manager import job_manager
                 # job_manager.register_browser(self.job_id, self.browser)
-            page = self.browser.new_page()
-            self.authenticate(page)
+            page = await self.browser.new_page()
+            await self.authenticate(page)
             
             self.logger.info("Authentication successful", extra={"account_id": self.account.id})
             return {"status": "success", "message": "Authentication completed successfully"}
@@ -132,12 +132,12 @@ class WebDEAuthentication(HumanAction):
                 pass
                 # from modules.core.job_manager import job_manager
                 # job_manager.unregister_browser(self.job_id)
-            self.browser.close()
+            await self.browser.close()
 
-    def authenticate(self, page: Page):
+    async def authenticate(self, page: Page):
         """State-based authentication using StatefulFlow."""
-        navigate_to(page, "https://alligator.navigator.web.de/go/?targetURI=https://link.web.de/mail/showStartView&ref=link")
-        self.human_behavior.read_delay()
+        await navigate_to(page, "https://alligator.navigator.web.de/go/?targetURI=https://link.web.de/mail/showStartView&ref=link")
+        await self.human_behavior.read_delay()
         
         state_registry = self._setup_state_handlers()
         
@@ -150,7 +150,7 @@ class WebDEAuthentication(HumanAction):
             job_id=self.job_id
         )
         
-        result = flow.run(page)
+        result = await flow.run(page)
         
         if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
             raise RequiredActionFailed(f"Failed to reach folder list. Status: {result.status.name}, Message: {result.message}", status=result.status)
@@ -161,7 +161,7 @@ class WebDEAuthentication(HumanAction):
         self.logger.info("Authentication completed", extra={"account_id": self.account.id})
 
 
-def main(account, device_type="mobile"):
+async def run(account, user_agent_type="mobile", job_id=None):
     """Entry point for web.de mobile authentication"""
-    auth = WebDEAuthentication(account, device_type)
-    return auth.execute()
+    auth = WebDEAuthentication(account, user_agent_type, job_id)
+    return await auth.execute()

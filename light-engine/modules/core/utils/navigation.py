@@ -1,13 +1,13 @@
 # core/flow_engine/navigation.py
 """Reliable navigation utilities with retry logic."""
 
-import time
+import asyncio
 import logging
-from playwright.sync_api import Page
+from playwright.async_api import Page
 from core.utils.browser_utils import navigate_to
 from core.models import Account
 
-def navigate_with_retry(
+async def navigate_with_retry(
     page: Page,
     url: str,
     account: Account,
@@ -40,7 +40,7 @@ def navigate_with_retry(
             if logger:
                 logger.info(f"Navigating to {url} (attempt {attempt}/{max_retries})", extra={"account_id": account.id})
             
-            navigate_to(page, url)
+            await navigate_to(page, url)
             return True
             
         except Exception as e:
@@ -67,7 +67,7 @@ def navigate_with_retry(
                 if is_retryable:
                     if logger:
                         logger.info(f"Retryable error detected. Waiting {retry_delay}s before retry...", extra={"account_id": account.id})
-                    time.sleep(retry_delay)
+                    await asyncio.sleep(retry_delay)
                 else:
                     # Non-retryable error, fail immediately
                     if logger:

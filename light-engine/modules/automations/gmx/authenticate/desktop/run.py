@@ -1,5 +1,5 @@
 import logging
-from playwright.sync_api import Page, Error as PlaywrightError
+from playwright.async_api import Page, Error as PlaywrightError
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.retry_decorators import RequiredActionFailed
 from core.utils.exceptions import JobCancelledException
@@ -91,10 +91,11 @@ class GMXAuthentication(HumanAction):
         
         return registry
 
-    def _is_goal_reached(self, page: Page) -> bool:
+    async def _is_goal_reached(self, page: Page) -> bool:
         """Check if we've reached a goal state (inbox)."""
         try:
-            page_id = identify_page(page, page.url, self.signatures)
+            # identify_page is async now
+            page_id = await identify_page(page, page.url, self.signatures)
             is_goal = page_id in self.GOAL_STATES
             if is_goal:
                 self.logger.debug(f"Goal state reached: {page_id}", extra={"account_id": self.account.id})
@@ -103,7 +104,7 @@ class GMXAuthentication(HumanAction):
             self.logger.warning(f"Error checking goal: {e}", extra={"account_id": self.account.id})
             return False
 
-    def execute(self) -> dict:
+    async def execute(self) -> dict:
         """
         Runs authentication flow for GMX
         """
@@ -120,7 +121,7 @@ class GMXAuthentication(HumanAction):
 
         try:
             # Start browser with proxy configuration
-            self.browser.start()
+            await self.browser.start()
             
             # Register browser with job_manager for force-close on stop
             if self.job_id:
@@ -128,10 +129,10 @@ class GMXAuthentication(HumanAction):
                 # job_manager.register_browser(self.job_id, self.browser)
             
             # Create new page
-            page = self.browser.new_page()
+            page = await self.browser.new_page()
 
             # Authenticate using StatefulFlow
-            self.authenticate(page)
+            await self.authenticate(page)
             
             # Update account state to active on success
             # update_account_state(self.account.id, "active")
@@ -160,16 +161,16 @@ class GMXAuthentication(HumanAction):
                 pass
                 # job_manager.unregister_browser(self.job_id)
             # Close browser
-            self.browser.close()
+            await self.browser.close()
 
-    def authenticate(self, page: Page):
+    async def authenticate(self, page: Page):
         """
         State-based authentication using StatefulFlow.
         Automatically handles different page states until reaching goal state.
         """
         # Navigate to GMX with retry on network errors
-        navigate_with_retry(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link", max_retries=3, account=self.account, logger=self.logger)
-        self.human_behavior.read_delay()
+        await navigate_with_retry(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link", max_retries=3, account=self.account, logger=self.logger)
+        await self.human_behavior.read_delay()
         
         # Setup state handlers
         state_registry = self._setup_state_handlers()
@@ -184,7 +185,7 @@ class GMXAuthentication(HumanAction):
             job_id=self.job_id
         )
         
-        result = flow.run(page)
+        result = await flow.run(page)
         
         if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
             raise RequiredActionFailed(

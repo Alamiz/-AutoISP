@@ -43,23 +43,31 @@ manager = ConnectionManager()
 # ---------------------------------------------------------------------------
 # Bridge logic: JobManager (Thread) -> WebSocket (Async Loop)
 # ---------------------------------------------------------------------------
-_main_loop = None
+# ---------------------------------------------------------------------------
+# Bridge logic: JobManager -> WebSocket
+# ---------------------------------------------------------------------------
 
 def set_main_event_loop(loop):
-    """Called from main app startup to capture the async loop."""
-    global _main_loop
-    _main_loop = loop
+    """
+    Called from main app startup.
+    With native async callback, we strictly don't need the loop object,
+    but we keep signature for compatibility or just register callback.
+    """
     # Hook into JobManager
     job_manager.set_event_callback(on_job_manager_event)
-    logger.info("WebSocket bridge initialized with main event loop")
+    logger.info("WebSocket bridge initialized")
 
-def on_job_manager_event(event_type: str, data: dict):
-    if _main_loop and manager.active_connections:
+async def on_job_manager_event(event_type: str, data: dict):
+    """
+    Async callback invoked by JobManager.
+    Since JobManager awaits this, we can directly await manager.broadcast.
+    """
+    if manager.active_connections:
         message = {"type": event_type, "data": data}
         try:
-            asyncio.run_coroutine_threadsafe(manager.broadcast(message), _main_loop)
+            await manager.broadcast(message)
         except Exception as e:
-            logger.error(f"Failed to schedule WS broadcast: {e}")
+            logger.error(f"Failed to broadcast WS message: {e}")
 
 # ---------------------------------------------------------------------------
 # Endpoint

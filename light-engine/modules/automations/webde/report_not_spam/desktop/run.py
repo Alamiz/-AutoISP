@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from playwright.sync_api import Page
+from playwright.async_api import Page
 from automations.webde.authenticate.desktop.run import WebDEAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.retry_decorators import RequiredActionFailed
@@ -72,18 +72,18 @@ class ReportNotSpam(HumanAction):
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         return registry
 
-    def execute(self):
+    async def execute(self):
         self.logger.info("Starting Report Not Spam", extra={"account_id": self.account.id})
         page = None
         status = "failed"
         
         try:
-            self.browser.start()
+            await self.browser.start()
             if self.job_id:
                 pass
                 # from modules.core.job_manager import job_manager
                 # job_manager.register_browser(self.job_id, self.browser)
-            page = self.browser.new_page()
+            page = await self.browser.new_page()
             
             # Authenticate first
             webde_auth = WebDEAuthentication(
@@ -91,10 +91,10 @@ class ReportNotSpam(HumanAction):
                 user_agent_type=self.user_agent_type,
                 job_id=self.job_id
             )
-            webde_auth.authenticate(page)
+            await webde_auth.authenticate(page)
 
             # Report not spam using SequentialFlow
-            self.report_not_spam(page)
+            await self.report_not_spam(page)
             
             self.logger.info("Report not spam successful", extra={"account_id": self.account.id})
             status = "success"
@@ -112,7 +112,7 @@ class ReportNotSpam(HumanAction):
             if page and self.log_dir:
                 try:
                     screenshot_path = os.path.join(self.log_dir, f"screenshot_{status}.png")
-                    page.screenshot(path=screenshot_path)
+                    await page.screenshot(path=screenshot_path)
                     self.logger.info(f"Screenshot saved to {screenshot_path}")
                 except Exception as e:
                     self.logger.error(f"Failed to take screenshot: {e}")
@@ -121,9 +121,9 @@ class ReportNotSpam(HumanAction):
                 pass
                 # from modules.core.job_manager import job_manager
                 # job_manager.unregister_browser(self.job_id)
-            self.browser.close()
+            await self.browser.close()
 
-    def report_not_spam(self, page: Page):
+    async def report_not_spam(self, page: Page):
         """Report not spam using SequentialFlow."""
         state_registry = self._setup_state_handlers()
         
@@ -135,7 +135,7 @@ class ReportNotSpam(HumanAction):
         ]
         
         flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
-        result = flow.run(page)
+        result = await flow.run(page)
         
         if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
             raise RequiredActionFailed(f"Failed to complete report. Status: {result.status.name}, Message: {result.message}", status=result.status)

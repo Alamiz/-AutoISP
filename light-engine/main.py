@@ -217,6 +217,12 @@ def run_automation(account_data: Dict[str, str], proxy: str, provider: str, auto
             raise AttributeError(f"{loader_module_path} missing 'run(account, job_id, **kwargs)' function")
 
         result = loader.run(account=account, **kwargs)
+        
+        # internal import to avoid top-level async issues if any
+        import asyncio
+        if asyncio.iscoroutine(result):
+            result = asyncio.run(result)
+            
         logger.info(f"Finished {automation_name} for {account.email}. Result: {result}")
         return result
 

@@ -1,10 +1,8 @@
-import threading
-import time
+import asyncio
 import logging
 import json
 import traceback
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor, Future, TimeoutError as FuturesTimeoutError
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
@@ -18,258 +16,295 @@ logger = logging.getLogger("autoisp")
 
 class JobManager:
     _instance = None
-    _lock = threading.Lock()
 
     def __new__(cls):
         if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super(JobManager, cls).__new__(cls)
-                    cls._instance._initialized = False
+            cls._instance = super(JobManager, cls).__new__(cls)
+            cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
         if self._initialized:
             return
         
-        self.job_queue = deque()
+        self.job_queue = asyncio.Queue()
         self.current_job_id: Optional[int] = None
-        self.is_running = False
-        self.worker_thread = None
-        self._stop_event = threading.Event()
+        self.worker_task: Optional[asyncio.Task] = None
         
-        # Callback for WebSocket updates: func(event_type: str, data: dict)
+        # Callback for updates: async func(event_type: str, data: dict)
         self.on_event = None
         
         self._initialized = True
 
 
     def start_worker(self):
-        if self.worker_thread and self.worker_thread.is_alive():
+        """Start the background worker task."""
+        if self.worker_task and not self.worker_task.done():
             return
         
-        self._stop_event.clear()
-        self.worker_thread = threading.Thread(target=self._worker_loop, daemon=True, name="JobManagerWorker")
-        self.worker_thread.start()
-        logger.info("JobManager worker thread started")
+        loop = asyncio.get_event_loop()
+        self.worker_task = loop.create_task(self._worker_loop())
+        logger.info("JobManager async worker started")
 
     def stop_worker(self):
-        self._stop_event.set()
-        if self.worker_thread:
-            self.worker_thread.join(timeout=5)
+        if self.worker_task:
+            self.worker_task.cancel()
+            self.worker_task = None
 
     def set_event_callback(self, callback):
         self.on_event = callback
 
-    def _emit(self, event_type: str, data: Dict[str, Any]):
+    async def _emit(self, event_type: str, data: Dict[str, Any]):
         if self.on_event:
             try:
-                self.on_event(event_type, data)
+                # If callback is async, await it; else call it
+                if asyncio.iscoroutinefunction(self.on_event):
+                    await self.on_event(event_type, data)
+                else:
+                    self.on_event(event_type, data)
             except Exception as e:
                 logger.error(f"Error in event callback: {e}")
 
-    def submit_job(self, job_id: int):
-        """Submit a job to the queue."""
+    async def submit_job(self, job_id: int):
+        """Submit a job to the async queue."""
         logger.info(f"Submitting job {job_id} to queue")
-        self.job_queue.append(job_id)
-        self._emit("job_queued", {"job_id": job_id})
+        await self.job_queue.put(job_id)
+        await self._emit("job_queued", {"job_id": job_id})
 
-    def _worker_loop(self):
+    async def _worker_loop(self):
         """Main loop processing jobs from the queue."""
-        while not self._stop_event.is_set():
-            if not self.job_queue:
-                time.sleep(1)
-                continue
-
+        logger.info("Worker loop running...")
+        while True:
             try:
-                job_id = self.job_queue.popleft()
-                self._process_job(job_id)
+                job_id = await self.job_queue.get()
+                logger.info(f"Picked up job {job_id}")
+                await self._process_job(job_id)
+                self.job_queue.task_done()
+            except asyncio.CancelledError:
+                break
             except Exception as e:
                 logger.error(f"Error in worker loop: {e}")
                 traceback.print_exc()
 
-    def _process_job(self, job_id: int):
+    async def _process_job(self, job_id: int):
         """Execute a single job."""
         self.current_job_id = job_id
-        db: Session = SessionLocal()
         
-        try:
-            job = db.query(Job).filter(Job.id == job_id).first()
-            if not job:
-                logger.error(f"Job {job_id} not found")
-                return
+        # Sync DB operation wrapped in thread
+        job = await asyncio.to_thread(self._get_job, job_id)
+        if not job:
+            logger.error(f"Job {job_id} not found")
+            return
 
+        try:
             # Mark job as running
-            job.status = "running"
-            job.started_at = datetime.now(timezone.utc)
-            db.commit()
+            await asyncio.to_thread(self._update_job_status, job_id, "running", start=True)
             
-            self._emit("job_started", {
-                "job_id": job.id,
+            await self._emit("job_started", {
+                "job_id": job_id,
                 "status": "running",
-                "started_at": job.started_at.isoformat()
+                "started_at": datetime.now(timezone.utc).isoformat()
             })
 
-            # Fetch job details
-            job_automations = db.query(JobAutomation).filter(
-                JobAutomation.job_id == job_id,
-                JobAutomation.enabled == True
-            ).order_by(JobAutomation.run_order).all()
-
-            job_accounts = db.query(JobAccount).filter(JobAccount.job_id == job_id).all()
+            # Fetch job details (sync)
+            automations, accounts = await asyncio.to_thread(self._get_job_details, job_id)
             
-            if not job_automations:
+            if not automations:
                 logger.warning(f"Job {job_id} has no enabled automations")
-                self._complete_job(db, job, "completed")
+                await asyncio.to_thread(self._update_job_status, job_id, "completed", finish=True)
+                await self._emit("job_completed", {"job_id": job_id, "status": "completed"})
                 return
 
             # Execute automations sequentially
-            for automation in job_automations:
+            for automation in automations:
                 logger.info(f"Starting automation {automation.automation_name} for job {job_id}")
                 
-                # Execute accounts concurrently for this automation
-                self._run_automation_for_accounts(
-                    db, job, automation, job_accounts
+                 # Execute accounts concurrently for this automation
+                await self._run_automation_for_accounts(
+                     job_id, automation, accounts, job.max_concurrent
                 )
 
-                if self._stop_event.is_set():
-                    break
-            
-            # Check if all accounts failed or if job was successful
-            # For now, if we finished all automations, we mark as completed
-            # We could improve this to check if any critical failures occurred
-            self._complete_job(db, job, "completed" if not self._stop_event.is_set() else "cancelled")
+            await asyncio.to_thread(self._update_job_status, job_id, "completed", finish=True)
+            await self._emit("job_completed", {
+                "job_id": job_id,
+                "status": "completed",
+                "finished_at": datetime.now(timezone.utc).isoformat()
+            })
 
         except Exception as e:
             logger.error(f"Failed to process job {job_id}: {e}")
             traceback.print_exc()
-            if job:
-                self._complete_job(db, job, "failed")
+            await asyncio.to_thread(self._update_job_status, job_id, "failed", finish=True)
+            await self._emit("job_completed", {"job_id": job_id, "status": "failed"})
+            
         finally:
-            db.close()
             self.current_job_id = None
 
-    def _complete_job(self, db: Session, job: Job, status: str):
-        job.status = status
-        job.finished_at = datetime.now(timezone.utc)
-        db.commit()
-        
-        self._emit("job_completed", {
-            "job_id": job.id,
-            "status": status,
-            "finished_at": job.finished_at.isoformat()
-        })
-        logger.info(f"Job {job.id} finished with status: {status}")
-
-    def _run_automation_for_accounts(
+    async def _run_automation_for_accounts(
         self, 
-        db: Session, 
-        job: Job, 
-        automation: JobAutomation, 
-        job_accounts: List[JobAccount]
+        job_id: int, 
+        automation: Any, # SQLAlchemy object
+        job_accounts: List[Any],
+        concurrency: int
     ):
         """Run a specific automation for all accounts in the job concurrently."""
         
-        # Prepare arguments
         settings = json.loads(automation.settings_json) if automation.settings_json else {}
         automation_name = automation.automation_name
         
-        # We need to map JobAccount to CoreAccount (compatible with runner)
-        # and keep track of JobAccount DB objects to update status
+        semaphore = asyncio.Semaphore(concurrency)
         
-        futures_map = {}
-        
-        with ThreadPoolExecutor(max_workers=job.max_concurrent) as executor:
-            for ja in job_accounts:
-                # Refresh JobAccount status to running for this automation?
-                # Actually, JobAccount status reflects the *overall* status or the *current* status.
-                # Let's update it to "running"
-                ja.status = "running"
-                ja.error_message = None # Clear previous errors? Or keep log?
-                db.commit()
-                
-                self._emit("account_update", {
-                    "job_id": job.id,
-                    "account_id": ja.account_id,
-                    "job_account_id": ja.id,
-                    "status": "running"
-                })
+        tasks = []
+        for ja in job_accounts:
+            # Update status to running (sync DB)
+            await asyncio.to_thread(self._update_account_status, ja.id, "running")
+            await self._emit("account_update", {
+                "job_id": job_id,
+                "account_id": ja.account_id,
+                "job_account_id": ja.id,
+                "status": "running"
+            })
 
-                # Construct CoreAccount
-                # We need to fetch the full account details including provider, password etc.
-                # ja.account is lazy loaded, accessed within session is fine.
-                db_account = ja.account
-                proxy_settings = None
-                if ja.proxy:
-                    proxy_settings = {
-                        "protocol": "http",
-                        "host": ja.proxy.ip,
-                        "port": ja.proxy.port,
-                        "username": ja.proxy.username,
-                        "password": ja.proxy.password
-                    }
-                
-                core_account = CoreAccount(
-                    id=str(db_account.id),
-                    email=db_account.email,
-                    password=db_account.password,
-                    provider=db_account.provider,
-                    proxy_settings=proxy_settings,
-                    credentials={
-                        "password": db_account.password,
-                        "recovery_email": db_account.recovery_email,
-                        "phone_number": db_account.phone_number
-                    }
+            # Construct CoreAccount (we assume ja.account is eager loaded or valid)
+            # Fetch full account data in thread to avoid lazy load block
+            core_account = await asyncio.to_thread(self._build_core_account, ja)
+
+            # Create task
+            task = asyncio.create_task(
+                self._run_single_account(
+                    semaphore, core_account, automation_name, job_id, ja.id, settings
                 )
+            )
+            tasks.append(task)
+            
+        await asyncio.gather(*tasks)
 
-                # Submit to executor
-                future = executor.submit(
-                    run_automation,
+    async def _run_single_account(self, semaphore, core_account, automation_name, job_id, job_account_id, settings):
+        async with semaphore:
+            try:
+                # This is the key async call to the runner
+                result = await run_automation(
                     account=core_account,
                     automation_name=automation_name,
-                    job_id=str(job.id),
+                    job_id=str(job_id),
                     **settings
                 )
-                futures_map[future] = ja
-
-            # Wait for completion (with timeout to prevent indefinite hangs)
-            ACCOUNT_TIMEOUT = 600  # 10 minutes per account
-            for future in futures_map:
-                ja = futures_map[future]
-                try:
-                    result = future.result(timeout=ACCOUNT_TIMEOUT)
-                    # result is typically a dict {"status": "success", "message": "..."}
-                    
-                    status = "completed"
-                    msg = ""
-                    
-                    if isinstance(result, dict):
-                        status = result.get("status", "completed")
-                        msg = result.get("message", "")
-                    
-                    # Map runner statuses to simple UI statuses if needed
-                    # For now keep as is, but lowercase/normalize
-                    ja.status = status.lower()
-                    ja.error_message = msg
-                    
-                except FuturesTimeoutError:
-                    logger.error(f"Account {ja.account.email} timed out after {ACCOUNT_TIMEOUT}s")
-                    ja.status = "failed"
-                    ja.error_message = f"Timed out after {ACCOUNT_TIMEOUT}s"
-                    future.cancel()
-                except Exception as e:
-                    logger.error(f"Account {ja.account.email} failed: {e}")
-                    ja.status = "failed"
-                    ja.error_message = str(e)
                 
+                status = result.get("status", "completed") if isinstance(result, dict) else "completed"
+                msg = result.get("message", "") if isinstance(result, dict) else str(result)
+                
+                # Normalize status
+                status = status.lower()
+                
+            except asyncio.CancelledError:
+                 status = "cancelled"
+                 msg = "Job cancelled"
+            except Exception as e:
+                logger.error(f"Account {core_account.email} failed: {e}")
+                status = "failed"
+                msg = str(e)
+            
+            # Update DB
+            await asyncio.to_thread(self._update_account_status, job_account_id, status, msg)
+            await self._emit("account_update", {
+                "job_id": job_id,
+                "account_id": core_account.id, # Note: check if ID mismatch (db vs core)
+                 "job_account_id": job_account_id,
+                "status": status,
+                "message": msg
+            })
+
+    # ─────────────────────────────────────────────────────────────
+    # Sync DB Helpers (run in threads)
+    # ─────────────────────────────────────────────────────────────
+
+    def _get_job(self, job_id):
+        db = SessionLocal()
+        try:
+            return db.query(Job).filter(Job.id == job_id).first()
+        finally:
+            db.close()
+
+    def _update_job_status(self, job_id, status, start=False, finish=False):
+        db = SessionLocal()
+        try:
+            job = db.query(Job).filter(Job.id == job_id).first()
+            if job:
+                job.status = status
+                if start:
+                    job.started_at = datetime.now(timezone.utc)
+                if finish:
+                    job.finished_at = datetime.now(timezone.utc)
                 db.commit()
-                self._emit("account_update", {
-                    "job_id": job.id,
-                    "account_id": ja.account_id,
-                    "job_account_id": ja.id,
-                    "status": ja.status,
-                    "message": ja.error_message
-                })
+        finally:
+            db.close()
+
+    def _get_job_details(self, job_id):
+        db = SessionLocal()
+        try:
+            automations = db.query(JobAutomation).filter(
+                JobAutomation.job_id == job_id,
+                JobAutomation.enabled == True
+            ).order_by(JobAutomation.run_order).all()
+            
+            # Eager load account and proxy to avoid detatched instance errors
+            from sqlalchemy.orm import joinedload
+            accounts = db.query(JobAccount).options(
+                joinedload(JobAccount.account),
+                joinedload(JobAccount.proxy)
+            ).filter(JobAccount.job_id == job_id).all()
+            
+            # Detach/Expunge to use outside session? 
+            # Better to just extraction data here or keep session scope short.
+            # We'll rely on the objects staying valid if simple, or we construct dicts.
+            # But we pass objects to _run_automation_for_accounts... 
+            # Strategy: The objects are detached when session closes. accessing lazy attrs triggers error.
+            # So we enable joinedload above.
+            db.expunge_all() 
+            return automations, accounts
+        finally:
+            db.close()
+
+    def _update_account_status(self, job_account_id, status, error_message=None):
+        db = SessionLocal()
+        try:
+             ja = db.query(JobAccount).filter(JobAccount.id == job_account_id).first()
+             if ja:
+                 ja.status = status
+                 if error_message:
+                     ja.error_message = error_message
+                 db.commit()
+        finally:
+            db.close()
+
+    def _build_core_account(self, ja):
+        """Convert DB JobAccount (attached/detached) to CoreAccount."""
+        # Note: 'ja' comes from _get_job_details where we expunged.
+        # Ensure ja.account is loaded.
+        
+        db_account = ja.account
+        proxy_settings = None
+        if ja.proxy:
+            proxy_settings = {
+                "protocol": "http",
+                "host": ja.proxy.ip,
+                "port": ja.proxy.port,
+                "username": ja.proxy.username,
+                "password": ja.proxy.password
+            }
+        
+        return CoreAccount(
+            id=str(db_account.id),
+            email=db_account.email,
+            password=db_account.password,
+            provider=db_account.provider,
+            proxy_settings=proxy_settings,
+            credentials={
+                "password": db_account.password,
+                "recovery_email": db_account.recovery_email,
+                "phone_number": db_account.phone_number
+            }
+        )
 
 # Global instance
 job_manager = JobManager()

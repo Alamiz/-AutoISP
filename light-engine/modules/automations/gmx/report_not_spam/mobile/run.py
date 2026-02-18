@@ -1,6 +1,7 @@
 import logging
 import os
-from playwright.sync_api import Page
+import asyncio
+from playwright.async_api import Page
 from automations.gmx.authenticate.mobile.run import GMXAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.retry_decorators import RequiredActionFailed
@@ -70,7 +71,7 @@ class ReportNotSpam(HumanAction):
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         return registry
 
-    def _execute_flow(self, page: Page) -> dict:
+    async def _execute_flow(self, page: Page) -> dict:
         """Execute the automation flow using SequentialFlow."""
         try:
             state_registry = self._setup_state_handlers()
@@ -82,7 +83,7 @@ class ReportNotSpam(HumanAction):
             ]
 
             flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
-            result = flow.run(page)
+            result = await flow.run(page)
             
             if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
                 return {"status": result.status.name, "message": f"Flow failed with status {result.status.name}: {result.message}", "retry_recommended": True}
@@ -97,7 +98,7 @@ class ReportNotSpam(HumanAction):
             self.logger.error(f"Exception in flow execution: {e}", extra={"account_id": self.account.id})
             return {"status": "failed", "message": str(e), "retry_recommended": True}
 
-    def execute(self):
+    async def execute(self):
         self.logger.info(f"Starting Report Not Spam (Mobile)", extra={"account_id": self.account.id})
         
         flow_attempt = 0
@@ -106,12 +107,12 @@ class ReportNotSpam(HumanAction):
         status = "failed"
         
         try:
-            self.browser.start()
+            await self.browser.start()
             if self.job_id:
                 pass
                 # from modules.core.job_manager import job_manager
                 # job_manager.register_browser(self.job_id, self.browser)
-            page = self.browser.new_page()
+            page = await self.browser.new_page()
 
             # Authenticate first
             gmx_auth = GMXAuthentication(
@@ -121,7 +122,7 @@ class ReportNotSpam(HumanAction):
             )
 
             try:
-                gmx_auth.authenticate(page)
+                await gmx_auth.authenticate(page)
             except RequiredActionFailed as e:
                 self.logger.error(f"Authentication failed with status {e.status.name if e.status else 'failed'}: {e}", extra={"account_id": self.account.id})
                 return {"status": e.status.name if e.status else "failed", "message": str(e)}
@@ -138,7 +139,7 @@ class ReportNotSpam(HumanAction):
                 self.logger.info(f"FLOW ATTEMPT {flow_attempt}/{self.max_flow_retries}", extra={"account_id": self.account.id})
                 self.reported_email_ids = []
                 
-                result = self._execute_flow(page)
+                result = await self._execute_flow(page)
                 last_result = result
                 
                 if result["status"] == "success":
@@ -152,11 +153,11 @@ class ReportNotSpam(HumanAction):
                 if flow_attempt < self.max_flow_retries:
                     wait_time = 5000 * flow_attempt
                     self.logger.info(f"Waiting {wait_time/1000}s before retry...", extra={"account_id": self.account.id})
-                    page.wait_for_timeout(wait_time)
+                    await page.wait_for_timeout(wait_time)
                     
                     try:
-                        navigate_to(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link")
-                        page.wait_for_load_state("domcontentloaded")
+                        await navigate_to(page, "https://alligator.navigator.gmx.net/go/?targetURI=https://link.gmx.net/mail/showStartView&ref=link")
+                        await page.wait_for_load_state("domcontentloaded")
                     except Exception as e:
                         self.logger.warning(f"Failed to reset to main page: {e}", extra={"account_id": self.account.id})
             
@@ -178,7 +179,7 @@ class ReportNotSpam(HumanAction):
             if page and self.log_dir:
                 try:
                     screenshot_path = os.path.join(self.log_dir, f"screenshot_{status}.png")
-                    page.screenshot(path=screenshot_path)
+                    await page.screenshot(path=screenshot_path)
                     self.logger.info(f"Screenshot saved to {screenshot_path}")
                 except Exception as e:
                     self.logger.error(f"Failed to take screenshot: {e}")
@@ -187,4 +188,4 @@ class ReportNotSpam(HumanAction):
                 pass
                 # from modules.core.job_manager import job_manager
                 # job_manager.unregister_browser(self.job_id)
-            self.browser.close()
+            await self.browser.close()

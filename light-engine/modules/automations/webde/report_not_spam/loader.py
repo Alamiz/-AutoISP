@@ -1,25 +1,17 @@
 from .desktop.run import ReportNotSpam as DesktopReportNotSpam
-from .mobile.run import ReportNotSpam as MobileReportNotSpam # Not implemented yet
+from .mobile.run import ReportNotSpam as MobileReportNotSpam
 
-def run(account, job_id=None, **kwargs):
+async def run(account, job_id=None, **kwargs):
     """
-    Selects the right platform (desktop/mobile) and runs the automation.
+    Loader for Report Not Spam automation.
+    Selects mobile or desktop implementation based on account type.
     """
+    
+    # Simple factory logic
+    # Assuming account object has a 'type' or similar attribute, or passed in kwargs
+    # For now defaulting to desktop if not mobile
+    
     automation_class = MobileReportNotSpam if account.type == "mobile" else DesktopReportNotSpam
     
-    search_text = kwargs.get("keyword")
-    start_date = kwargs.get("start_date")
-    end_date = kwargs.get("end_date")
-    log_dir = kwargs.get("log_dir")
-    
-    automation = automation_class(
-        account=account,
-        user_agent_type=account.type,
-        search_text=search_text,
-        start_date=start_date,
-        end_date=end_date,
-        job_id=job_id,
-        log_dir=log_dir
-    )
-
-    return automation.execute()
+    automation = automation_class(account, job_id=job_id, **kwargs)
+    return await automation.execute()

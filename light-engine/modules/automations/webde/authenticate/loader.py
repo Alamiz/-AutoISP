@@ -1,7 +1,7 @@
 from .desktop.run import WebDEAuthentication as DesktopAuth
 from .mobile.run import WebDEAuthentication as MobileAuth
 
-def run(account, job_id=None, **kwargs):
+async def run(account, job_id=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     """
@@ -13,4 +13,4 @@ def run(account, job_id=None, **kwargs):
         job_id=job_id
     )
 
-    return automation.execute()
+    return await automation.execute()

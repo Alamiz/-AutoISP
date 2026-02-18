@@ -1,6 +1,7 @@
 import time
+import asyncio
 from core.utils.retry_decorators import retry_action
-from playwright.sync_api import Page
+from playwright.async_api import Page, Locator
 from core.utils.element_finder import deep_find_elements
 from core.flow_engine.step import Step, StepResult
 from modules.core.flow_state import FlowResult
@@ -8,10 +9,10 @@ from core.utils.date_utils import parse_mail_date
 from datetime import datetime
 
 class NavigateToSpamStep(Step):
-    def run(self, page: Page) -> StepResult:
+    async def run(self, page: Page) -> StepResult:
         try:
             start_time = time.perf_counter()
-            self.automation.human_click(
+            await self.automation.human_click(
                 page,
                 selectors=['button.sidebar-folder-icon-spam'],
                 deep_search=True
@@ -19,13 +20,13 @@ class NavigateToSpamStep(Step):
             duration = time.perf_counter() - start_time
             self.logger.info(f"Navigated to Spam folder: {duration:.2f} seconds", extra={"account_id": self.account.id})
             
-            page.wait_for_timeout(2000)
+            await page.wait_for_timeout(2000)
             return StepResult(status=FlowResult.SUCCESS, message="Navigated to Spam folder")
         except Exception as e:
             return StepResult(status=FlowResult.RETRY, message=f"Failed to navigate to Spam: {e}")
 
 class ReportSpamEmailsStep(Step):
-    def run(self, page: Page) -> StepResult:
+    async def run(self, page: Page) -> StepResult:
         try:
             keyword = (getattr(self.automation, "search_text", "") or "").lower()
             start_date = getattr(self.automation, "start_date") 
@@ -44,7 +45,7 @@ class ReportSpamEmailsStep(Step):
             while True:
                 self.logger.info(f"Processing page {current_page}", extra={"account_id": self.account.id})
 
-                email_items = deep_find_elements(
+                email_items = await deep_find_elements(
                     page, "list-mail-item.list-mail-item--root"
                 )
 
@@ -61,12 +62,16 @@ class ReportSpamEmailsStep(Step):
                     try:
                         # --- Extract date ---
                         date_el = item.locator("list-date-label.list-mail-item__date")
-                        if date_el.count() == 0:
-                            raise Exception("Date element not found")
+                        if await date_el.count() == 0:
+                            self.logger.warning("No date found on this email", extra={"account_id": self.account.id})
+                            index += 1
+                            continue
 
-                        ms = date_el.get_attribute("date-in-ms")
+                        ms = await date_el.get_attribute("date-in-ms")
                         if not ms:
-                            raise Exception("date-in-ms missing")
+                            self.logger.warning("date-in-ms missing", extra={"account_id": self.account.id})
+                            index += 1
+                            continue
 
                         mail_date = datetime.fromtimestamp(
                             int(ms) / 1000
@@ -90,11 +95,11 @@ class ReportSpamEmailsStep(Step):
 
                         # --- Keyword check ---
                         subject_el = item.locator("div.list-mail-item__subject")
-                        if subject_el.count() == 0:
+                        if await subject_el.count() == 0:
                             index += 1
                             continue
 
-                        subject_text = (subject_el.inner_text() or "").lower()
+                        subject_text = (await subject_el.inner_text() or "").lower()
                         if keyword not in subject_text:
                             index += 1
                             continue
@@ -105,16 +110,16 @@ class ReportSpamEmailsStep(Step):
                         )
 
                         # --- Open email ---
-                        self.click_email_item(item)
+                        await self.click_email_item(item)
 
                         # --- Scroll content ---
-                        self.scroll_content(page)
+                        await self.scroll_content(page)
 
                         # --- Report as not spam ---
-                        self.click_not_spam(page)
+                        await self.click_not_spam(page)
 
                         # DOM CHANGED → re-query + reset index
-                        email_items = deep_find_elements(
+                        email_items = await deep_find_elements(
                             page, "list-mail-item.list-mail-item--root"
                         )
                         
@@ -134,15 +139,19 @@ class ReportSpamEmailsStep(Step):
 
                 # --- Next page ---
                 try:
-                    next_button = self.automation._find_element_with_humanization(
+                    next_button = await self.automation._find_element_with_humanization(
                         page,
                         ["button.list-paging-footer__page-next"],
                         deep_search=True
                     )
-                    if next_button and not next_button.is_disabled():
-                        self.automation.human_behavior.click(next_button)
-                        current_page += 1
-                        continue
+                    
+                    if next_button:
+                        # Handle both Locator and ElementHandle
+                        is_disabled = await next_button.is_disabled()
+                        if not is_disabled:
+                            await self.automation.human_behavior.click(next_button)
+                            current_page += 1
+                            continue
                     break
                 except Exception as e:
                     self.logger.warning(
@@ -160,10 +169,10 @@ class ReportSpamEmailsStep(Step):
             )
     
     @retry_action()
-    def click_email_item(self, item):
+    async def click_email_item(self, item):
         try:
             start_time = time.perf_counter()
-            self.automation.human_behavior.click(item)
+            await self.automation.human_behavior.click(item)
             duration = time.perf_counter() - start_time
             self.logger.info(f"Email item clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
@@ -173,20 +182,25 @@ class ReportSpamEmailsStep(Step):
             )
 
     @retry_action()
-    def scroll_content(self, page: Page):
+    async def scroll_content(self, page: Page):
         try:
             start_time = time.perf_counter()
-            iframe = self.automation._find_element_with_humanization(
+            iframe = await self.automation._find_element_with_humanization(
                 page,
                 selectors=['iframe[name="detail-body-iframe"]'],
                 deep_search=True
             )
             # iframe is a Locator, we need ElementHandle to call content_frame()
-            frame = iframe.element_handle().content_frame()
-            body = self.automation._find_element_with_humanization(
+            if isinstance(iframe, Locator):
+                element_handle = await iframe.element_handle()
+                frame = await element_handle.content_frame()
+            else:
+                 frame = await iframe.content_frame()
+
+            body = await self.automation._find_element_with_humanization(
                 frame, ["body"]
             )
-            self.automation.human_behavior.scroll_into_view(body)
+            await self.automation.human_behavior.scroll_into_view(body)
             duration = time.perf_counter() - start_time
             self.logger.info(f"Content scrolled: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
@@ -196,10 +210,10 @@ class ReportSpamEmailsStep(Step):
             )
     
     @retry_action()
-    def click_not_spam(self, page: Page):
+    async def click_not_spam(self, page: Page):
         try:
             start_time = time.perf_counter()
-            self.automation.human_click(
+            await self.automation.human_click(
                 page,
                 selectors=[
                     'div.list-toolbar__scroll-item '
@@ -228,7 +242,7 @@ class ReportSpamEmailsStep(Step):
         )
 
 class OpenReportedEmailsStep(Step):
-    def run(self, page: Page) -> StepResult:
+    async def run(self, page: Page) -> StepResult:
         try:
             keyword = (getattr(self.automation, "search_text", "") or "").lower()
             start_dt = getattr(self.automation, "start_date")
@@ -241,16 +255,16 @@ class OpenReportedEmailsStep(Step):
             )
 
             # Navigate to inbox
-            self._navigate_to_inbox(page)
+            await self._navigate_to_inbox(page)
 
             # Fill search input
-            self._fill_search_input(page, keyword)
+            await self._fill_search_input(page, keyword)
 
             # Open search options
-            self.open_search_options(page)
+            await self.open_search_options(page)
  
             # Select inbox and submit search
-            self.select_inbox_and_submit(page)
+            await self.select_inbox_and_submit(page)
 
             if not hasattr(self.automation, "pending_closures"):
                 self.automation.pending_closures = []
@@ -261,7 +275,7 @@ class OpenReportedEmailsStep(Step):
             while True:
                 self.logger.info(f"Processing page {current_page}", extra={"account_id": self.account.id})
 
-                email_items = deep_find_elements(
+                email_items = await deep_find_elements(
                     page, "list-mail-item.list-mail-item--root"
                 )
 
@@ -271,24 +285,24 @@ class OpenReportedEmailsStep(Step):
 
                 index = 0
                 while index < len(email_items):
-                    self._cleanup_pending_pages()
+                    await self._cleanup_pending_pages()
                     start_process = time.perf_counter()
                     item = email_items[index]
 
                     try:
                         fav_button = item.locator("list-favorite-marker.list-mail-item__fav[selected]")
-                        if fav_button.count() > 0:
+                        if await fav_button.count() > 0:
                             index += 1
                             continue
 
                         # --- Extract datetime from date-in-ms ---
                         date_el = item.locator("list-date-label.list-mail-item__date")
-                        if date_el.count() == 0:
+                        if await date_el.count() == 0:
                             self.logger.warning("No date found on this email", extra={"account_id": self.account.id})
                             index += 1
                             continue
 
-                        ms = date_el.get_attribute("date-in-ms")
+                        ms = await date_el.get_attribute("date-in-ms")
                         if not ms:
                             self.logger.warning("No date-in-ms found on this email", extra={"account_id": self.account.id})
                             index += 1
@@ -315,12 +329,12 @@ class OpenReportedEmailsStep(Step):
 
                         # --- Subject ---
                         subject_el = item.locator("div.list-mail-item__subject")
-                        if subject_el.count() == 0:
+                        if await subject_el.count() == 0:
                             self.logger.warning("No subject found on this email", extra={"account_id": self.account.id})
                             index += 1
                             continue
 
-                        subject_text = (subject_el.get_attribute("title") or "").lower()
+                        subject_text = (await subject_el.get_attribute("title") or "").lower()
 
                         if keyword not in subject_text:
                             index += 1
@@ -331,21 +345,21 @@ class OpenReportedEmailsStep(Step):
                         self.logger.info(f"Processing email {subject_text[:10]}... @ {mail_dt}", extra={"account_id": self.account.id})
 
                         # --- Actions ---
-                        self._click_email_item(item, page)
+                        await self._click_email_item(item, page)
 
-                        frame = self._scroll_content(page)
+                        frame = await self._scroll_content(page)
 
-                        self._add_to_favorites(page)
+                        await self._add_to_favorites(page)
 
-                        self._scroll_to_top(frame)
+                        await self._scroll_to_top(frame)
 
-                        self._click_link_or_image(frame, page)
+                        await self._click_link_or_image(frame, page)
 
                         duration = time.perf_counter() - start_process
                         self.logger.info(f"Email processed in {duration:.2f} seconds \n\n", extra={"account_id": self.account.id})
 
                         # Re-query for safety (DOM not reordered)
-                        email_items = deep_find_elements(
+                        email_items = await deep_find_elements(
                             page, "list-mail-item.list-mail-item--root"
                         )
 
@@ -359,22 +373,25 @@ class OpenReportedEmailsStep(Step):
 
                 # --- Pagination ---
                 try:
-                    next_button = self.automation._find_element_with_humanization(
+                    next_button = await self.automation._find_element_with_humanization(
                         page,
                         ["button.list-paging-footer__page-next"],
                         deep_search=True
                     )
-                    if next_button and not next_button.is_disabled():
-                        self.automation.human_behavior.click(next_button)
-                        page.wait_for_timeout(2000)
-                        current_page += 1
-                        continue
+                    
+                    if next_button:
+                        is_disabled = await next_button.is_disabled()
+                        if not is_disabled:
+                            await self.automation.human_behavior.click(next_button)
+                            await page.wait_for_timeout(2000)
+                            current_page += 1
+                            continue
                     break
                 except Exception:
                     break
 
             # Final cleanup (gentle)
-            self._cleanup_pending_pages(force=False)
+            await self._cleanup_pending_pages(force=False)
 
             return self._final(found_any)
 
@@ -385,10 +402,10 @@ class OpenReportedEmailsStep(Step):
             )
 
     @retry_action()
-    def _navigate_to_inbox(self, page):
+    async def _navigate_to_inbox(self, page):
         try:
             start_time = time.perf_counter()
-            self.automation.human_click(
+            await self.automation.human_click(
                 page,
                 selectors=["button.sidebar-folder-icon-inbox"],
                 deep_search=True
@@ -399,25 +416,25 @@ class OpenReportedEmailsStep(Step):
             self.logger.warning(f"Failed to navigate to inbox: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
-    def _fill_search_input(self, page, keyword):
+    async def _fill_search_input(self, page, keyword):
         try:
             start_time = time.perf_counter()
-            search_input = deep_find_elements(
+            search_input = await deep_find_elements(
                 page,
                 css_selector="input.webmailer-mail-list-search-input__input",
             )
             if search_input:
-                search_input[0].fill(keyword)
+                await search_input[0].fill(keyword)
             duration = time.perf_counter() - start_time
             self.logger.info(f"Search input filled: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Failed to fill search input: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
-    def open_search_options(self, page):
+    async def open_search_options(self, page):
         try:
             start_time = time.perf_counter()
-            self.automation.human_click(
+            await self.automation.human_click(
                 page,
                 selectors=["button.webmailer-mail-list-search-options__button"],
                 deep_search=True
@@ -428,11 +445,11 @@ class OpenReportedEmailsStep(Step):
             self.logger.warning(f"Failed to open search options: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
-    def select_inbox_and_submit(self, page):
+    async def select_inbox_and_submit(self, page):
         try:
             start_time = time.perf_counter()
             # Select inbox
-            self.automation.human_select(
+            await self.automation.human_select(
                 page,
                 selectors=[
                     "div.webmailer-mail-list-search-options__container select#folderSelect"
@@ -442,7 +459,7 @@ class OpenReportedEmailsStep(Step):
             )
 
             # Submit search
-            self.automation.human_click(
+            await self.automation.human_click(
                 page,
                 selectors=[
                     "div.webmailer-mail-list-search-options__container button[type='submit']"
@@ -452,36 +469,42 @@ class OpenReportedEmailsStep(Step):
             duration = time.perf_counter() - start_time
             self.logger.info(f"Inbox selected and search submitted: {duration:.2f} seconds", extra={"account_id": self.account.id})
 
-            page.wait_for_timeout(2000)
+            await page.wait_for_timeout(2000)
         except Exception as e:
             self.logger.warning(f"Failed to select inbox and submit search: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
-    def _click_email_item(self, item, page):
+    async def _click_email_item(self, item, page):
         try:
             start_time = time.perf_counter()
-            self.automation.human_behavior.click(item)
+            await self.automation.human_behavior.click(item)
             duration = time.perf_counter() - start_time
             self.logger.info(f"Email item clicked: {duration:.2f} seconds", extra={"account_id": self.account.id})
-            page.wait_for_timeout(2000)
+            await page.wait_for_timeout(2000)
         except Exception as e:
             self.logger.warning(f"Click inside email failed: {e}", extra={"account_id": self.account.id})
 
     @retry_action()
-    def _scroll_content(self, page):
+    async def _scroll_content(self, page):
         try:
             start_time = time.perf_counter()
-            iframe = self.automation._find_element_with_humanization(
+            iframe = await self.automation._find_element_with_humanization(
                 page,
                 selectors=["iframe[name='detail-body-iframe']"],
                 deep_search=True
             )
+            
             # iframe is a Locator, we need ElementHandle to call content_frame()
-            frame = iframe.element_handle().content_frame()
-            body = self.automation._find_element_with_humanization(
+            if isinstance(iframe, Locator):
+                element_handle = await iframe.element_handle()
+                frame = await element_handle.content_frame()
+            else:
+                 frame = await iframe.content_frame()
+
+            body = await self.automation._find_element_with_humanization(
                 frame, ["body"]
             )
-            self.automation.human_behavior.scroll_into_view(body)
+            await self.automation.human_behavior.scroll_into_view(body)
             duration = time.perf_counter() - start_time
             self.logger.info(f"Content scrolled: {duration:.2f} seconds", extra={"account_id": self.account.id})
 
@@ -489,37 +512,37 @@ class OpenReportedEmailsStep(Step):
         except Exception as e:
             self.logger.warning(f"Scroll content failed: {e}", extra={"account_id": self.account.id})
     
-    def _scroll_to_top(self, frame):
+    async def _scroll_to_top(self, frame):
         try:
             start_time = time.perf_counter()
-            body = self.automation._find_element_with_humanization(
+            body = await self.automation._find_element_with_humanization(
                 frame, ["body"]
             )
             # Scroll the body to top
-            body.evaluate("element => element.scrollTop = 0")
+            await body.evaluate("element => element.scrollTop = 0")
             duration = time.perf_counter() - start_time
             self.logger.info(f"Scrolled to top: {duration:.2f} seconds", extra={"account_id": self.account.id})
         except Exception as e:
             self.logger.warning(f"Scroll to top failed: {e}", extra={"account_id": self.account.id})
     
     @retry_action()
-    def _add_to_favorites(self, page):
+    async def _add_to_favorites(self, page):
         try:
             start_time = time.perf_counter()
             # Find and click the button
-            button = self.automation._find_element_with_humanization(
+            button = await self.automation._find_element_with_humanization(
                 page,
                 selectors=["button.detail-favorite-marker__unselected"],
                 deep_search=True,
                 timeout=2000
             )
-            button.click()
+            await button.click()
             
             # Wait a moment for the DOM to update
-            page.wait_for_timeout(500)
+            await page.wait_for_timeout(500)
             
             # Verify the button now has the selected class
-            selected_button = self.automation._find_element_with_humanization(
+            selected_button = await self.automation._find_element_with_humanization(
                 page,
                 selectors=["button.detail-favorite-marker__selected"],
                 deep_search=True,
@@ -536,24 +559,24 @@ class OpenReportedEmailsStep(Step):
             self.logger.warning(f"Failed to add to favorites: {e}", extra={"account_id": self.account.id})
             raise  # Re-raise to trigger retry
     
-    def _find_first_clickable(self, container):
+    async def _find_first_clickable(self, container):
         """Find the first visible and clickable link or image inside a container."""
         if not container:
             return None
         
         # Search for all links and images
-        targets = container.query_selector_all("a, img")
+        targets = await container.query_selector_all("a, img")
         for target in targets:
             try:
-                if target.is_visible():
-                    box = target.bounding_box()
+                if await target.is_visible():
+                    box = await target.bounding_box()
                     if box and box['width'] > 0 and box['height'] > 0:
                         return target
             except:
                 continue
         return None
 
-    def _cleanup_pending_pages(self, force=False):
+    async def _cleanup_pending_pages(self, force=False):
         """Close pending pages that have been open for >30 seconds, or all if force=True."""
         if not hasattr(self.automation, "pending_closures"):
             return
@@ -563,7 +586,7 @@ class OpenReportedEmailsStep(Step):
         for p, close_time in self.automation.pending_closures:
             if force or now >= close_time:
                 try:
-                    p.close()
+                    await p.close()
                     self.logger.info("Pending tab closed successfully (Thread-safe)", extra={"account_id": self.account.id})
                 except Exception as e:
                     self.logger.warning(f"Failed to close pending tab: {e}", extra={"account_id": self.account.id})
@@ -572,19 +595,19 @@ class OpenReportedEmailsStep(Step):
         self.automation.pending_closures = remaining
 
     @retry_action()
-    def _click_link_or_image(self, frame, page):
+    async def _click_link_or_image(self, frame, page):
         try:
             start_time = time.perf_counter()
             if frame:
-                target = self._find_first_clickable(frame)
+                target = await self._find_first_clickable(frame)
 
                 if target:
                     try:
-                        with page.context.expect_page(timeout=5000) as new_page_info:
+                        async with page.context.expect_page(timeout=5000) as new_page_info:
                             # Use a shorter timeout for the click itself to avoid 30s hangs
-                            self.automation.human_behavior.click(target, timeout=5000)
+                            await self.automation.human_behavior.click(target, timeout=5000)
                         
-                        new_page = new_page_info.value
+                        new_page = await new_page_info.value
                         self.logger.info("New tab opened, will close in 30s (Queue-based)", extra={"account_id": self.account.id})
                         
                         if not hasattr(self.automation, "pending_closures"):
@@ -595,8 +618,8 @@ class OpenReportedEmailsStep(Step):
                         self.logger.warning(f"Failed to open new page from click: {e}", extra={"account_id": self.account.id})
                         # Fallback if no new page is opened (e.g. click failed or same tab navigation)
                         try:
-                            self.automation.human_behavior.click(target, timeout=5000)
-                            page.wait_for_timeout(3000)
+                            await self.automation.human_behavior.click(target, timeout=5000)
+                            await page.wait_for_timeout(3000)
                         except:
                             pass
 

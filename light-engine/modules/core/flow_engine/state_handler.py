@@ -1,6 +1,6 @@
 # core/flow_engine/state_handler.py
 from typing import Callable, Dict, Optional
-from playwright.sync_api import Page
+from playwright.async_api import Page
 from core.utils.browser_utils import navigate_to
 from modules.core.flow_state import FlowResult
 
@@ -14,7 +14,7 @@ class StateHandler:
         self.logger = logger
         self.account = automation.account if automation else None
     
-    def handle(self, page: Page) -> FlowResult:
+    async def handle(self, page: Page) -> FlowResult:
         """
         Handle unexpected pages.
         
@@ -33,14 +33,14 @@ class StateHandlerRegistry:
     """
     def __init__(
         self, 
-        identifier_func: Callable[[Page, str, dict], str], 
+        identifier_func: Callable, # async function
         signatures: dict, 
         logger=None
     ):
         """
         Args:
-            identifier_func: Function that identifies the current page
-                            Signature: (page, url, signatures) -> page_id
+            identifier_func: Async function that identifies the current page
+                            Signature: await identifier_func(page, url, signatures) -> page_id
             signatures: Dictionary of page signatures for identification
             logger: Optional logger instance
         """
@@ -66,7 +66,7 @@ class StateHandlerRegistry:
         """Get the handler for a specific page ID."""
         return self._handlers.get(page_id)
 
-    def identify(self, page: Page) -> str:
+    async def identify(self, page: Page) -> str:
         """
         Identify the current page.
         
@@ -74,7 +74,8 @@ class StateHandlerRegistry:
             Page identifier string, or "unknown" if identification fails
         """
         try:
-            page_id = self.identifier_func(page, page.url, self.signatures)
+            # await the async identifier function
+            page_id = await self.identifier_func(page, page.url, self.signatures)
             return page_id
         except Exception as e:
             if self.logger:
@@ -100,12 +101,12 @@ class RedirectStateHandler(StateHandler):
         self.redirect_url = redirect_url
         self.action = action
     
-    def handle(self, page: Page) -> FlowResult:
+    async def handle(self, page: Page) -> FlowResult:
         try:
             if self.logger:
                 self.logger.info(f"Redirecting to: {self.redirect_url}")
-            navigate_to(page, self.redirect_url)
-            page.wait_for_load_state("domcontentloaded")
+            await navigate_to(page, self.redirect_url)
+            await page.wait_for_load_state("domcontentloaded")
             return self.action
         except Exception as e:
             if self.logger:

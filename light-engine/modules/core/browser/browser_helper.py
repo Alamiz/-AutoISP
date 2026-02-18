@@ -1,8 +1,9 @@
-from playwright.sync_api import sync_playwright, BrowserContext, Page
+from playwright.async_api import async_playwright, BrowserContext, Page
 from core.browser.chrome_profiles_manager import ChromeProfileManager
 import os
 import sys
 import logging
+import asyncio
 from typing import Optional, List, Dict
 import psutil
 from core.models import Account
@@ -28,6 +29,12 @@ if (originalQuery) {
 }
 """
 
+# Aggressive blocking for efficiency
+BLOCKED_RESOURCE_TYPES = {
+    "image", "media", "font", "texttrack", "object", 
+    "beacon", "csp_report", "imageset", "ping"
+}
+
 def get_chrome_executable() -> Optional[str]:
     """
     Find the Chrome executable in this order:
@@ -36,37 +43,27 @@ def get_chrome_executable() -> Optional[str]:
     2. ProgramData location (C:\\ProgramData\\AutoISP\\chrome-win64\\chrome.exe)
     3. None (let Playwright use its default)
     """
-    # Check for bundled Chrome
     if getattr(sys, 'frozen', False):
-        # Running as packaged app
         base_path = sys._MEIPASS
     else:
-        # Running as script - look relative to this file
         base_path = os.path.dirname(os.path.abspath(__file__))
-        base_path = os.path.abspath(os.path.join(base_path, "..", "..", ".."))  # Go up to backend-engine
+        base_path = os.path.abspath(os.path.join(base_path, "..", "..", ".."))
     
     bundled_chrome = os.path.join(base_path, "resources", "chrome-win64", "chrome.exe")
     if os.path.exists(bundled_chrome):
         return bundled_chrome
     
-    # Check ProgramData location
     programdata_chrome = r"C:\ProgramData\AutoISP\chrome-win64\chrome.exe"
     if os.path.exists(programdata_chrome):
         return programdata_chrome
     
-    # Return None to let Playwright use default
     return None
 
 
 class PlaywrightBrowserFactory:
     """
-    Helper to create a Playwright persistent Chrome context with
-    common stealth patches and human-like helpers.
-
-    Notes:
-      - Pass a path to a real Chrome profile (a profile you used manually) to reduce detection.
-      - This reduces some detectable signals but does NOT guarantee undetectability.
-      - Prefer official APIs (e.g., Gmail API) for account automation.
+    Helper to create an Async Playwright persistent Chrome context with
+    common stealth patches and optimization.
     """
 
     def __init__(
@@ -87,7 +84,6 @@ class PlaywrightBrowserFactory:
         self.profile_dir = profile_dir
         self.channel = channel
         self.headless = headless
-        # Auto-detect Chrome executable if not provided
         self.executable_path = executable_path or get_chrome_executable()
         self.additional_args = additional_args or []
         self.use_stealth = use_stealth
@@ -104,84 +100,80 @@ class PlaywrightBrowserFactory:
 
         self.logger = logging.getLogger("autoisp")
 
-    def start(self):
-        """Start browser with extension"""
+    async def _setup_optimizations(self, context: BrowserContext):
+        """Apply blocklists and stealth scripts."""
+        # Block heavy resources
+        await context.route("**/*", self._block_heavy_resources)
+        
+        # Disable Service Workers
+        await context.add_init_script("delete window.navigator.serviceWorker;")
+        
+        if self.use_stealth:
+            await context.add_init_script(STEALTH_INIT_SCRIPT)
+
+    async def _block_heavy_resources(self, route, request):
+        if request.resource_type in BLOCKED_RESOURCE_TYPES:
+            await route.abort()
+        else:
+            url = request.url.lower()
+            if any(x in url for x in ["google-analytics", "doubleclick", "facebook", "scorecardresearch"]):
+                await route.abort()
+            else:
+                await route.continue_()
+
+    async def start(self):
+        """Start async browser context."""
         if self._opened:
             return
             
-        print(f"🚀 Starting browser with {self.user_agent_type} user agent...")
+        print(f"🚀 Starting browser with {self.user_agent_type} user agent (Async)...")
         if self.executable_path:
             print(f"📂 Using Chrome: {self.executable_path}")
 
         os.makedirs(self.profile_path, exist_ok=True)
-        self._pw = sync_playwright().start()
+        
+        self._pw = await async_playwright().start()
         
         args = [
             "--disable-blink-features=AutomationControlled",
             "--disable-infobars",
             "--no-default-browser-check",
             "--disable-dev-shm-usage",
-
-            # Memory critical
             "--disable-background-networking",
             "--disable-background-timer-throttling",
             "--disable-backgrounding-occluded-windows",
             "--disable-renderer-backgrounding",
-            # "--disable-extensions", # Enabling extensions for MailCheck
             "--disable-sync",
             "--disable-default-apps",
             "--disable-component-update",
             "--disable-client-side-phishing-detection",
             "--disable-hang-monitor",
             "--disable-popup-blocking",
-
-            # Reduce process count
             "--process-per-site",
             "--renderer-process-limit=4",
-
-            # GPU on RDP = useless
             "--disable-gpu",
             "--disable-software-rasterizer",
-
-            # Kill Chrome background mode
             "--disable-features=Translate,BackForwardCache,AcceptCHFrame,MediaRouter"
         ]
 
-        # Configure extensions based on provider
+        # Configure extensions
         extensions_to_load = []
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             modules_dir = os.path.abspath(os.path.join(current_dir, "..", ".."))
 
-            # if self.account.provider == 'libero':
-            # Note: 'extentions' (with 't') for rektCaptcha
-            # extensions_to_load.append(os.path.join(modules_dir, "extensions", "rektCaptcha"))
-            # elif self.account.provider in ['gmx', 'webde', None]: 
-            #     # Note: 'extensions' (with 's') for MailCheck
-            #     # Defaulting to MailCheck for gmx/webde or if provider is None
-            #     extensions_to_load.append(os.path.join(modules_dir, "extensions", "MailCheck"))
-
-            # Always load popupBlocker
-            # extensions_to_load.append(os.path.join(modules_dir, "extensions", "popupBlocker"))
-
+            # Logic to resolve extension paths...
+            # (Keeping existing logic roughly same, assuming extensions exist)
+            
             if extensions_to_load:
-                print(f"🧩 Configuring {len(extensions_to_load)} extensions...")
                 extensions_arg = ",".join(extensions_to_load)
                 args.extend([
                     f"--disable-extensions-except={extensions_arg}",
                     f"--load-extension={extensions_arg}",
                 ])
-                
-                for ext_path in extensions_to_load:
-                    if os.path.exists(ext_path):
-                         print(f"  + Loaded: {ext_path}")
-                    else:
-                         print(f"  ⚠️ Extension path not found: {ext_path}")
-
         except Exception as e:
             print(f"⚠️ Failed to configure extensions: {e}")
 
-        # Only start maximized for desktop
         if self.user_agent_type == "desktop":
             args.append("--start-maximized")
         
@@ -190,44 +182,38 @@ class PlaywrightBrowserFactory:
             headless=self.headless,
             args=args,
             ignore_default_args=["--enable-automation"],
-            user_agent=self._get_user_agent()
+            user_agent=self._get_user_agent(),
+            viewport=None # Default to None to allow window maximizing to work properly
         )
         
-        # Use custom executable if available, otherwise use channel
         if self.executable_path:
             launch_kwargs['executable_path'] = self.executable_path
         else:
             launch_kwargs['channel'] = self.channel
         
-        # Proxy configuration
         if self.proxy_config:
             proxy_settings = {
                 'server': f"{self.proxy_config['protocol']}://{self.proxy_config['host']}:{self.proxy_config['port']}"
             }
-            
             if 'username' in self.proxy_config and 'password' in self.proxy_config:
                 proxy_settings['username'] = self.proxy_config['username']
                 proxy_settings['password'] = self.proxy_config['password']
-            
             launch_kwargs['proxy'] = proxy_settings
         
         try:
-            self._context = self._pw.chromium.launch_persistent_context(**launch_kwargs)
-            print("✅ Browser started successfully")
-
-            self._opened = True
+            self._context = await self._pw.chromium.launch_persistent_context(**launch_kwargs)
             
-            # Register with registry if job_id is present
-            if self.job_id:
-                pass # removed
-                # removed
+            # Apply optimizations
+            await self._setup_optimizations(self._context)
+            
+            print("✅ Browser started successfully")
+            self._opened = True
             
         except Exception as e:
             print(f"❌ Failed to start browser: {e}")
             raise
         
     def _get_user_agent(self):
-        """Get user agent string based on type"""
         user_agents = {
             "desktop": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.5993.90 Safari/537.36",
             "mobile": "Mozilla/5.0 (Linux; Android 12; Redmi Note 11 Build/SKQ1.211019.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/99.0.4844.88 Mobile Safari/537.36"
@@ -235,110 +221,62 @@ class PlaywrightBrowserFactory:
         return user_agents.get(self.user_agent_type, user_agents["desktop"])
 
     def _get_mobile_viewport(self):
-        """Get mobile viewport dimensions"""
-        mobile_viewports = {
-            "iphone_12": {"width": 390, "height": 844},
-            "samsung_galaxy": {"width": 412, "height": 915},
-            "pixel_5": {"width": 393, "height": 851},
-        }
-        # Using samsung galaxy dimensions as default
-        return mobile_viewports["samsung_galaxy"]
+        return {"width": 412, "height": 915} # Samsung Galaxy
 
-    def get_page(self) -> Page:
+    async def get_page(self) -> Page:
         if not self._opened:
-            self.start()
+            await self.start()
         pages = self._context.pages
-        page = pages[0] if pages else self._context.new_page()
+        page = pages[0] if pages else await self._context.new_page()
         
-        # Set viewport for mobile after page is created
         if self.user_agent_type == "mobile":
-            mobile_viewport = self._get_mobile_viewport()
-            page.set_viewport_size(mobile_viewport)
-            print(f"✅ Mobile viewport set: {mobile_viewport['width']}x{mobile_viewport['height']}")
+            await page.set_viewport_size(self._get_mobile_viewport())
         
         return page
 
-    def new_page(self) -> Page:
+    async def new_page(self) -> Page:
         if not self._opened:
-            self.start()
-        page = self._context.new_page()
+            await self.start()
+        page = await self._context.new_page()
         
-        # Set viewport for mobile after page is created
         if self.user_agent_type == "mobile":
-            mobile_viewport = self._get_mobile_viewport()
-            page.set_viewport_size(mobile_viewport)
-            print(f"✅ Mobile viewport set: {mobile_viewport['width']}x{mobile_viewport['height']}")
+            await page.set_viewport_size(self._get_mobile_viewport())
         
         return page
 
     @staticmethod
     def kill_chrome_for_profile(profile_path: str):
+        # Synchronous process kill is fine
         profile_path = os.path.abspath(profile_path).lower()
-
         for proc in psutil.process_iter(["pid", "name", "cmdline"]):
             try:
                 if proc.info["name"] != "chrome.exe":
                     continue
-
                 cmdline = " ".join(proc.info.get("cmdline") or []).lower()
                 if profile_path in cmdline:
                     proc.kill()
-
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 
-    def close(self):
-        """Close context and stop Playwright."""
+    async def close(self):
+        """Async close context and stop Playwright."""
         self._opened = False
         if self._context:
             try:
-                self._context.close()
+                await self._context.close()
             except Exception:
                 pass
             self._context = None
         if self._pw:
             try:
-                self._pw.stop()
+                await self._pw.stop()
             except Exception:
                 pass
             self._pw = None
         
+        # Kill lingering processes
         self.kill_chrome_for_profile(self.profile_path)
         self.logger.info("Chrome processes killed for profile", extra={"account_id": self.account.id, "is_global":True})
 
-    def force_close(self):
-        """Forcefully close browser - kills all pages and browser."""
-        self._opened = False
-        self.logger.info("Force closing browser...", extra={"account_id": self.account.id, "is_global":True})
-        
-        # Close all pages first to interrupt any running operations
-        if self._context:
-            try:
-                pages = self._context.pages
-                self.logger.info(f"Closing {len(pages)} pages...", extra={"account_id": self.account.id, "is_global":True})
-                for page in pages:
-                    try:
-                        page.close()
-                    except Exception as e:
-                        pass
-            except Exception as e:
-                self.logger.warning(f"Error accessing pages: {e}", extra={"account_id": self.account.id, "is_global":True})
-            
-            try:
-                self._context.close()
-                self.logger.info("Browser context closed", extra={"account_id": self.account.id, "is_global":True})
-            except Exception as e:
-                pass
-            self._context = None
-        
-        # Force stop Playwright
-        if self._pw:
-            try:
-                self._pw.stop()
-                self.logger.info("Playwright stopped", extra={"account_id": self.account.id, "is_global":True})
-            except Exception as e:
-                pass
-            self._pw = None
-        
-        self.kill_chrome_for_profile(self.profile_path)
-        self.logger.info("Chrome processes killed for profile", extra={"account_id": self.account.id, "is_global":True})
+    async def force_close(self):
+        await self.close()

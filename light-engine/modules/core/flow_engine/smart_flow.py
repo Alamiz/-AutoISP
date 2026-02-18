@@ -1,15 +1,16 @@
 from typing import List, Optional, Callable
-from playwright.sync_api import Page
+from playwright.async_api import Page
 from .step import Step, StepResult
 from .state_handler import StateHandlerRegistry
 from core.models import Account
 from modules.core.flow_state import FlowResult
+import asyncio
 
 class Flow(Step):
     """
     Base class for a Flow, which is a composite Step that manages execution of other steps.
     """
-    def run(self, page: Page) -> StepResult:
+    async def run(self, page: Page) -> StepResult:
         raise NotImplementedError("Subclasses must implement run()")
 
 class SequentialFlow(Flow):
@@ -25,7 +26,7 @@ class SequentialFlow(Flow):
         self.account = account
         self.max_restarts = max_restarts
 
-    def _check_page_state(self, page) -> Optional[StepResult]:
+    async def _check_page_state(self, page) -> Optional[StepResult]:
         """
         Check if we're on an unexpected page and handle it.
         Returns StepResult if page was handled and flow should abort/retry, None if page is expected.
@@ -40,7 +41,7 @@ class SequentialFlow(Flow):
             max_id_attempts = 4
             
             for attempt in range(1, max_id_attempts + 1):
-                page_id = self.state_registry.identify(page)
+                page_id = await self.state_registry.identify(page)
                 if page_id != "unknown":
                     break
                 
@@ -51,7 +52,7 @@ class SequentialFlow(Flow):
                             f"Page identification returned 'unknown'. Retrying in {wait_time}s... (Attempt {attempt}/{max_id_attempts})",
                             extra={"account_id": self.account.id if self.account else None}
                         )
-                    page.wait_for_timeout(wait_time * 1000)
+                    await page.wait_for_timeout(wait_time * 1000)
             
             # If still unknown after retries, log warning but continue
             if page_id == "unknown":
@@ -69,7 +70,7 @@ class SequentialFlow(Flow):
                 if self.logger:
                     self.logger.warning(f"Unexpected page detected: {page_id}. Running handler...", extra={"account_id": self.account.id})
                 
-                result = handler.handle(page)
+                result = await handler.handle(page)
                 
                 # If handler returns a specific failure state, return it immediately
                 if result in (FlowResult.ABORT, FlowResult.FAILED, FlowResult.LOCKED, 
@@ -94,11 +95,11 @@ class SequentialFlow(Flow):
         
         return None
 
-    def run(self, page: Page) -> StepResult:
+    async def run(self, page: Page) -> StepResult:
         restart_count = 0
         
         while True:
-            result = self._run_steps(page)
+            result = await self._run_steps(page)
             
             if result.status == FlowResult.RESTART:
                 restart_count += 1
@@ -115,12 +116,12 @@ class SequentialFlow(Flow):
                         f"Restarting flow from beginning (Restart {restart_count}/{self.max_restarts}): {result.message}",
                         extra={"account_id": self.account.id if self.account else None}
                     )
-                page.wait_for_timeout(3000)
+                await page.wait_for_timeout(3000)
                 continue
             
             return result
 
-    def _run_steps(self, page: Page) -> StepResult:
+    async def _run_steps(self, page: Page) -> StepResult:
         """Execute all steps sequentially. Returns the final result."""
         last_result = StepResult(status=FlowResult.SUCCESS)
         
@@ -132,7 +133,7 @@ class SequentialFlow(Flow):
             step_name = step.__class__.__name__
             
             # Check state before step
-            state_result = self._check_page_state(page)
+            state_result = await self._check_page_state(page)
             if state_result:
                 if state_result.status != FlowResult.SUCCESS:
                     # If state check returned a non-success result (ABORT, RETRY, RESTART, COMPLETED, etc.)
@@ -154,7 +155,7 @@ class SequentialFlow(Flow):
                     self.logger.debug(f"Executing step {i+1}/{len(self.steps)}: {step_name} (Attempt {attempt}/{max_retries})", extra={"account_id": self.account.id})
                 
                 try:
-                    result = step.run(page)
+                    result = await step.run(page)
                     last_result = result
                     
                     if result.status == FlowResult.SUCCESS:
@@ -224,7 +225,7 @@ class StatefulFlow(Flow):
         self.max_steps = max_steps
         self.job_id = job_id
 
-    def run(self, page: Page) -> StepResult:
+    async def run(self, page: Page) -> StepResult:
         steps_taken = 0
         if self.logger:
             self.logger.debug(f"Starting (max_steps={self.max_steps})", extra={"account_id": self.account.id})
@@ -238,7 +239,13 @@ class StatefulFlow(Flow):
             
             # 1. Check Goal
             try:
-                if self.goal_checker(page):
+                # Goal checker might be sync or async
+                if asyncio.iscoroutinefunction(self.goal_checker):
+                     is_goal_reached = await self.goal_checker(page)
+                else:
+                     is_goal_reached = self.goal_checker(page)
+
+                if is_goal_reached:
                     if self.logger:
                         self.logger.debug("Goal reached!", extra={"account_id": self.account.id})
                     return StepResult(status=FlowResult.SUCCESS, message="Goal reached")
@@ -250,7 +257,7 @@ class StatefulFlow(Flow):
             page_id = "unknown"
             max_id_attempts = 4
             for attempt in range(1, max_id_attempts + 1):
-                page_id = self.state_registry.identify(page)
+                page_id = await self.state_registry.identify(page)
                 if page_id != "unknown":
                     break
                 
@@ -258,7 +265,7 @@ class StatefulFlow(Flow):
                     wait_time = attempt * 5 # 5s, 10s
                     if self.logger:
                         self.logger.debug(f"Identification returned 'unknown'. Retrying in {wait_time}s... (Attempt {attempt}/{max_id_attempts})", extra={"account_id": self.account.id})
-                    page.wait_for_timeout(wait_time * 1000)
+                    await page.wait_for_timeout(wait_time * 1000)
             
             if self.logger:
                 self.logger.debug(f"Identified state: {page_id}", extra={"account_id": self.account.id})
@@ -269,7 +276,7 @@ class StatefulFlow(Flow):
                 if self.logger:
                     self.logger.info(f"Handling state '{page_id}'", extra={"account_id": self.account.id})
                 
-                result = handler.handle(page)
+                result = await handler.handle(page)
                 
                 if result == FlowResult.COMPLETED:
                     return StepResult(status=FlowResult.COMPLETED, message=f"Completed by {page_id}")
@@ -299,7 +306,7 @@ class StatefulFlow(Flow):
                 if page_id == "unknown":
                      if self.logger:
                          self.logger.warning("Unknown state after multiple identification attempts.", extra={"account_id": self.account.id})
-                     page.wait_for_timeout(2000)
+                     await page.wait_for_timeout(2000)
                      continue
                 else:
                     # Identified but no handler?

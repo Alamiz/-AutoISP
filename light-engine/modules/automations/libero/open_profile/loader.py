@@ -1,6 +1,6 @@
 from .desktop.run import OpenProfile as DesktopAuth
 
-def run(account, job_id=None, **kwargs):
+async def run(account, job_id=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     """
@@ -12,4 +12,4 @@ def run(account, job_id=None, **kwargs):
         job_id=job_id
     )
 
-    return automation.execute()
+    return await automation.execute()

@@ -1,9 +1,10 @@
-from playwright.sync_api import Page
+from playwright.async_api import Page
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from typing import Optional
 import time
 import logging
+import asyncio
 
 logger = logging.getLogger("autoisp")
 
@@ -27,7 +28,7 @@ def has_required_sublink(current_url: str, required_sublink: str) -> bool:
         return False
 
 
-def identify_page(page: Page, current_url: Optional[str] = None, signatures=None) -> str:
+async def identify_page(page: Page, current_url: Optional[str] = None, signatures=None) -> str:
     """
     Optimized page identification using flattened HTML snapshot.
     
@@ -55,12 +56,13 @@ def identify_page(page: Page, current_url: Optional[str] = None, signatures=None
     # ========================================
     # STEP 1: Build HTML ONCE (expensive operation)
     # ========================================
-    flattened_html = flatten_page_to_html(page)
+    flattened_html = await flatten_page_to_html(page)
     
     # ========================================
     # STEP 2: Parse with BeautifulSoup ONCE
     # ========================================
-    soup = BeautifulSoup(flattened_html, 'html.parser')
+    # BeautifulSoup is synchronous CPU bound, run in thread to not block loop
+    soup = await asyncio.to_thread(BeautifulSoup, flattened_html, 'html.parser')
     
     # ========================================
     # STEP 3: Setup selector caching

@@ -22,7 +22,7 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 # ── Create Job Run ────────────────────────────────────────────────────────
 @router.post("/run", response_model=JobOut)
-def run_job(payload: JobRunRequest, db: Session = Depends(get_db)):
+async def run_job(payload: JobRunRequest, db: Session = Depends(get_db)):
     job = create_job_run(
         db,
         name=payload.name,
@@ -36,7 +36,7 @@ def run_job(payload: JobRunRequest, db: Session = Depends(get_db)):
     db.refresh(job)
     
     # Submit job to background manager
-    job_manager.submit_job(job.id)
+    await job_manager.submit_job(job.id)
     
     return job
 

@@ -2,13 +2,14 @@ import importlib
 import logging
 import sys
 import os
+import asyncio
 
 
 from modules.core.models import Account
 
-def run_automation(account: Account, automation_name: str, job_id=None, **kwargs):
+async def run_automation(account: Account, automation_name: str, job_id=None, **kwargs):
     """
-    Global runner for any automation.
+    Global runner for any automation (Async).
     Delegates platform logic to the automation's loader.py.
     
     Args:
@@ -27,8 +28,8 @@ def run_automation(account: Account, automation_name: str, job_id=None, **kwargs
         current_dir = os.path.dirname(os.path.abspath(__file__))
         modules_path = os.path.abspath(os.path.join(current_dir, ".."))
 
-    print("modules_path: ", modules_path)
-    sys.path.insert(0, modules_path)
+    if modules_path not in sys.path:
+        sys.path.insert(0, modules_path)
 
     try:
         # Import the automation's loader.py
@@ -39,7 +40,15 @@ def run_automation(account: Account, automation_name: str, job_id=None, **kwargs
             raise AttributeError(f"{loader_module_path} missing 'run(account, job_id, **kwargs)' function")
 
         logger.info(f"Running {automation_name} on {isp} for profile {profile}", extra={"account_id": account.id, "is_global": True})
-        return loader.run(account=account, job_id=job_id, **kwargs)
+        
+        # Await the loader's run method (assuming loader is also migrated to async)
+        if asyncio.iscoroutinefunction(loader.run):
+             return await loader.run(account=account, job_id=job_id, **kwargs)
+        else:
+             # Fallback for legacy sync loaders (will block loop if not threaded)
+             # Ideally efficiently migrated to async
+             logger.warning(f"Loader for {automation_name} is sync! Blocking event loop.", extra={"account_id": account.id})
+             return loader.run(account=account, job_id=job_id, **kwargs)
 
     except Exception as e:
         # Check if it's a cancellation
