@@ -112,6 +112,7 @@ def create_job_run(
     db: Session,
     *,
     name: Optional[str],
+    provider: str,
     max_concurrent: int,
     accounts_data: Optional[List[Dict[str, Any]]] = None,
     account_ids: Optional[List[int]] = None,
@@ -142,7 +143,7 @@ def create_job_run(
         raise HTTPException(status_code=400, detail="No accounts selected for this job")
 
     # 2 — Create the Job
-    job = Job(name=name, max_concurrent=max_concurrent, status="queued")
+    job = Job(name=name, provider=provider, max_concurrent=max_concurrent, status="queued")
     db.add(job)
     db.flush()
 

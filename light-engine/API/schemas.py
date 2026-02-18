@@ -156,6 +156,7 @@ VALID_JOB_STATUSES = {"queued", "running", "completed", "failed", "stopped"}
 class JobRunRequest(BaseModel):
     """Payload for POST /jobs/run — creates everything in one shot."""
     name: Optional[str] = None
+    provider: str
     max_concurrent: int = 1
     accounts: Optional[List[AccountCreate]] = None
     account_ids: Optional[List[int]] = None
@@ -179,6 +180,7 @@ class JobOut(BaseModel):
 
     id: int
     name: Optional[str] = None
+    provider: str
     status: str
     max_concurrent: int
     created_at: Optional[datetime] = None

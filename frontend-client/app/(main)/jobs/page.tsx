@@ -13,6 +13,7 @@ import { apiGet, apiDelete } from "@/lib/api"
 import { JobAccountStatusBadge } from "@/components/job-account-status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useProvider } from "@/contexts/provider-context"
 import { cn } from "@/lib/utils"
 import {
     DropdownMenu,
@@ -39,12 +40,13 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function JobsPage() {
+    const { selectedProvider } = useProvider()
     const [wizardOpen, setWizardOpen] = useState(false)
     const [deleteId, setDeleteId] = useState<number | null>(null)
 
     const { data: response, isLoading: loading, refetch: fetchJobs } = useQuery<{ items: Job[], total: number }>({
-        queryKey: ["jobs"],
-        queryFn: () => apiGet<{ items: Job[], total: number }>("/jobs?page_size=100", "local"),
+        queryKey: ["jobs", selectedProvider?.slug],
+        queryFn: () => apiGet<{ items: Job[], total: number }>(`/jobs?page_size=100&provider=${selectedProvider?.slug || ""}`, "local"),
         refetchInterval: 10000 // Backup polling
     })
 

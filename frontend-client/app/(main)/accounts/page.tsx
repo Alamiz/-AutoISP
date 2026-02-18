@@ -60,7 +60,7 @@ export default function AccountsPage() {
     const fetchAccounts = async () => {
         try {
             setLoading(true)
-            let url = `/accounts?page_size=100`
+            let url = `/accounts?page_size=100&provider=${selectedProvider?.slug || ""}`
             if (statusFilter && statusFilter !== "all") {
                 url += `&status=${statusFilter}`
             }
@@ -86,6 +86,10 @@ export default function AccountsPage() {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        fetchAccounts()
+    }, [selectedProvider?.slug, statusFilter])
 
     const accountStats = useMemo(() => {
         return {

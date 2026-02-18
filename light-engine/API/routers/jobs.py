@@ -26,6 +26,7 @@ async def run_job(payload: JobRunRequest, db: Session = Depends(get_db)):
     job = create_job_run(
         db,
         name=payload.name,
+        provider=payload.provider,
         max_concurrent=payload.max_concurrent,
         accounts_data=[a.model_dump() for a in payload.accounts] if payload.accounts else None,
         account_ids=payload.account_ids,
@@ -46,9 +47,12 @@ async def run_job(payload: JobRunRequest, db: Session = Depends(get_db)):
 def list_jobs(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=10000),
+    provider: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(Job)
+    if provider:
+        query = query.filter(Job.provider == provider)
     total = query.count()
     items = (
         query.order_by(Job.created_at.desc())
@@ -70,9 +74,13 @@ def job_summary(job_id: int, db: Session = Depends(get_db)):
 
 # ── Active Jobs (Running/Queued) ──────────────────────────────────────────
 @router.get("/active", response_model=List[JobSummary])
-def get_active_jobs(db: Session = Depends(get_db)):
+def get_active_jobs(provider: Optional[str] = None, db: Session = Depends(get_db)):
     """Returns full summary for all running or queued jobs."""
-    active_jobs = db.query(Job).filter(Job.status.in_(["running", "queued"])).all()
+    query = db.query(Job).filter(Job.status.in_(["running", "queued"]))
+    if provider:
+        query = query.filter(Job.provider == provider)
+    
+    active_jobs = query.all()
     results = []
     for job in active_jobs:
         summary = get_job_summary(db, job.id)

@@ -34,7 +34,8 @@ import {
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { Filter, Loader2, Clock } from "lucide-react"
+import { Filter, Loader2, Clock, User as UserIcon } from "lucide-react"
+import { useProvider } from "@/contexts/provider-context"
 
 interface CreateJobWizardProps {
     open: boolean
@@ -44,6 +45,7 @@ interface CreateJobWizardProps {
 type WizardStep = "accounts" | "proxies" | "automation"
 
 export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
+    const { selectedProvider } = useProvider()
     const router = useRouter()
     const [step, setStep] = useState<WizardStep>("accounts")
     const [loading, setLoading] = useState(false)
@@ -137,7 +139,7 @@ export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
     const fetchAccounts = async () => {
         try {
             setLoading(true)
-            const res = await apiGet<any>(`/accounts?page_size=500`, "local")
+            const res = await apiGet<any>(`/accounts?page_size=500&provider=${selectedProvider?.slug || ""}`, "local")
             setAccounts(res?.items || [])
             setTotalAccountsCount(res?.total || 0)
         } catch (err) {
@@ -440,6 +442,7 @@ export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
 
             const payload = {
                 name: jobName || `Job ${new Date().toLocaleString()}`,
+                provider: selectedProvider?.slug || "unknown",
                 max_concurrent: maxConcurrent,
                 account_ids: accountIds.map(Number),
                 proxy_ids: Object.keys(selectedProxyIds).filter(id => selectedProxyIds[id]).map(Number),

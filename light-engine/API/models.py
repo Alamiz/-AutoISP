@@ -68,6 +68,7 @@ class Job(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=True)
+    provider = Column(String, nullable=False, default="unknown")
     status = Column(String, nullable=False, default="queued")
     max_concurrent = Column(Integer, nullable=False, default=1)
     created_at = Column(DateTime, default=_utcnow)
