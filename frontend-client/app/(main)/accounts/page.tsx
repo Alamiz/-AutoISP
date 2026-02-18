@@ -3,11 +3,12 @@
 import { useState, useEffect, useMemo } from "react"
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
 import { BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { User, Plus, RefreshCw, MoreHorizontal, Trash2, Edit } from "lucide-react"
+import { User, Plus, RefreshCw, MoreHorizontal, Trash2, Edit, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BulkUploader } from "@/components/bulk-uploader"
 import { apiGet, apiDelete } from "@/lib/api"
 import { toast } from "sonner"
+import { StatCard } from "@/components/stat-card"
 import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -85,6 +86,15 @@ export default function AccountsPage() {
             setLoading(false)
         }
     }
+
+    const accountStats = useMemo(() => {
+        return {
+            total: accounts.length,
+            active: accounts.filter(a => a.status === "active").length,
+            failed: accounts.filter(a => a.status === "failed").length,
+            issues: accounts.filter(a => ["locked", "suspended", "wrong_password"].includes(a.status)).length
+        }
+    }, [accounts])
 
     const deleteAccount = async (id: number) => {
         try {
@@ -168,12 +178,12 @@ export default function AccountsPage() {
         {
             accessorKey: "email",
             header: "Email",
-            cell: ({ row }) => <div className="font-medium text-xs truncate max-w-[200px]" title={row.getValue("email")}>{row.getValue("email")}</div>,
+            cell: ({ row }) => <div className="font-medium truncate max-w-[200px]" title={row.getValue("email")}>{row.getValue("email")}</div>,
         },
         {
             accessorKey: "provider",
             header: "Provider",
-            cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px] py-0">{row.getValue("provider")}</Badge>,
+            cell: ({ row }) => <Badge variant="outline" className="capitalize py-0">{row.getValue("provider")}</Badge>,
         },
         {
             accessorKey: "status",
@@ -187,7 +197,7 @@ export default function AccountsPage() {
             accessorKey: "created_at",
             header: "Created",
             cell: ({ row }) => {
-                return <div className="text-muted-foreground text-xs">{new Date(row.getValue("created_at")).toLocaleDateString()}</div>
+                return <div className="text-muted-foreground">{new Date(row.getValue("created_at")).toLocaleDateString()}</div>
             },
         },
         {
@@ -209,6 +219,7 @@ export default function AccountsPage() {
                                 navigator.clipboard.writeText(account.email)
                                 toast.success("Email copied to clipboard")
                             }}>
+                                <Copy className="mr-2 h-4 w-4" />
                                 Copy email
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -296,6 +307,37 @@ export default function AccountsPage() {
                             Bulk Upload
                         </Button>
                     </div>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <StatCard
+                        title="Total Accounts"
+                        value={accountStats.total}
+                        description="Currently registered"
+                        icon={<User className="h-5 w-5" />}
+                        variant="primary"
+                    />
+                    <StatCard
+                        title="Active"
+                        value={accountStats.active}
+                        description="Ready for use"
+                        icon={<Plus className="h-5 w-5" />}
+                        variant="success"
+                    />
+                    <StatCard
+                        title="Failed"
+                        value={accountStats.failed}
+                        description="General failures"
+                        icon={<Trash2 className="h-5 w-5" />}
+                        variant="destructive"
+                    />
+                    <StatCard
+                        title="Account Issues"
+                        value={accountStats.issues}
+                        description="Locked/Suspended"
+                        icon={<MoreHorizontal className="h-5 w-5" />}
+                        variant="warning"
+                    />
                 </div>
 
                 <DataTable

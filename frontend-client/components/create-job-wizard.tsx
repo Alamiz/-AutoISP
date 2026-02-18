@@ -263,12 +263,26 @@ export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
         {
             accessorKey: "email",
             header: "Email",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <Mail className="h-3 w-3 text-muted-foreground" />
-                    <span className="font-medium truncate max-w-[150px]">{row.getValue("email")}</span>
-                </div>
-            )
+            cell: ({ row }) => {
+                const account = row.original
+                return (
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm truncate">{account.email}</span>
+                            {account.label && (
+                                <Badge variant="secondary" className="h-3.5 px-1 font-normal opacity-70">
+                                    {account.label}
+                                </Badge>
+                            )}
+                        </div>
+                        {account.latest_automation && (
+                            <span className="text-muted-foreground truncate opacity-80">
+                                {account.latest_automation}
+                            </span>
+                        )}
+                    </div>
+                )
+            }
         },
 
         {
@@ -276,7 +290,7 @@ export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
             header: "Status",
             cell: ({ row }) => {
                 const status = row.getValue("status") as string
-                return <AccountStatusBadge status={status} />
+                return <AccountStatusBadge status={status} className="py-0 h-4" />
             }
         },
     ], [])
@@ -495,7 +509,7 @@ export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
                                         <Button
                                             variant="secondary"
                                             size="sm"
-                                            className="h-8 gap-2 px-4 shadow-sm"
+                                            className="h-8 gap-2 px-4 shadow-sm cursor-pointer"
                                             onClick={() => {
                                                 const input = document.createElement("input")
                                                 input.type = "file"
@@ -738,7 +752,7 @@ export function CreateJobWizard({ open, onOpenChange }: CreateJobWizardProps) {
                                                                                         e.stopPropagation()
                                                                                         setConfiguringAutomationId(isExpanded ? null : auto.id)
                                                                                     }}
-                                                                                    className={`h-7 px-2 text-xs gap-1 ${isValid ? 'text-primary' : 'text-orange-500'}`}
+                                                                                    className={`h-7 px-2 text-xs gap-1 ${isValid ? 'text-primary' : 'text-red-500'}`}
                                                                                 >
                                                                                     <Settings className="h-3 w-3" />
                                                                                     Configure

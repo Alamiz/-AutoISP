@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, XCircle, AlertCircle, ShieldAlert, BadgeHelp, Lock, Smartphone, Timer } from "lucide-react"
+import { CheckCircle2, XCircle, AlertCircle, ShieldAlert, BadgeHelp, Lock, Smartphone } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface AccountStatusBadgeProps {
     status: string
@@ -9,76 +10,79 @@ interface AccountStatusBadgeProps {
 export function AccountStatusBadge({ status, className }: AccountStatusBadgeProps) {
     const normalizedStatus = (status || "unknown").toLowerCase()
 
-    switch (normalizedStatus) {
-        case "active":
-            return (
-                <Badge variant="success" className={className}>
-                    <CheckCircle2 className="mr-1 h-3 w-3" />
-                    Active
-                </Badge>
-            )
-        case "valid": // Legacy/Alternative
-            return (
-                <Badge variant="success" className={className}>
-                    <CheckCircle2 className="mr-1 h-3 w-3" />
-                    Valid
-                </Badge>
-            )
-        case "locked":
-            return (
-                <Badge variant="destructive" className={className}>
-                    <Lock className="mr-1 h-3 w-3" />
-                    Locked
-                </Badge>
-            )
-        case "suspended":
-            return (
-                <Badge variant="destructive" className={className}>
-                    <ShieldAlert className="mr-1 h-3 w-3" />
-                    Suspended
-                </Badge>
-            )
-        case "wrong_password":
-            return (
-                <Badge variant="destructive" className={className}>
-                    <AlertCircle className="mr-1 h-3 w-3" />
-                    Wrong Password
-                </Badge>
-            )
-        case "wrong_email":
-            return (
-                <Badge variant="destructive" className={className}>
-                    <AlertCircle className="mr-1 h-3 w-3" />
-                    Wrong Email
-                </Badge>
-            )
-        case "phone_verification":
-            return (
-                <Badge variant="warning" className={className}>
-                    <Smartphone className="mr-1 h-3 w-3" />
-                    Phone Verify
-                </Badge>
-            )
-        case "captcha":
-            return (
-                <Badge variant="warning" className={className}>
-                    <BadgeHelp className="mr-1 h-3 w-3" />
-                    Captcha
-                </Badge>
-            )
-        case "failed":
-            return (
-                <Badge variant="destructive" className={className}>
-                    <XCircle className="mr-1 h-3 w-3" />
-                    Failed
-                </Badge>
-            )
-        case "unknown":
-        default:
-            return (
-                <Badge variant="secondary" className={className}>
-                    Unknown
-                </Badge>
-            )
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case "active":
+            case "valid":
+                return {
+                    icon: <CheckCircle2 className="mr-1 h-3 w-3" />,
+                    label: "Active",
+                    className: "bg-green-500/10 text-green-500 border-green-500/20"
+                }
+            case "locked":
+                return {
+                    icon: <Lock className="mr-1 h-3 w-3" />,
+                    label: "Locked",
+                    className: "bg-red-500/10 text-red-500 border-red-500/20"
+                }
+            case "suspended":
+                return {
+                    icon: <ShieldAlert className="mr-1 h-3 w-3" />,
+                    label: "Suspended",
+                    className: "bg-red-500/10 text-red-500 border-red-500/20"
+                }
+            case "wrong_password":
+                return {
+                    icon: <AlertCircle className="mr-1 h-3 w-3" />,
+                    label: "Wrong Password",
+                    className: "bg-red-500/10 text-red-500 border-red-500/20"
+                }
+            case "wrong_email":
+                return {
+                    icon: <AlertCircle className="mr-1 h-3 w-3" />,
+                    label: "Wrong Email",
+                    className: "bg-red-500/10 text-red-500 border-red-500/20"
+                }
+            case "phone_verification":
+                return {
+                    icon: <Smartphone className="mr-1 h-3 w-3" />,
+                    label: "Phone Verify",
+                    className: "bg-orange-500/10 text-orange-500 border-orange-500/20"
+                }
+            case "captcha":
+                return {
+                    icon: <BadgeHelp className="mr-1 h-3 w-3" />,
+                    label: "Captcha",
+                    className: "bg-orange-500/10 text-orange-500 border-orange-500/20"
+                }
+            case "failed":
+                return {
+                    icon: <XCircle className="mr-1 h-3 w-3" />,
+                    label: "Failed",
+                    className: "bg-red-500/10 text-red-500 border-red-500/20"
+                }
+            default:
+                return {
+                    icon: null,
+                    label: status || "Unknown",
+                    className: "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                }
+        }
     }
+
+    const config = getStatusConfig(normalizedStatus)
+
+    return (
+        <Badge
+            variant="outline"
+            className={cn(
+                "font-medium border shadow-none",
+                config.className,
+                className
+            )}
+        >
+            {config.icon}
+            {config.label}
+        </Badge>
+    )
 }

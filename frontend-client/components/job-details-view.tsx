@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable } from "@/components/data-table"
+import { StatCard } from "@/components/stat-card"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
@@ -122,42 +123,35 @@ export default function JobDetailsView() {
                     </Button>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.total}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-500">{stats.completed}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Failed</CardTitle>
-                            <XCircle className="h-4 w-4 text-red-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-500">{stats.failed}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Running</CardTitle>
-                            <Clock className="h-4 w-4 text-yellow-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-yellow-500">{stats.running}</div>
-                        </CardContent>
-                    </Card>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                    <StatCard
+                        title="Total Accounts"
+                        value={stats.total}
+                        description="Assigned to job"
+                        icon={<SquareTerminal className="h-5 w-5" />}
+                        variant="primary"
+                    />
+                    <StatCard
+                        title="Completed"
+                        value={stats.completed}
+                        description="Successful tasks"
+                        icon={<CheckCircle2 className="h-5 w-5" />}
+                        variant="success"
+                    />
+                    <StatCard
+                        title="Failed"
+                        value={stats.failed}
+                        description="Tasks with errors"
+                        icon={<XCircle className="h-5 w-5" />}
+                        variant="destructive"
+                    />
+                    <StatCard
+                        title="Running"
+                        value={stats.running}
+                        description="Active processes"
+                        icon={<Clock className="h-5 w-5" />}
+                        variant="warning"
+                    />
                 </div>
 
                 <div className="space-y-4">

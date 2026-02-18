@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
 import { BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { Globe, Plus, RefreshCw, MoreHorizontal, Trash2, Edit } from "lucide-react"
+import { Globe, Plus, RefreshCw, MoreHorizontal, Trash2, Edit, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BulkUploader } from "@/components/bulk-uploader"
 import { apiGet, apiDelete } from "@/lib/api"
@@ -166,23 +166,23 @@ export default function ProxiesPage() {
         {
             accessorKey: "ip",
             header: "IP Address",
-            cell: ({ row }) => <div className="font-mono font-medium text-xs truncate max-w-[150px]">{row.getValue("ip")}</div>,
+            cell: ({ row }) => <div className="font-mono font-medium truncate max-w-[150px]">{row.getValue("ip")}</div>,
         },
         {
             accessorKey: "port",
             header: "Port",
-            cell: ({ row }) => <div className="font-mono text-muted-foreground text-xs">{row.getValue("port")}</div>,
+            cell: ({ row }) => <div className="font-mono text-muted-foreground">{row.getValue("port")}</div>,
         },
         {
             accessorKey: "username",
             header: "Username",
-            cell: ({ row }) => <div className="text-muted-foreground text-xs truncate max-w-[100px]">{row.getValue("username") || "-"}</div>,
+            cell: ({ row }) => <div className="text-muted-foreground truncate max-w-[100px]">{row.getValue("username") || "-"}</div>,
         },
         {
             accessorKey: "created_at",
             header: "Created",
             cell: ({ row }) => {
-                return <div className="text-muted-foreground text-xs">{new Date(row.getValue("created_at")).toLocaleDateString()}</div>
+                return <div className="text-muted-foreground">{new Date(row.getValue("created_at")).toLocaleDateString()}</div>
             },
         },
         {
@@ -204,6 +204,7 @@ export default function ProxiesPage() {
                                 navigator.clipboard.writeText(`${proxy.ip}:${proxy.port}`)
                                 toast.success("Proxy copied to clipboard")
                             }}>
+                                <Copy className="mr-2 h-4 w-4" />
                                 Copy address
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />

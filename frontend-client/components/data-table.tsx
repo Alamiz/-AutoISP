@@ -299,19 +299,19 @@ export function DataTable<TData, TValue>({
             )}
 
             <div className={cn(
-                "overflow-auto",
+                "overflow-auto flex-1 min-h-0",
                 !hideBorder && "border",
                 !hideRounding && "rounded-md",
                 "bg-card",
                 containerClassName
             )}>
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead key={header.id} className="bg-card">
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(

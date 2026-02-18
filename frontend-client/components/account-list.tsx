@@ -529,13 +529,13 @@ export function AccountList() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-foreground truncate">{account.email}</p>
-                        {account.label && <Badge variant="secondary" className="text-xs">
+                        <p className="text-base font-medium text-foreground truncate">{account.email}</p>
+                        {account.label && <Badge variant="secondary" className="text-[10px] h-4">
                           {account.label}
                         </Badge>}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <AccountStatusBadge status={account.status} />
+                      <div className="flex items-center gap-4 text-base text-muted-foreground">
+                        <AccountStatusBadge status={account.status} className="text-xs py-0 h-5" />
                         {/* Job Status Indicator */}
                         {(() => {
                           const job = getAccountJob(String(account.id));
@@ -601,7 +601,7 @@ export function AccountList() {
                           // );
                         })()}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 truncate">{account.latest_automation}</p>
+                      <p className="text-sm text-muted-foreground mt-1 truncate">{account.latest_automation}</p>
                       <div className="flex flex-wrap items-center mt-2 gap-2 text-xs">
                         {/* Device Switcher */}
                         <TooltipProvider>

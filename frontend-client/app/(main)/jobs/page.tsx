@@ -5,13 +5,15 @@ import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { PageBreadcrumb } from "@/components/breadcrumb-context"
 import { BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { SquareTerminal, Play, CheckCircle2, XCircle, Clock, MoreHorizontal, Eye, Trash2, StopCircle } from "lucide-react"
+import { SquareTerminal, Play, CheckCircle2, XCircle, Clock, MoreHorizontal, Eye, Trash2, StopCircle, Loader2 } from "lucide-react"
 import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Job } from "@/lib/types"
 import { apiGet, apiDelete } from "@/lib/api"
+import { JobAccountStatusBadge } from "@/components/job-account-status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,6 +25,7 @@ import {
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CreateJobWizard } from "@/components/create-job-wizard"
+import { StatCard } from "@/components/stat-card"
 import { format } from "date-fns"
 import {
     AlertDialog,
@@ -46,10 +49,12 @@ export default function JobsPage() {
     })
 
     const jobs = response?.items || []
+    const runningJob = jobs.find(j => j.status === "running")
+    const queuedJobs = jobs.filter(j => j.status === "queued")
 
     const stats = {
         total: response?.total || jobs.length,
-        running: jobs.filter(j => j.status === "running" || j.status === "queued").length,
+        queued: queuedJobs.length,
         completed: jobs.filter(j => j.status === "completed").length,
         failed: jobs.filter(j => j.status === "failed").length
     }
@@ -76,31 +81,20 @@ export default function JobsPage() {
             accessorKey: "name",
             header: "Job Name",
             cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <span className="font-medium text-sm">{row.original.name || `Job #${row.original.id}`}</span>
-                </div>
+                <Link
+                    href={`/jobs/detail?id=${row.original.id}`}
+                    className="font-medium text-sm hover:underline"
+                >
+                    {row.original.name || `Job #${row.original.id}`}
+                </Link>
             )
         },
         {
             accessorKey: "status",
             header: "Status",
-            cell: ({ row }) => {
-                const status = row.original.status
-                return (
-                    <Badge
-                        variant={
-                            status === "completed" ? "success" :
-                                status === "failed" ? "destructive" :
-                                    status === "running" ? "warning" :
-                                        "secondary"
-                        }
-                        className="capitalize font-normal"
-                    >
-                        {status === "running" && <Clock className="mr-1 h-3 w-3 animate-pulse" />}
-                        {status}
-                    </Badge>
-                )
-            }
+            cell: ({ row }) => (
+                <JobAccountStatusBadge status={row.original.status} />
+            )
         },
         {
             accessorKey: "max_concurrent",
@@ -122,11 +116,6 @@ export default function JobsPage() {
                 const job = row.original
                 return (
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/jobs/detail?id=${job.id}`}>
-                                View Details
-                            </Link>
-                        </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -136,6 +125,13 @@ export default function JobsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/jobs/detail?id=${job.id}`}>
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Details
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => setDeleteId(job.id)} className="text-destructive focus:text-destructive">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete Job
@@ -177,47 +173,61 @@ export default function JobsPage() {
                     </Button>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-                            <SquareTerminal className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.total}</div>
-                            <p className="text-xs text-muted-foreground">Lifetime runs</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Running</CardTitle>
-                            <Clock className="h-4 w-4 text-yellow-500 animate-pulse" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-yellow-500">{stats.running}</div>
-                            <p className="text-xs text-muted-foreground">Active processes</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-500">{stats.completed}</div>
-                            <p className="text-xs text-muted-foreground">Successful jobs</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card/50 border-border shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Failed</CardTitle>
-                            <XCircle className="h-4 w-4 text-red-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-500">{stats.failed}</div>
-                            <p className="text-xs text-muted-foreground">Jobs with errors</p>
-                        </CardContent>
-                    </Card>
+                {runningJob && (
+                    <div className="mb-8 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 relative">
+                                <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
+                                <Loader2 className="h-6 w-6 text-blue-500 animate-spin relative z-10" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-lg font-bold">Currently Running</h2>
+                                    <Badge className="bg-blue-400/10 text-blue-400 border-blue-400/20 animate-pulse">Active</Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    <span className="font-semibold text-foreground">{runningJob.name || `Job #${runningJob.id}`}</span> is currently executing...
+                                </p>
+                            </div>
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={`/jobs/detail?id=${runningJob.id}`}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Progress
+                            </Link>
+                        </Button>
+                    </div>
+                )}
+
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                    <StatCard
+                        title="Total Jobs"
+                        value={stats.total}
+                        description="Lifetime runs"
+                        icon={<SquareTerminal className="h-5 w-5" />}
+                        variant="primary"
+                    />
+                    <StatCard
+                        title="Queued"
+                        value={stats.queued}
+                        description="Waiting to run"
+                        icon={<Clock className="h-5 w-5" />}
+                        variant="warning"
+                    />
+                    <StatCard
+                        title="Completed"
+                        value={stats.completed}
+                        description="Successful jobs"
+                        icon={<CheckCircle2 className="h-5 w-5" />}
+                        variant="success"
+                    />
+                    <StatCard
+                        title="Failed"
+                        value={stats.failed}
+                        description="Jobs with errors"
+                        icon={<XCircle className="h-5 w-5" />}
+                        variant="destructive"
+                    />
                 </div>
 
                 <DataTable
@@ -252,3 +262,4 @@ export default function JobsPage() {
         </div>
     )
 }
+
