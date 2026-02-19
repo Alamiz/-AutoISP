@@ -277,9 +277,21 @@ class JobManager:
         try:
              ja = db.query(JobAccount).filter(JobAccount.id == job_account_id).first()
              if ja:
+                 # Update the specific job record
                  ja.status = status
                  if error_message:
                      ja.error_message = error_message
+                 
+                 # Also update the Master Account status to reflect current health
+                 if ja.account:
+                     # Map automation success to "active" for the sidebar/list
+                     if status in ["success", "completed"]:
+                         ja.account.status = "active"
+                     else:
+                         # For errors like 'locked', 'wrong_password', 'suspended', 
+                         # we propagate the specific status to the master account
+                         ja.account.status = status
+                 
                  db.commit()
         finally:
             db.close()
