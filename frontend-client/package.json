@@ -32,6 +32,13 @@
         "to": "backend/api.exe"
       }
     ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Alamiz",
+        "repo": "-AutoISP"
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "app/favicon.ico"
@@ -60,7 +67,7 @@
     "date-fns": "^4.1.0",
     "electron-log": "^5.4.3",
     "electron-serve": "^3.0.0",
-    "electron-updater": "^6.7.3",
+    "electron-updater": "^6.8.3",
     "formik": "^2.4.6",
     "lucide-react": "^0.544.0",
     "next": "^16.0.5",

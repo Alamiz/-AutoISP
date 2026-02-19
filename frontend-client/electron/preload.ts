@@ -32,3 +32,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeListener('log-panel:attached', callback);
     },
 });
+
+// Auto-updater API
+contextBridge.exposeInMainWorld('updater', {
+    checkForUpdates: () => ipcRenderer.invoke('update:check'),
+    downloadUpdate: () => ipcRenderer.invoke('update:download'),
+    installUpdate: () => ipcRenderer.invoke('update:install'),
+    onUpdateEvent: (callback: (event: any) => void) => {
+        const handler = (_ipcEvent: any, payload: any) => callback(payload);
+        ipcRenderer.on('update:event', handler);
+        // Return unsubscribe function
+        return () => {
+            ipcRenderer.removeListener('update:event', handler);
+        };
+    },
+});

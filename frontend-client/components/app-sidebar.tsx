@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { ProviderSwitcher } from "@/components/provider-switcher"
+import { UpdateStatus } from "@/components/update-status"
 import { SettingsDialog } from "@/components/settings-dialog"
 import {
   Sidebar,
@@ -106,6 +107,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <Separator />
       <SidebarFooter>
+        <UpdateStatus />
+        <Separator />
         {/* <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton

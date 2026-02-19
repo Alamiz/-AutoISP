@@ -4,6 +4,7 @@ import { spawn, ChildProcess } from 'child_process';
 import kill from 'tree-kill';
 import log from 'electron-log';
 import net from 'net';
+import { autoUpdater } from 'electron-updater';
 
 let mainWindow: BrowserWindow | null;
 let loadingWindow: BrowserWindow | null;
@@ -206,6 +207,94 @@ function waitForBackend(port: number, host = "127.0.0.1", retries = 20, delay = 
     });
 }
 
+// ─── Auto-Updater Configuration ────────────────────────────────────────────
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.logger = log;
+
+let isCheckingForUpdate = false;
+
+function sendUpdateEvent(payload: Record<string, unknown>) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update:event', payload);
+    }
+}
+
+// Forward updater events to renderer
+autoUpdater.on('checking-for-update', () => {
+    sendUpdateEvent({ type: 'checking' });
+});
+
+autoUpdater.on('update-available', (info) => {
+    isCheckingForUpdate = false;
+    sendUpdateEvent({ type: 'available', version: info.version });
+});
+
+autoUpdater.on('update-not-available', (_info) => {
+    isCheckingForUpdate = false;
+    sendUpdateEvent({ type: 'not-available' });
+});
+
+autoUpdater.on('download-progress', (progress) => {
+    sendUpdateEvent({
+        type: 'progress',
+        percent: progress.percent,
+        bytesPerSecond: progress.bytesPerSecond,
+        transferred: progress.transferred,
+        total: progress.total,
+    });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+    isCheckingForUpdate = false;
+    sendUpdateEvent({ type: 'downloaded', version: info.version });
+});
+
+autoUpdater.on('error', (err) => {
+    isCheckingForUpdate = false;
+    log.error('Auto-updater error:', err);
+    sendUpdateEvent({ type: 'error', message: err?.message || 'Unknown update error' });
+});
+
+// IPC handlers for renderer
+ipcMain.handle('update:check', async () => {
+    if (isCheckingForUpdate) return;
+    isCheckingForUpdate = true;
+    try {
+        await autoUpdater.checkForUpdates();
+    } catch (err) {
+        isCheckingForUpdate = false;
+        throw err;
+    }
+});
+
+ipcMain.handle('update:download', async () => {
+    await autoUpdater.downloadUpdate();
+});
+
+ipcMain.handle('update:install', async () => {
+    // Show native confirmation dialog
+    const result = dialog.showMessageBoxSync(mainWindow!, {
+        type: 'warning',
+        title: 'Install Update',
+        message: 'Install update and restart?',
+        detail: 'The app will close and any running automations will be terminated.',
+        buttons: ['Install & Restart', 'Cancel'],
+        defaultId: 0,
+        cancelId: 1,
+    });
+
+    if (result === 1) return; // User cancelled
+
+    // Gracefully terminate backend before installing
+    killPythonBackend();
+
+    // Give the backend a moment to shut down, then install
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    autoUpdater.quitAndInstall(false, true);
+});
+
+// ─── App Lifecycle ─────────────────────────────────────────────────────────
 app.whenReady().then(
     async () => {
         startPythonBackend();
@@ -214,6 +303,24 @@ app.whenReady().then(
         try {
             await waitForBackend(8001);
             createWindow();
+
+            // Initial update check (delayed to let the window settle)
+            setTimeout(() => {
+                autoUpdater.checkForUpdates().catch((err) => {
+                    log.warn('Initial update check failed:', err);
+                });
+            }, 5000);
+
+            // Periodic update check every 6 hours
+            setInterval(() => {
+                if (!isCheckingForUpdate) {
+                    isCheckingForUpdate = true;
+                    autoUpdater.checkForUpdates().catch((err) => {
+                        isCheckingForUpdate = false;
+                        log.warn('Periodic update check failed:', err);
+                    });
+                }
+            }, 6 * 60 * 60 * 1000);
         } catch (error) {
             log.error("Backend failed to start:", error);
             app.quit();
