@@ -119,7 +119,7 @@ Each release **must** have a higher semver version than the previous one. The ve
 
 | Symptom | Cause / Fix |
 |---------|-------------|
-| "No published versions" error | Release is a **draft** → edit it on GitHub and click **Publish** |
+| "No published versions" / 406 error | The release has a grey **Draft** badge → click ✏️ Edit on the release and click **Publish release** |
 | "HttpError: 401" in logs | `GH_TOKEN` is missing, expired, or lacks `repo` scope |
 | Update check never fires | In dev mode, `electron-updater` can't find artifacts. Build with `npm run dist` and test the installed app |
 | Download hangs at 0% | Firewall/proxy blocking `github.com` or `objects.githubusercontent.com` |
