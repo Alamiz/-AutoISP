@@ -21,6 +21,7 @@ from .handlers import (
 from automations.common_handlers import (
     WrongPasswordPageHandler,
     WrongEmailPageHandler,
+    LoginNotPossiblePageHandler,
     LoginCaptchaHandler,
     SecuritySuspensionHandler,
     PhoneVerificationHandler,
@@ -69,6 +70,7 @@ class WebDEAuthentication(HumanAction):
         registry.register("mailcheck_options_page", MailCheckOptionsHandler(self, self.logger, self.browser._context))
         registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
         registry.register("webde_login_wrong_username", WrongEmailPageHandler(self, self.logger))
+        registry.register("webde_login_not_possible_page", LoginNotPossiblePageHandler(self, self.logger))
         registry.register("webde_login_captcha_page", LoginCaptchaHandler(self, self.logger, self.job_id))
         registry.register("webde_logged_in_page", LoggedInPageHandler(self, self.logger))
         registry.register("webde_inbox_ads_preferences_popup_1_core", AdsPreferencesPopup1Handler(self, self.logger))

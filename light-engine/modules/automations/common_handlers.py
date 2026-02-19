@@ -33,7 +33,6 @@ class WrongEmailPageHandler(CommonHandler):
         if self.logger:
             self.logger.warning("WrongEmailPageHandler: Wrong email detected")
         await asyncio.to_thread(update_account_status, self.account.id, "wrong_email")
-        # update_account_state(self.account.id, "wrong_username")
         return FlowResult.WRONG_EMAIL
 
 class LoginNotPossiblePageHandler(CommonHandler):
@@ -41,7 +40,8 @@ class LoginNotPossiblePageHandler(CommonHandler):
     async def handle(self, page: Page = None) -> FlowResult:
         if self.logger:
             self.logger.warning("LoginNotPossiblePageHandler: Login not possible detected (temp error, retrying)")
-        return FlowResult.RETRY
+        await asyncio.to_thread(update_account_status, self.account.id, "locked")
+        return FlowResult.LOCKED
 
 class LoginCaptchaHandler(CommonHandler, HumanAction):
     """Handle login captcha with auto-solve + fallback to user"""
@@ -85,7 +85,20 @@ class LoginCaptchaHandler(CommonHandler, HumanAction):
                 )
             return FlowResult.RETRY
 
-        # 2. Fallback → wait for user
+        # 2. Auto-solve failed — check if the page changed (e.g. alert appeared)
+        from core.utils.identifier import identify_page
+        current_url = page.url
+        current_page = await identify_page(page, current_url=current_url, signatures=self.automation.signatures)
+
+        if "captcha" not in current_page:
+            if self.logger:
+                self.logger.info(
+                    f"CaptchaHandler: Page changed to '{current_page}' after solve attempt. Handing off to flow engine.",
+                    extra={"account_id": self.account.id}
+                )
+            return FlowResult.RETRY
+
+        # 3. Still on captcha page — fallback → wait for user
         if self.logger:
             self.logger.warning(
                 "CaptchaHandler: Auto-solve failed. Waiting for user...",

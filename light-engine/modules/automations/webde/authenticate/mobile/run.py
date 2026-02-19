@@ -66,7 +66,7 @@ class WebDEAuthentication(HumanAction):
         registry.register("webde_register_page", RegisterPageHandler(self, self.logger))
         registry.register("webde_login_page", LoginPageHandler(self, self.logger))
         registry.register("webde_login_page_v2", LoginPageV2Handler(self, self.logger))
-        registry.register("webde_login_not_possible", LoginNotPossiblePageHandler(self, self.logger))
+        registry.register("webde_login_not_possible_page", LoginNotPossiblePageHandler(self, self.logger))
         registry.register("webde_login_wrong_password", WrongPasswordPageHandler(self, self.logger))
         registry.register("webde_login_wrong_username", WrongEmailPageHandler(self, self.logger))
         registry.register("webde_login_captcha_page", LoginCaptchaHandler(self, self.logger, self.job_id))

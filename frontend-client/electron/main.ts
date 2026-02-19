@@ -1,4 +1,4 @@
-import { app, Menu, BrowserWindow, ipcMain } from 'electron';
+import { app, Menu, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import kill from 'tree-kill';
@@ -161,11 +161,14 @@ function startPythonBackend() {
     }
 
     pythonProcess.on('error', (err) => {
-        console.error('Failed to start Python backend:', err);
+        log.error('Failed to start Python backend:', err);
     });
 
     pythonProcess.on('exit', (code, signal) => {
-        console.log(`Python backend exited with code ${code} and signal ${signal}`);
+        log.warn(`Python backend exited with code ${code} and signal ${signal}`);
+        if (code !== 0 && code !== null) {
+            log.error(`Backend crashed with exit code ${code}. Check logs at: ${log.transports.file.getFile().path}`);
+        }
     });
 }
 
@@ -196,21 +199,26 @@ function killPythonBackend() {
     }
 }
 
-function waitForBackend(port: number, host = "127.0.0.1", retries = 20, delay = 500) {
+function waitForBackend(port: number, host = "127.0.0.1", retries = 60, delay = 1000) {
     return new Promise<void>((resolve, reject) => {
         let attempts = 0;
 
         const check = () => {
             const socket = net.connect(port, host, () => {
                 socket.end();
-                resolve(); // backend is ready
+                log.info(`Backend is ready after ${attempts + 1} attempt(s)`);
+                resolve();
             });
 
             socket.on("error", () => {
-                if (++attempts < retries) {
-                    setTimeout(check, delay); // retry
+                attempts++;
+                if (attempts % 10 === 0) {
+                    log.info(`Waiting for backend... attempt ${attempts}/${retries}`);
+                }
+                if (attempts < retries) {
+                    setTimeout(check, delay);
                 } else {
-                    reject(new Error("Backend did not start in time"));
+                    reject(new Error(`Backend did not start after ${retries} attempts (${retries * delay / 1000}s)`));
                 }
             });
         };
@@ -335,6 +343,15 @@ app.whenReady().then(
             }, 6 * 60 * 60 * 1000);
         } catch (error) {
             log.error("Backend failed to start:", error);
+            const logPath = log.transports.file.getFile().path;
+            dialog.showErrorBox(
+                'AutoISP - Backend Failed to Start',
+                `The backend server failed to start. This can happen if:\n\n` +
+                `• Visual C++ Redistributable is not installed\n` +
+                `• Antivirus is blocking the application\n` +
+                `• The app is still loading (try again)\n\n` +
+                `Log file: ${logPath}`
+            );
             app.quit();
         }
     }

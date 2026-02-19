@@ -323,26 +323,17 @@ PAGE_SIGNATURES = {
             },
         ]
     },
-    "webde_login_not_possible": {
-        "description": "WebDE login not possible page.",
-        "required_sublink": "auth.web.de/login/mobile",
+    "webde_login_not_possible_page": {
+        "description": "Webde Login not possible page.",
+        "required_sublink": "auth.web.de/login",
         "checks": [
             {
-                "name": "Alert message",
-                "css_selector": 'div[role="alert"]',
-                "contains_text": None,
+                "name": "Error message",
+                "css_selector": 'div[data-testid="email-view"] div[role="alert"] h3',
+                "contains_text": "nicht möglich",
                 "min_count": 1,
-                "description": "",
-                "weight": 2.0,
-                "should_exist": True
-            },
-            {
-                "name": "Back button",
-                "css_selector": 'button[data-testid="button-back"]',
-                "contains_text": None,
-                "min_count": 1,
-                "description": "",
-                "weight": 2.0,
+                "description": "Login not possible error message",
+                "weight": 10.0,
                 "should_exist": True
             },
         ]

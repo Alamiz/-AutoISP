@@ -169,6 +169,21 @@ PAGE_SIGNATURES = {
             },
         ]
     },
+    "webde_login_not_possible_page": {
+        "description": "Webde Login not possible page.",
+        "required_sublink": "auth.web.de/login",
+        "checks": [
+            {
+                "name": "Error message",
+                "css_selector": 'div[data-testid="email-view"] div[role="alert"] h3',
+                "contains_text": "nicht möglich",
+                "min_count": 1,
+                "description": "Login not possible error message",
+                "weight": 10.0,
+                "should_exist": True
+            },
+        ]
+    },
     "webde_logged_in_page": {
         "description": "Webde Confirm user page.",
         "required_sublink": "web.de",
