@@ -43,10 +43,7 @@ class ChangePasswordAndAddRecovery(HumanAction):
         self.new_password = None
         self.recovery_email = None
         self.output_dir = None
-        
-        # Log path for recovery email and password change
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.recovery_log_path = os.path.join("output", "recovery_and_password", f"processed_{timestamp}.txt")
+        self.recovery_log_path = None
 
         self.browser = PlaywrightBrowserFactory(
             profile_dir=f"Profile_{self.profile}",
@@ -74,6 +71,12 @@ class ChangePasswordAndAddRecovery(HumanAction):
         # Determine output directory from log_dir
         if self.log_dir:
             self.output_dir = os.path.dirname(os.path.dirname(self.log_dir))
+            
+            # Setup recovery log path inside this run's folder
+            log_root = os.path.join(self.output_dir, "recovery_and_password")
+            os.makedirs(log_root, exist_ok=True)
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.recovery_log_path = os.path.join(log_root, f"processed_{timestamp}.txt")
         
         try:
             self.browser.start()

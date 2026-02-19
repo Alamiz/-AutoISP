@@ -1,13 +1,13 @@
+import asyncio
+
 from .desktop.run import ChangePasswordAndAddRecovery as DesktopChangePasswordAndAddRecovery
 
-def run(account, job_id=None, **kwargs):
+async def run(account, job_id=None, log_dir=None, logger=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     NOTE: Mobile version is deprecated, forcing desktop version.
     """
     automation_class = DesktopChangePasswordAndAddRecovery
-    
-    log_dir = kwargs.get("log_dir")
     
     # Always force desktop user agent
     automation = automation_class(
@@ -17,4 +17,9 @@ def run(account, job_id=None, **kwargs):
         log_dir=log_dir
     )
 
-    return automation.execute()
+    # If a dynamic logger was provided, override the default one
+    if logger:
+        automation.logger = logger
+
+    # Run sync execution in a thread to avoid blocking the event loop
+    return await asyncio.to_thread(automation.execute)

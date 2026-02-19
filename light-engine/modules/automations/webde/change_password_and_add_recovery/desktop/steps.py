@@ -111,10 +111,15 @@ class ChangePasswordStep(Step):
                 self.logger.error("Password change confirmation not found", extra={"account_id": self.account.id})
                 return StepResult(status=FlowResult.RETRY, message="Password change failed: confirmation not found")
             
-            # Save new password immediately to output/changed_passwords.txt
+            # Save new password immediately to changed_passwords.txt in output_dir
             try:
-                self.logger.info("Saving new password to output/changed_passwords.txt...", extra={"account_id": self.account.id})
-                update_credentials_file("output/changed_passwords.txt", self.account.email, new_password)
+                output_dir = getattr(self.automation, 'output_dir', None)
+                if output_dir:
+                    changed_pw_file = os.path.join(output_dir, "changed_passwords.txt")
+                    self.logger.info(f"Saving new password to {changed_pw_file}...", extra={"account_id": self.account.id})
+                    update_credentials_file(changed_pw_file, self.account.email, new_password)
+                else:
+                    self.logger.warning("No output_dir set, could not save changed_passwords.txt", extra={"account_id": self.account.id})
                 
                 # Also update the processed log file with the NEW password
                 log_path = getattr(self.automation, 'recovery_log_path', None)

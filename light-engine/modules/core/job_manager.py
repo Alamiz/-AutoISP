@@ -11,6 +11,8 @@ from API.database import SessionLocal
 from API.models import Job, JobAccount, JobAutomation, Account as DBAccount
 from modules.core.models import Account as CoreAccount
 from modules.core.runner import run_automation
+from API.database import BASE_DIR
+import os
 
 logger = logging.getLogger("autoisp")
 
@@ -86,24 +88,22 @@ class JobManager:
                 logger.error(f"Error in worker loop: {e}")
                 traceback.print_exc()
 
-    async def _process_job(self, job_id: int):
-        """Execute a single job."""
-        self.current_job_id = job_id
-        
-        # Sync DB operation wrapped in thread
-        job = await asyncio.to_thread(self._get_job, job_id)
-        if not job:
-            logger.error(f"Job {job_id} not found")
-            return
-
         try:
+            # Create timestamped run folder inside BASE_DIR/output
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_root = os.path.join(BASE_DIR, "output")
+            run_output_dir = os.path.join(output_root, f"automation_run_{timestamp}")
+            os.makedirs(run_output_dir, exist_ok=True)
+            logger.info(f"Created run output directory: {run_output_dir}")
+
             # Mark job as running
             await asyncio.to_thread(self._update_job_status, job_id, "running", start=True)
             
             await self._emit("job_started", {
                 "job_id": job_id,
                 "status": "running",
-                "started_at": datetime.now(timezone.utc).isoformat()
+                "started_at": datetime.now(timezone.utc).isoformat(),
+                "output_dir": run_output_dir
             })
 
             # Fetch job details (sync)
@@ -121,7 +121,7 @@ class JobManager:
                 
                  # Execute accounts concurrently for this automation
                 await self._run_automation_for_accounts(
-                     job_id, automation, accounts, job.max_concurrent
+                     job_id, automation, accounts, job.max_concurrent, run_output_dir
                 )
 
             await asyncio.to_thread(self._update_job_status, job_id, "completed", finish=True)
@@ -145,7 +145,8 @@ class JobManager:
         job_id: int, 
         automation: Any, # SQLAlchemy object
         job_accounts: List[Any],
-        concurrency: int
+        concurrency: int,
+        run_output_dir: str
     ):
         """Run a specific automation for all accounts in the job concurrently."""
         
@@ -169,17 +170,22 @@ class JobManager:
             # Fetch full account data in thread to avoid lazy load block
             core_account = await asyncio.to_thread(self._build_core_account, ja)
 
+            # Create account-specific logs folder
+            email_folder = core_account.email.replace("@", "_").replace(".", "_")
+            account_log_dir = os.path.join(run_output_dir, "accounts", email_folder)
+            os.makedirs(account_log_dir, exist_ok=True)
+
             # Create task
             task = asyncio.create_task(
                 self._run_single_account(
-                    semaphore, core_account, automation_name, job_id, ja.id, settings
+                    semaphore, core_account, automation_name, job_id, ja.id, settings, account_log_dir
                 )
             )
             tasks.append(task)
             
         await asyncio.gather(*tasks)
 
-    async def _run_single_account(self, semaphore, core_account, automation_name, job_id, job_account_id, settings):
+    async def _run_single_account(self, semaphore, core_account, automation_name, job_id, job_account_id, settings, log_dir):
         async with semaphore:
             try:
                 # This is the key async call to the runner
@@ -187,6 +193,7 @@ class JobManager:
                     account=core_account,
                     automation_name=automation_name,
                     job_id=str(job_id),
+                    log_dir=log_dir,
                     **settings
                 )
                 
