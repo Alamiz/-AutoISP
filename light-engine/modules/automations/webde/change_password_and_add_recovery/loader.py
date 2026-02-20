@@ -22,4 +22,4 @@ async def run(account, job_id=None, log_dir=None, logger=None, **kwargs):
         automation.logger = logger
 
     # Run sync execution in a thread to avoid blocking the event loop
-    return await asyncio.to_thread(automation.execute)
+    return await automation.execute()

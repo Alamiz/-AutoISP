@@ -88,6 +88,8 @@ class JobManager:
                 logger.error(f"Error in worker loop: {e}")
                 traceback.print_exc()
 
+    async def _process_job(self, job_id: int):
+        """Logic to process a specific job."""
         try:
             # Create timestamped run folder inside BASE_DIR/output
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -95,6 +97,14 @@ class JobManager:
             run_output_dir = os.path.join(output_root, f"automation_run_{timestamp}")
             os.makedirs(run_output_dir, exist_ok=True)
             logger.info(f"Created run output directory: {run_output_dir}")
+
+            # Fetch job details to get max_concurrent
+            db_job = await asyncio.to_thread(self._get_job, job_id)
+            if not db_job:
+                logger.error(f"Job {job_id} not found in database")
+                return
+            
+            max_concurrent = db_job.max_concurrent or 1
 
             # Mark job as running
             await asyncio.to_thread(self._update_job_status, job_id, "running", start=True)
@@ -106,7 +116,7 @@ class JobManager:
                 "output_dir": run_output_dir
             })
 
-            # Fetch job details (sync)
+            # Fetch automations and accounts
             automations, accounts = await asyncio.to_thread(self._get_job_details, job_id)
             
             if not automations:
@@ -121,7 +131,7 @@ class JobManager:
                 
                  # Execute accounts concurrently for this automation
                 await self._run_automation_for_accounts(
-                     job_id, automation, accounts, job.max_concurrent, run_output_dir
+                     job_id, automation, accounts, max_concurrent, run_output_dir
                 )
 
             await asyncio.to_thread(self._update_job_status, job_id, "completed", finish=True)

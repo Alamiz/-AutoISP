@@ -20,11 +20,12 @@ class ReportNotSpam(HumanAction):
     web.de Mobile Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, account, user_agent_type="mobile", search_text=None, max_flow_retries=3, start_date=None, end_date=None, job_id=None, log_dir=None):
+    def __init__(self, account, user_agent_type="mobile", search_text=None, max_flow_retries=3, start_date=None, end_date=None, job_id=None, log_dir=None, **kwargs):
         super().__init__()
         self.account = account
         self.user_agent_type = user_agent_type
-        self.search_text = search_text
+        # UI/Runner might pass 'keyword', map it to search_text if needed
+        self.search_text = search_text or kwargs.get("keyword")
         self.max_flow_retries = max_flow_retries
         self.job_id = job_id
         self.log_dir = log_dir

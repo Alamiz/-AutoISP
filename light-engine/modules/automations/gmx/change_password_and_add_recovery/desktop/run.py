@@ -1,7 +1,7 @@
 import logging
 import os
 import datetime
-from playwright.sync_api import Page
+from playwright.async_api import Page
 from automations.gmx.authenticate.desktop.run import GMXAuthentication
 from core.browser.browser_helper import PlaywrightBrowserFactory
 from core.utils.retry_decorators import RequiredActionFailed
@@ -66,7 +66,7 @@ class ChangePasswordAndAddRecovery(HumanAction):
         registry.register("unknown", UnknownPageHandler(self, self.logger))
         return registry
 
-    def execute(self):
+    async def execute(self):
         self.logger.info("Starting Change Password and Add Recovery", extra={"account_id": self.account.id})
         page = None
         status = "failed"
@@ -76,8 +76,8 @@ class ChangePasswordAndAddRecovery(HumanAction):
             self.output_dir = os.path.dirname(os.path.dirname(self.log_dir))
         
         try:
-            self.browser.start()
-            page = self.browser.new_page()
+            await self.browser.start()
+            page = await self.browser.new_page()
             
             # Authenticate first
             gmx_auth = GMXAuthentication(
@@ -85,10 +85,10 @@ class ChangePasswordAndAddRecovery(HumanAction):
                 user_agent_type=self.user_agent_type,
                 job_id=self.job_id
             )
-            gmx_auth.authenticate(page)
+            await gmx_auth.authenticate(page)
 
             # Change password and add recovery email using SequentialFlow
-            self.change_password_and_add_recovery(page)
+            await self.change_password_and_add_recovery(page)
             
             self.logger.info("Change password and add recovery successful", extra={"account_id": self.account.id})
             status = "success"
@@ -106,14 +106,14 @@ class ChangePasswordAndAddRecovery(HumanAction):
             if page and self.log_dir:
                 try:
                     screenshot_path = os.path.join(self.log_dir, f"screenshot_{status}.png")
-                    page.screenshot(path=screenshot_path)
+                    await page.screenshot(path=screenshot_path)
                     self.logger.info(f"Screenshot saved to {screenshot_path}")
                 except Exception as e:
                     self.logger.error(f"Failed to take screenshot: {e}")
             
-            self.browser.close()
+            await self.browser.close()
 
-    def change_password_and_add_recovery(self, page: Page):
+    async def change_password_and_add_recovery(self, page: Page):
         """Change password and add recovery email using SequentialFlow."""
         state_registry = self._setup_state_handlers()
         
@@ -127,7 +127,7 @@ class ChangePasswordAndAddRecovery(HumanAction):
         ]
         
         flow = SequentialFlow(steps, state_registry=state_registry, account=self.account, logger=self.logger)
-        result = flow.run(page)
+        result = await flow.run(page)
         
         if result.status not in (FlowResult.SUCCESS, FlowResult.COMPLETED):
             raise RequiredActionFailed(f"Failed to complete automation. Status: {result.status.name}, Message: {result.message}", status=result.status)

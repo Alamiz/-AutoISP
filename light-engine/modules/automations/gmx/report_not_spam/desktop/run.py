@@ -22,6 +22,9 @@ class ReportNotSpam:
     def __init__(self, account, job_id=None, **kwargs):
         self.account = account
         self.job_id = job_id
+        # UI/Runner might pass 'keyword', map it to search_text if needed
+        if "keyword" in kwargs and "search_text" not in kwargs:
+            kwargs["search_text"] = kwargs["keyword"]
         self.kwargs = kwargs
         
         self.logger = logging.getLogger("autoisp")

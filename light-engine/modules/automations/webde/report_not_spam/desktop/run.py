@@ -23,11 +23,12 @@ class ReportNotSpam(HumanAction):
     web.de Desktop Report Not Spam using SequentialFlow
     """
     
-    def __init__(self, account, user_agent_type="desktop", search_text=None, start_date=None, end_date=None, job_id=None, log_dir=None):
+    def __init__(self, account, user_agent_type="desktop", search_text=None, start_date=None, end_date=None, job_id=None, log_dir=None, **kwargs):
         super().__init__()
         self.account = account
         self.user_agent_type = user_agent_type
-        self.search_text = search_text
+        # UI/Runner might pass 'keyword', map it to search_text if needed
+        self.search_text = search_text or kwargs.get("keyword")
         self.job_id = job_id
         self.log_dir = log_dir
         self.logger = logging.getLogger("autoisp")

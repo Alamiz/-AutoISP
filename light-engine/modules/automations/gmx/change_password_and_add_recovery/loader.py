@@ -1,6 +1,6 @@
 from .desktop.run import ChangePasswordAndAddRecovery as DesktopChangePasswordAndAddRecovery
 
-def run(account, job_id=None, **kwargs):
+async def run(account, job_id=None, **kwargs):
     """
     Selects the right platform (desktop/mobile) and runs the automation.
     NOTE: Mobile version is deprecated, forcing desktop version.
@@ -17,4 +17,5 @@ def run(account, job_id=None, **kwargs):
         log_dir=log_dir
     )
 
-    return automation.execute()
+    # Run natively async
+    return await automation.execute()
